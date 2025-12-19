@@ -1,0 +1,11 @@
+Place your PNG icon files here (so iPhone installs use the correct icon):
+
+Required for iPhone:
+- apple-touch-icon.png  (recommended 180x180)
+
+Recommended for PWA manifest:
+- icon-192.png
+- icon-512.png
+- icon-512-maskable.png
+
+Tip: You can use the same artwork and export multiple sizes.
