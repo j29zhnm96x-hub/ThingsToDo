@@ -24,7 +24,12 @@ const APP_SHELL = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
+    (async () => {
+      const cache = await caches.open(CACHE_NAME);
+      // Cache individually so missing optional assets (like extra icon sizes)
+      // don't cause the whole install to fail.
+      await Promise.allSettled(APP_SHELL.map((url) => cache.add(url)));
+    })()
   );
   self.skipWaiting();
 });

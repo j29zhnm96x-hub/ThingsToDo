@@ -17,10 +17,6 @@ export async function renderInbox(ctx) {
   const todos = (await db.todos.listByProject(null)).filter((t) => !t.archived);
   const { projects, map: projectsById } = await buildProjectsById(db);
 
-  const empty = todos.length === 0
-    ? el('div', { class: 'card small' }, 'No inbox items. Tap “Add” to capture a todo.')
-    : null;
-
   const list = renderTodoList({
     todos,
     projectsById,
@@ -55,7 +51,7 @@ export async function renderInbox(ctx) {
     onMoveDown: async (todo) => swapWithNeighbor({ ctx, todo, direction: 1, containerProjectId: null })
   });
 
-  main.append(el('div', { class: 'stack' }, empty, list));
+  main.append(el('div', { class: 'stack' }, list));
 }
 
 async function swapWithNeighbor({ ctx, todo, direction, containerProjectId }) {

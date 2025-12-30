@@ -22,7 +22,8 @@ export function initApp(root) {
     topbarTitle,
     topbarActions,
     modalHost,
-    openTodoEditor: (opts) => openTodoEditor({ ...opts, modalHost, onChange: () => router.refresh() }),
+    // Always pass `db` so create/edit both work.
+    openTodoEditor: (opts) => openTodoEditor({ ...opts, db, modalHost, onChange: () => router.refresh() }),
     db
   };
 

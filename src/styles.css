@@ -14,6 +14,9 @@
   --danger: #ef4444;
   --ok: #22c55e;
 
+  /* Surfaces used by inputs/todos so themes can swap them. */
+  --field: #0b162e;
+
   --radius: 14px;
   --tap: 44px;
 
@@ -32,6 +35,7 @@ html[data-theme='light'] {
   --text: #0f172a;
   --muted: #475569;
   --border: #cbd5e1;
+  --field: #ffffff;
 }
 
 * { box-sizing: border-box; }
@@ -41,7 +45,21 @@ body {
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
   background: var(--bg);
   color: var(--text);
+
+  /* iOS UX tweaks (requested): avoid blue tap highlight, text callout, selection */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
 }
+
+/* Allow text selection where it matters */
+input, textarea, select {
+  -webkit-user-select: text;
+  user-select: text;
+}
+button { -webkit-tap-highlight-color: transparent; }
 
 .skip-link {
   position: absolute;
@@ -67,7 +85,7 @@ body {
   top: 0;
   z-index: 5;
   padding: calc(12px + var(--safe-top)) 14px 12px;
-  background: linear-gradient(to bottom, rgba(11,18,32,0.98), rgba(11,18,32,0.80));
+  background: var(--bg);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(36,50,77,0.8);
@@ -116,7 +134,7 @@ body {
 .btn:active { transform: translateY(1px); }
 .btn:focus-visible { outline: 2px solid #93c5fd; outline-offset: 2px; }
 
-.btn--primary { background: #1f2a44; border-color: #2f4368; }
+.btn--primary { background: var(--surface2); border-color: var(--border); }
 .btn--danger { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.35); }
 .btn--ghost { background: transparent; }
 
@@ -126,7 +144,7 @@ body {
   padding: 10px 12px;
   border-radius: 12px;
   border: 1px solid var(--border);
-  background: #0b162e;
+  background: var(--field);
   color: var(--text);
 }
 .textarea { min-height: 96px; resize: vertical; }
@@ -150,7 +168,7 @@ body {
   padding: 12px;
   border-radius: var(--radius);
   border: 1px solid var(--border);
-  background: #0b162e;
+  background: var(--field);
 }
 
 .todo__title { font-weight: 650; line-height: 1.2; }
@@ -194,7 +212,7 @@ body {
   grid-template-columns: repeat(4, 1fr);
   gap: 0;
   padding: 8px 8px calc(8px + var(--safe-bottom));
-  background: rgba(11,18,32,0.92);
+  background: var(--bg);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
   border-top: 1px solid rgba(36,50,77,0.9);
@@ -242,7 +260,7 @@ body {
   border-radius: 14px;
   overflow: hidden;
   border: 1px solid var(--border);
-  background: #071024;
+  background: var(--field);
 }
 .thumb img { width: 100%; height: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; }
 .thumb button {

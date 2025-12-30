@@ -7,6 +7,13 @@ export const Priority = {
   P3: 'P3'
 };
 
+function uuid() {
+  // iOS should support crypto.randomUUID in modern versions, but keep a fallback.
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+  const rnd = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).slice(1);
+  return `${rnd()}${rnd()}-${rnd()}-${rnd()}-${rnd()}-${rnd()}${rnd()}${rnd()}`;
+}
+
 export function nowIso() {
   return new Date().toISOString();
 }
@@ -14,7 +21,7 @@ export function nowIso() {
 export function newProject({ name }) {
   const t = nowIso();
   return {
-    id: crypto.randomUUID(),
+    id: uuid(),
     name: name.trim(),
     createdAt: t,
     updatedAt: t,
@@ -25,7 +32,7 @@ export function newProject({ name }) {
 export function newTodo({ title, projectId }) {
   const t = nowIso();
   return {
-    id: crypto.randomUUID(),
+    id: uuid(),
     title: title.trim(),
     notes: '',
     priority: Priority.P2,
@@ -43,7 +50,7 @@ export function newTodo({ title, projectId }) {
 
 export function newAttachment({ todoId, blob, name, type }) {
   return {
-    id: crypto.randomUUID(),
+    id: uuid(),
     todoId,
     name: name || 'image',
     type: type || blob.type || 'application/octet-stream',

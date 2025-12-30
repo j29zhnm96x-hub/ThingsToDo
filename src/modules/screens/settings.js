@@ -54,10 +54,6 @@ export async function renderSettings(ctx) {
       exportBtn,
       importBtn,
       resetBtn
-    ),
-    el('div', { class: 'card stack' },
-      el('div', { style: { fontWeight: '700' } }, 'PWA notes'),
-      el('div', { class: 'small' }, 'Service worker requires serving over http(s). If you open this via file://, offline caching will not activate.')
     )
   ));
 
