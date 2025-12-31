@@ -1,6 +1,7 @@
 import { el, humanDue } from './dom.js';
 import { compareTodos } from '../logic/sorting.js';
 import { daysLeftText, daysLeftClass } from './todoInfo.js';
+import { hapticLight, hapticSelection } from './haptic.js';
 
 export function renderTodoList({
   todos,
@@ -18,12 +19,31 @@ export function renderTodoList({
 }) {
   const list = el('div', { class: 'list' });
 
-  const sorted = [...todos].sort(compareTodos);
+  const FADE_OUT_MS = 1200;
+  const SHIFT_DOWN_MS = 1500;
+  const FADE_IN_MS = 1200;
 
-  for (const t of sorted) {
+  // Separate active and recently completed todos
+  const activeTodos = todos.filter(t => !t.completed);
+  const completedTodos = todos.filter(t => t.completed);
+  
+  // Sort each group
+  const sortedActive = [...activeTodos].sort(compareTodos);
+  const sortedCompleted = [...completedTodos].sort((a, b) => {
+    // Sort by completedAt descending (most recently completed first)
+    const aTime = a.completedAt ? new Date(a.completedAt).getTime() : 0;
+    const bTime = b.completedAt ? new Date(b.completedAt).getTime() : 0;
+    return bTime - aTime;
+  });
+
+  function renderCard(t) {
     const due = humanDue(t.dueDate);
     const daysLeft = daysLeftText(t.dueDate);
     const daysLeftCls = daysLeftClass(t.dueDate);
+
+    const dueTagInline = (!t.completed && (due || daysLeft) && daysLeft)
+      ? el('span', { class: `dueTag ${daysLeftCls} todo__dueInline` }, daysLeft)
+      : null;
 
     const menuBtn = el('button', {
       type: 'button',
@@ -31,28 +51,28 @@ export function renderTodoList({
       'aria-label': 'Menu',
       onClick: (e) => {
         e.stopPropagation();
+        hapticLight();
         onMenu?.(t, { onEdit, onMove, onArchive, onRestore, onDelete, mode });
       }
-    }, '…');
+    }, '⋯');
 
     const titleArea = el('div', {
       class: 'todo__titleArea',
-      onClick: () => onTap?.(t)
+      onClick: () => {
+        hapticLight();
+        onTap?.(t);
+      }
     },
       el('div', { class: t.completed ? 'todo__title todo__title--done' : 'todo__title' }, t.title)
     );
 
-    // Due date row with days left
-    const row2 = (due || daysLeft) ? el('div', { class: 'todo__row2' },
-      daysLeft ? el('span', { class: `dueTag ${daysLeftCls}` }, daysLeft) : null
-    ) : null;
+    const noteIcon = t.notes ? el('span', { class: 'todo__noteIcon', 'aria-label': 'Has notes' }, '✏️') : null;
 
-    const item = el('div', {
-      class: 'todo',
-      dataset: { todoId: t.id, priority: t.priority, projectId: t.projectId ?? '' },
-      'aria-label': t.title
-    },
-    el('div', { class: 'todo__row1' },
+    // Due date row removed (days-left pill is inline next to menu)
+    const row2 = null;
+
+    // Checkbox with checkmark span for iOS compatibility
+    const checkbox = el('label', { class: 'todo__checkWrap' },
       el('input', {
         type: 'checkbox',
         class: 'todo__check',
@@ -61,15 +81,141 @@ export function renderTodoList({
         disabled: mode === 'archive' ? 'disabled' : null,
         onChange: (e) => {
           e.stopPropagation();
-          onToggleCompleted?.(t, e.target.checked);
+          hapticSelection();
+          const card = e.target.closest('.todo');
+          const nextState = e.target.checked;
+
+          // Beautiful completion animation (in-place DOM) so cards don't jump.
+          if (nextState && card && mode !== 'archive') {
+            const listEl = card.closest('.list');
+            if (!listEl) {
+              onToggleCompleted?.(t, true);
+              return;
+            }
+
+            const cardRect = card.getBoundingClientRect();
+            const cardHeight = cardRect.height;
+
+            card.classList.add('todo--fadeOut', 'todo--animating');
+
+            setTimeout(() => {
+              // Remove from active list after fade-out.
+              try { card.parentNode?.removeChild(card); } catch { /* ignore */ }
+
+              // Ensure Completed divider exists.
+              let divider = listEl.querySelector('.todo-divider');
+              if (!divider) {
+                divider = el('div', { class: 'todo-divider' },
+                  el('span', { class: 'todo-divider__text' }, 'Completed')
+                );
+                listEl.appendChild(divider);
+              }
+
+              const completedCards = Array.from(listEl.querySelectorAll('.todo-divider ~ .todo'));
+
+              // Insert an invisible placeholder that reserves the slot.
+              const placeholder = el('div', { class: 'todo todo--slot', 'aria-hidden': 'true' });
+              placeholder.style.height = `${cardHeight}px`;
+
+              if (completedCards.length) {
+                // Record "first" positions before DOM change.
+                const firstTops = new Map(completedCards.map((n) => [n, n.getBoundingClientRect().top]));
+
+                // Insert placeholder (DOM change).
+                divider.after(placeholder);
+
+                // Record "last" positions after DOM change.
+                const lastTops = new Map(completedCards.map((n) => [n, n.getBoundingClientRect().top]));
+
+                // FLIP: Apply inverse transform WITHOUT transition so they appear at old position.
+                for (const n of completedCards) {
+                  const dy = (firstTops.get(n) ?? 0) - (lastTops.get(n) ?? 0);
+                  if (!dy) continue;
+                  // Disable transition temporarily
+                  n.style.transition = 'none';
+                  n.style.transform = `translateY(${dy}px)`;
+                }
+
+                // Force reflow so the "instant" transform is applied.
+                void listEl.offsetHeight;
+
+                // Now enable transition and animate to final position (transform: none).
+                requestAnimationFrame(() => {
+                  for (const n of completedCards) {
+                    n.style.transition = '';
+                    n.classList.add('todo--flipMove');
+                    n.style.transform = '';
+                  }
+                });
+              } else {
+                divider.after(placeholder);
+              }
+
+              const shiftDelay = completedCards.length ? SHIFT_DOWN_MS : 0;
+              setTimeout(() => {
+                // Put the card into the reserved slot and fade it in.
+                card.classList.remove('todo--fadeOut', 'todo--animating');
+                card.classList.add('todo--newCompleted');
+                placeholder.replaceWith(card);
+
+                // Cleanup flip classes after they finish.
+                if (completedCards.length) {
+                  setTimeout(() => {
+                    for (const n of completedCards) n.classList.remove('todo--flipMove');
+                  }, 50);
+                }
+
+                // Persist after the visual completes (avoids re-render hiccup mid-animation).
+                setTimeout(() => onToggleCompleted?.(t, true), FADE_IN_MS + 50);
+              }, shiftDelay);
+            }, FADE_OUT_MS);
+
+            return;
+          }
+
+          onToggleCompleted?.(t, nextState);
         }
       }),
+      el('span', { class: 'todo__checkIcon' }, '✓')
+    );
+
+    const item = el('div', {
+      class: 'todo',
+      dataset: { todoId: t.id, priority: t.priority, projectId: t.projectId ?? '' },
+      'aria-label': t.title
+    },
+    el('div', { class: 'todo__row1' },
+      checkbox,
       titleArea,
+      dueTagInline,
+      noteIcon,
       menuBtn
     ),
     row2);
 
-    list.appendChild(item);
+    return item;
+  }
+
+  // Render active todos
+  for (const t of sortedActive) {
+    list.appendChild(renderCard(t));
+  }
+
+  // Add divider and completed section if there are completed todos
+  if (sortedCompleted.length > 0 && mode !== 'archive') {
+    const divider = el('div', { class: 'todo-divider' },
+      el('span', { class: 'todo-divider__text' }, 'Completed')
+    );
+    list.appendChild(divider);
+
+    for (const t of sortedCompleted) {
+      list.appendChild(renderCard(t));
+    }
+  } else {
+    // Archive mode - render completed in normal order
+    for (const t of sortedCompleted) {
+      list.appendChild(renderCard(t));
+    }
   }
 
   // Touch-friendly drag reordering (within same priority bucket).

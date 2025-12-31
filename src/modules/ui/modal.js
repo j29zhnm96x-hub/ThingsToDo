@@ -1,4 +1,5 @@
 import { el, clear } from './dom.js';
+import { hapticLight } from './haptic.js';
 
 // Simple bottom-sheet modal with focus management.
 
@@ -16,7 +17,7 @@ export function openModal(modalHost, { title, content, actions = [], onClose }) 
       type: 'button',
       class: 'iconBtn',
       'aria-label': 'Close',
-      onClick: () => close()
+      onClick: () => { hapticLight(); close(); }
     }, '×')
   );
 
@@ -27,6 +28,7 @@ export function openModal(modalHost, { title, content, actions = [], onClose }) 
       type: 'button',
       class: a.class || 'btn',
       onClick: async () => {
+        hapticLight();
         const shouldClose = await a.onClick?.();
         if (shouldClose !== false) close();
       }

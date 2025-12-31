@@ -27,13 +27,6 @@ export async function renderProjectDetail(ctx, projectId) {
 
   const { projects, map: projectsById } = await buildProjectsById(db);
 
-  const header = el('div', { class: 'card stack' },
-    el('div', { class: 'row' },
-      el('button', { class: 'btn', type: 'button', onClick: () => (location.hash = '#projects') }, 'Back'),
-      el('div', { class: 'small' }, `${todos.length} active`) 
-    )
-  );
-
   const list = renderTodoList({
     todos,
     projectsById,
@@ -45,7 +38,11 @@ export async function renderProjectDetail(ctx, projectId) {
       onEdit: () => ctx.openTodoEditor({ mode: 'edit', todoId: todo.id, projectId: todo.projectId, db })
     }),
     onToggleCompleted: async (todo, checked) => {
-      await db.todos.put({ ...todo, completed: checked });
+      await db.todos.put({ 
+        ...todo, 
+        completed: checked,
+        completedAt: checked ? new Date().toISOString() : null
+      });
       await renderProjectDetail(ctx, projectId);
     },
     onEdit: (todo) => ctx.openTodoEditor({ mode: 'edit', todoId: todo.id, projectId: todo.projectId, db }),
@@ -107,5 +104,5 @@ export async function renderProjectDetail(ctx, projectId) {
     }
   });
 
-  main.append(el('div', { class: 'stack' }, header, todos.length ? list : el('div', { class: 'card small' }, 'No todos in this project yet. Tap “Add”.')));
+  main.append(el('div', { class: 'stack' }, todos.length ? list : el('div', { class: 'card small' }, 'No todos in this project yet. Tap + to add one.')));
 }

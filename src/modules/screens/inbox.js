@@ -30,7 +30,11 @@ export async function renderInbox(ctx) {
       onEdit: () => ctx.openTodoEditor({ mode: 'edit', todoId: todo.id, projectId: todo.projectId, db })
     }),
     onToggleCompleted: async (todo, checked) => {
-      await db.todos.put({ ...todo, completed: checked });
+      await db.todos.put({ 
+        ...todo, 
+        completed: checked,
+        completedAt: checked ? new Date().toISOString() : null
+      });
       await renderInbox(ctx);
     },
     onEdit: (todo) => ctx.openTodoEditor({ mode: 'edit', todoId: todo.id, projectId: todo.projectId, db }),

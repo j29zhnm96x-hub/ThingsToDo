@@ -2,6 +2,7 @@ import { el, clear } from '../ui/dom.js';
 import { openModal } from '../ui/modal.js';
 import { confirm } from '../ui/confirm.js';
 import { newProject } from '../data/models.js';
+import { hapticLight } from '../ui/haptic.js';
 
 export async function renderProjects(ctx) {
   const { main, db, modalHost } = ctx;
@@ -9,57 +10,43 @@ export async function renderProjects(ctx) {
 
   const projects = await db.projects.list();
 
-  const addBtn = el('button', { class: 'btn btn--primary', type: 'button', onClick: () => openCreateProject() }, 'Create Project');
+  // Get active todo counts for each project
+  const projectCounts = new Map();
+  for (const p of projects) {
+    const todos = await db.todos.listByProject(p.id);
+    const activeCount = todos.filter((t) => !t.archived && !t.completed).length;
+    projectCounts.set(p.id, activeCount);
+  }
 
   const list = el('div', { class: 'list' },
-    projects.map((p) =>
-      el('div', { class: 'card' },
-        el('div', { class: 'row' },
+    projects.map((p) => {
+      const activeCount = projectCounts.get(p.id) || 0;
+      return el('div', {
+        class: 'projectCard',
+        onClick: (e) => {
+          if (e.target.closest('.projectCard__menuBtn')) return;
+          hapticLight();
+          location.hash = `#project/${p.id}`;
+        },
+        'aria-label': `Open project ${p.name}`
+      },
+        el('div', { class: 'projectCard__row' },
+          el('div', { class: 'projectCard__info' },
+            el('span', { class: 'projectCard__name' }, p.name),
+            activeCount > 0 ? el('span', { class: 'projectCard__count' }, `${activeCount} active`) : null
+          ),
           el('button', {
             type: 'button',
-            class: 'btn btn--ghost',
-            style: { textAlign: 'left', padding: '0', border: '0', background: 'transparent' },
-            onClick: () => (location.hash = `#project/${p.id}`),
-            'aria-label': `Open project ${p.name}`
-          }, p.name),
-          el('button', { type: 'button', class: 'iconBtn', 'aria-label': 'Project options', onClick: () => openProjectMenu(p) }, '⋯')
+            class: 'projectCard__menuBtn',
+            'aria-label': 'Project options',
+            onClick: (e) => { e.stopPropagation(); hapticLight(); openProjectMenu(p); }
+          }, '⋯')
         )
-      )
-    )
+      );
+    })
   );
 
-  main.append(el('div', { class: 'stack' }, addBtn, projects.length ? list : el('div', { class: 'card small' }, 'No projects yet. Create one to organize your todos.')));
-
-  function openCreateProject() {
-    const nameInput = el('input', { class: 'input', placeholder: 'Project name', 'aria-label': 'Project name' });
-    const content = el('div', { class: 'stack' },
-      el('label', { class: 'label' }, el('span', {}, 'Name'), nameInput)
-    );
-
-    openModal(modalHost, {
-      title: 'Create Project',
-      content,
-      actions: [
-        { label: 'Cancel', class: 'btn btn--ghost', onClick: () => true },
-        {
-          label: 'Create',
-          class: 'btn btn--primary',
-          onClick: async () => {
-            const name = nameInput.value.trim();
-            if (!name) {
-              nameInput.focus();
-              return false;
-            }
-            await db.projects.put(newProject({ name }));
-            await renderProjects(ctx);
-            return true;
-          }
-        }
-      ]
-    });
-
-    requestAnimationFrame(() => nameInput.focus());
-  }
+  main.append(el('div', { class: 'stack' }, projects.length ? list : el('div', { class: 'card small' }, 'No projects yet. Tap + to create one.')));
 
   function openProjectMenu(project) {
     const renameBtn = el('button', { class: 'btn', type: 'button' }, 'Rename');
@@ -164,4 +151,35 @@ export async function renderProjects(ctx) {
       ]
     });
   }
+}
+
+export function openCreateProject({ db, modalHost, onCreated }) {
+  const nameInput = el('input', { class: 'input', placeholder: 'Project name', 'aria-label': 'Project name' });
+  const content = el('div', { class: 'stack' },
+    el('label', { class: 'label' }, el('span', {}, 'Name'), nameInput)
+  );
+
+  openModal(modalHost, {
+    title: 'Create Project',
+    content,
+    actions: [
+      { label: 'Cancel', class: 'btn btn--ghost', onClick: () => true },
+      {
+        label: 'Create',
+        class: 'btn btn--primary',
+        onClick: async () => {
+          const name = nameInput.value.trim();
+          if (!name) {
+            nameInput.focus();
+            return false;
+          }
+          await db.projects.put(newProject({ name }));
+          onCreated?.();
+          return true;
+        }
+      }
+    ]
+  });
+
+  requestAnimationFrame(() => nameInput.focus());
 }

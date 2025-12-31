@@ -1,13 +1,15 @@
 import { router } from './router.js';
 import { db } from './data/db.js';
 import { renderInbox } from './screens/inbox.js';
-import { renderProjects } from './screens/projects.js';
+import { renderProjects, openCreateProject } from './screens/projects.js';
 import { renderProjectDetail } from './screens/projectDetail.js';
 import { renderArchive } from './screens/archive.js';
 import { renderSettings } from './screens/settings.js';
 import { openTodoEditor } from './ui/todoEditor.js';
 import { el } from './ui/dom.js';
 import { applyTheme } from './ui/theme.js';
+import { autoArchiveCompleted } from './logic/todoOps.js';
+import { hapticLight } from './ui/haptic.js';
 
 export function initApp(root) {
   const main = document.getElementById('main');
@@ -30,6 +32,7 @@ export function initApp(root) {
   // SPA nav: bottom tabs
   tabButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
+      hapticLight();
       const route = btn.getAttribute('data-route');
       if (route) location.hash = route;
     });
@@ -45,6 +48,9 @@ export function initApp(root) {
     async onRoute(route) {
       // Ensure DB is ready once at startup.
       await db.ready();
+
+      // Auto-archive completed todos older than 24h (runs on each navigation, but fast)
+      await autoArchiveCompleted(db);
 
       // Apply persisted theme (default: dark).
       const settings = await db.settings.get();
@@ -65,18 +71,22 @@ export function initApp(root) {
       if (route.name === 'inbox') {
         topbarTitle.textContent = 'Inbox';
         topbarActions.append(
-          el('button', { class: 'btn btn--primary', type: 'button', onClick: () => ctx.openTodoEditor({ mode: 'create', projectId: null }) }, 'Add')
+          el('button', { class: 'topbar__addBtn', type: 'button', 'aria-label': 'Add todo', onClick: () => { hapticLight(); ctx.openTodoEditor({ mode: 'create', projectId: null }); } }, '+')
         );
         await renderInbox(ctx);
       } else if (route.name === 'projects') {
         topbarTitle.textContent = 'Projects';
+        topbarActions.append(
+          el('button', { class: 'topbar__addBtn', type: 'button', 'aria-label': 'Add project', onClick: () => { hapticLight(); openCreateProject({ db, modalHost, onCreated: () => router.refresh() }); } }, '+')
+        );
         await renderProjects(ctx);
       } else if (route.name === 'project') {
         const project = await db.projects.get(route.params.projectId);
         topbarTitle.textContent = project ? project.name : 'Project';
         if (project) {
           topbarActions.append(
-            el('button', { class: 'btn btn--primary', type: 'button', onClick: () => ctx.openTodoEditor({ mode: 'create', projectId: project.id }) }, 'Add')
+            el('button', { class: 'topbar__backBtn', type: 'button', 'aria-label': 'Back to projects', onClick: () => { hapticLight(); location.hash = '#projects'; } }, '←'),
+            el('button', { class: 'topbar__addBtn', type: 'button', 'aria-label': 'Add todo', onClick: () => { hapticLight(); ctx.openTodoEditor({ mode: 'create', projectId: project.id }); } }, '+')
           );
         }
         await renderProjectDetail(ctx, route.params.projectId);

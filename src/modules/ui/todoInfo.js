@@ -48,7 +48,7 @@ function daysLeftClass(isoOrNull) {
   if (days === null) return '';
   if (days < 0) return 'dueTag--overdue';
   if (days === 0) return 'dueTag--today';
-  if (days <= 2) return 'dueTag--soon';
+  if (days <= 3) return 'dueTag--soon';
   return '';
 }
 
@@ -98,13 +98,15 @@ export async function openTodoInfo({ todo, db, modalHost, onEdit }) {
 
   // Images
   let imagesEl = null;
+  const allImageUrls = [];
   if (attachments.length > 0) {
-    const thumbs = attachments.map((att) => {
+    const thumbs = attachments.map((att, index) => {
       const url = URL.createObjectURL(att.blob);
       objectUrls.push(url);
+      allImageUrls.push(url);
       return el('div', { 
         class: 'thumb thumb--clickable',
-        onClick: () => openImageViewer(url, att.name || 'Image')
+        onClick: () => openImageViewer(allImageUrls, index)
       },
         el('img', { src: url, alt: att.name || 'Attachment' })
       );
@@ -115,23 +117,221 @@ export async function openTodoInfo({ todo, db, modalHost, onEdit }) {
     );
   }
 
-  function openImageViewer(url, name) {
-    const overlay = el('div', { class: 'imageViewer', onClick: (e) => {
-      if (e.target === overlay) overlay.remove();
-    }},
-      el('button', { 
-        class: 'imageViewer__close', 
-        type: 'button',
-        'aria-label': 'Close',
-        onClick: () => overlay.remove()
-      }, '×'),
-      el('img', { 
-        class: 'imageViewer__img', 
-        src: url, 
-        alt: name,
-        onClick: (e) => e.stopPropagation()
-      })
+  function openImageViewer(urls, startIndex) {
+    let currentIndex = startIndex;
+    let scale = 1;
+    let translateX = 0;
+    let translateY = 0;
+    let lastDistance = 0;
+    let lastScale = 1;
+    let lastX = 0, lastY = 0;
+    let lastTranslateX = 0, lastTranslateY = 0;
+    let activePointers = new Map();
+    let swipeStartX = 0;
+    let swipeStartY = 0;
+    let isSwiping = false;
+
+    const img = el('img', { 
+      class: 'imageViewer__img', 
+      src: urls[currentIndex], 
+      alt: 'Image'
+    });
+
+    // Counter element (e.g., "1 / 3")
+    const counter = el('div', { class: 'imageViewer__counter' }, 
+      `${currentIndex + 1} / ${urls.length}`
     );
+
+    function updateImage() {
+      img.src = urls[currentIndex];
+      counter.textContent = `${currentIndex + 1} / ${urls.length}`;
+      // Reset zoom when changing images
+      scale = 1;
+      translateX = 0;
+      translateY = 0;
+      updateTransform();
+    }
+
+    function nextImage() {
+      if (currentIndex < urls.length - 1) {
+        currentIndex++;
+        updateImage();
+      }
+    }
+
+    function prevImage() {
+      if (currentIndex > 0) {
+        currentIndex--;
+        updateImage();
+      }
+    }
+
+    function updateTransform() {
+      img.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+    }
+
+    function getDistance(p1, p2) {
+      const dx = p1.clientX - p2.clientX;
+      const dy = p1.clientY - p2.clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    function getCenter(p1, p2) {
+      return {
+        x: (p1.clientX + p2.clientX) / 2,
+        y: (p1.clientY + p2.clientY) / 2
+      };
+    }
+
+    function handlePointerDown(e) {
+      e.preventDefault();
+      activePointers.set(e.pointerId, e);
+      img.setPointerCapture(e.pointerId);
+
+      if (activePointers.size === 2) {
+        const pointers = Array.from(activePointers.values());
+        lastDistance = getDistance(pointers[0], pointers[1]);
+        lastScale = scale;
+        isSwiping = false;
+      } else if (activePointers.size === 1) {
+        lastX = e.clientX;
+        lastY = e.clientY;
+        lastTranslateX = translateX;
+        lastTranslateY = translateY;
+        // Track for swipe when not zoomed
+        if (scale === 1 && urls.length > 1) {
+          swipeStartX = e.clientX;
+          swipeStartY = e.clientY;
+          isSwiping = true;
+        }
+      }
+    }
+
+    function handlePointerMove(e) {
+      if (!activePointers.has(e.pointerId)) return;
+      activePointers.set(e.pointerId, e);
+
+      if (activePointers.size === 2) {
+        const pointers = Array.from(activePointers.values());
+        const currentDistance = getDistance(pointers[0], pointers[1]);
+        
+        if (lastDistance > 0) {
+          const newScale = Math.min(5, Math.max(1, lastScale * (currentDistance / lastDistance)));
+          scale = newScale;
+          
+          if (scale <= 1) {
+            scale = 1;
+            translateX = 0;
+            translateY = 0;
+          }
+          updateTransform();
+        }
+      } else if (activePointers.size === 1) {
+        if (scale > 1) {
+          // Pan when zoomed
+          const dx = e.clientX - lastX;
+          const dy = e.clientY - lastY;
+          translateX = lastTranslateX + dx;
+          translateY = lastTranslateY + dy;
+          updateTransform();
+        } else if (isSwiping && urls.length > 1) {
+          // Preview swipe - show slight horizontal movement
+          const dx = e.clientX - swipeStartX;
+          img.style.transform = `translateX(${dx * 0.3}px)`;
+        }
+      }
+    }
+
+    function handlePointerUp(e) {
+      // Check for swipe before clearing pointers
+      if (isSwiping && scale === 1 && activePointers.size === 1 && urls.length > 1) {
+        const dx = e.clientX - swipeStartX;
+        const dy = e.clientY - swipeStartY;
+        const absDx = Math.abs(dx);
+        const absDy = Math.abs(dy);
+        
+        // Horizontal swipe threshold: 50px, and more horizontal than vertical
+        if (absDx > 50 && absDx > absDy) {
+          if (dx < 0) {
+            nextImage();
+          } else {
+            prevImage();
+          }
+        } else {
+          // Reset position if swipe wasn't far enough
+          img.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+        }
+        isSwiping = false;
+      }
+
+      activePointers.delete(e.pointerId);
+      
+      // Reset tracking when going from 2 to 1 pointer
+      if (activePointers.size === 1) {
+        const remaining = Array.from(activePointers.values())[0];
+        lastX = remaining.clientX;
+        lastY = remaining.clientY;
+        lastTranslateX = translateX;
+        lastTranslateY = translateY;
+      }
+      
+      lastDistance = 0;
+      lastScale = scale;
+    }
+
+    // Double tap to zoom
+    let lastTap = 0;
+    function handleDoubleTap(e) {
+      const now = Date.now();
+      if (now - lastTap < 300) {
+        e.preventDefault();
+        if (scale > 1) {
+          scale = 1;
+          translateX = 0;
+          translateY = 0;
+        } else {
+          scale = 2;
+        }
+        updateTransform();
+      }
+      lastTap = now;
+    }
+
+    // Pointer events on image
+    img.addEventListener('pointerdown', handlePointerDown);
+    img.addEventListener('pointermove', handlePointerMove);
+    img.addEventListener('pointerup', handlePointerUp);
+    img.addEventListener('pointercancel', handlePointerUp);
+    img.addEventListener('click', handleDoubleTap);
+
+    const closeBtn = el('button', { 
+      class: 'imageViewer__close', 
+      type: 'button',
+      'aria-label': 'Close'
+    }, '×');
+
+    const overlay = el('div', { class: 'imageViewer' },
+      closeBtn,
+      urls.length > 1 ? counter : null,
+      img
+    );
+
+    function closeViewer() {
+      overlay.remove();
+    }
+
+    // Close button
+    closeBtn.addEventListener('pointerup', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      closeViewer();
+    });
+
+    // Close on tap outside when not zoomed
+    overlay.addEventListener('pointerup', (e) => {
+      if (e.target === overlay && scale === 1) closeViewer();
+    });
+
     document.body.appendChild(overlay);
   }
 

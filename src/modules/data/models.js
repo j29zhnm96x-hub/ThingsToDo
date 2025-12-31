@@ -38,6 +38,7 @@ export function newTodo({ title, projectId }) {
     priority: Priority.P2,
     dueDate: null,
     completed: false,
+    completedAt: null,
     projectId: projectId ?? null,
     archived: false,
     archivedAt: null,
