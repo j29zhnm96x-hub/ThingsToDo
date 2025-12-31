@@ -2,9 +2,27 @@ import { openDb, storeApi, txDone, reqDone } from './idb.js';
 import { nowIso } from './models.js';
 
 const DB_NAME = 'thingstodo-db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
-function upgrade(db) {
+// IndexedDB indexes cannot use `null` keys reliably across browsers.
+// We store Inbox as a stable string sentinel and normalize at the API boundary.
+const INBOX_PROJECT_ID = '__inbox__';
+
+function normalizeTodoIn(todo) {
+  if (!todo) return todo;
+  const t = { ...todo };
+  if (t.projectId == null) t.projectId = INBOX_PROJECT_ID;
+  return t;
+}
+
+function normalizeTodoOut(todo) {
+  if (!todo) return todo;
+  const t = { ...todo };
+  if (t.projectId === INBOX_PROJECT_ID) t.projectId = null;
+  return t;
+}
+
+function upgrade(db, tx) {
   // todos: by id
   if (!db.objectStoreNames.contains('todos')) {
     const s = db.createObjectStore('todos', { keyPath: 'id' });
@@ -26,6 +44,28 @@ function upgrade(db) {
   // single settings record
   if (!db.objectStoreNames.contains('settings')) {
     db.createObjectStore('settings', { keyPath: 'id' });
+  }
+
+  // Migration (v1 -> v2): replace null projectId with sentinel so it indexes.
+  // This fixes Safari/WebKit issues where null values are not indexed and
+  // transitions null -> string may not re-index reliably.
+  try {
+    if (tx && tx.objectStoreNames.contains('todos')) {
+      const store = tx.objectStore('todos');
+      const req = store.openCursor();
+      req.onsuccess = () => {
+        const cursor = req.result;
+        if (!cursor) return;
+        const v = cursor.value;
+        if (v && v.projectId == null) {
+          v.projectId = INBOX_PROJECT_ID;
+          cursor.update(v);
+        }
+        cursor.continue();
+      };
+    }
+  } catch {
+    // Best-effort migration; app will still function via fallbacks.
   }
 }
 
@@ -67,12 +107,13 @@ export const db = {
   todos: {
     async get(id) {
       const dbi = await getDb();
-      return storeApi(dbi, 'todos').get(id);
+      const t = await storeApi(dbi, 'todos').get(id);
+      return normalizeTodoOut(t);
     },
     async put(todo) {
       const dbi = await getDb();
       todo.updatedAt = nowIso();
-      return storeApi(dbi, 'todos').put(todo);
+      return storeApi(dbi, 'todos').put(normalizeTodoIn(todo));
     },
     async delete(id) {
       const dbi = await getDb();
@@ -80,17 +121,27 @@ export const db = {
       await deleteAttachmentsForTodo(id);
     },
     async listActive() {
-      const all = await listByIndex('todos', 'by_archived', false);
-      return all;
+      // Safari/WebKit has a bug where updating an indexed field doesn't always
+      // update the index. Always do a full scan for reliability.
+      const dbi = await getDb();
+      const items = await storeApi(dbi, 'todos').list();
+      return items.filter((t) => !t.archived).map(normalizeTodoOut);
     },
     async listArchived() {
-      const all = await listByIndex('todos', 'by_archived', true);
-      return all;
+      // Safari/WebKit has a bug where updating an indexed field doesn't always
+      // update the index. Always do a full scan for reliability.
+      const dbi = await getDb();
+      const items = await storeApi(dbi, 'todos').list();
+      return items.filter((t) => t.archived).map(normalizeTodoOut);
     },
     async listByProject(projectIdOrNull) {
-      const all = await listByIndex('todos', 'by_project', projectIdOrNull);
-      // Caller typically filters archived.
-      return all;
+      const key = projectIdOrNull == null ? INBOX_PROJECT_ID : projectIdOrNull;
+
+      // Safari/WebKit has a bug where updating an indexed field doesn't always
+      // update the index. Always do a full scan for reliability.
+      const dbi = await getDb();
+      const items = await storeApi(dbi, 'todos').list();
+      return items.filter((t) => t.projectId === key).map(normalizeTodoOut);
     }
   },
 

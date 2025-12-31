@@ -26,13 +26,19 @@ function parseHash(hash) {
 
 export const router = {
   _handler: null,
+  _queue: Promise.resolve(),
   init({ onRoute }) {
     this._handler = onRoute;
     window.addEventListener('hashchange', () => this.refresh());
     this.refresh();
   },
-  async refresh() {
-    const route = parseHash(location.hash);
-    if (this._handler) await this._handler(route);
+  refresh() {
+    this._queue = this._queue
+      .then(async () => {
+        const route = parseHash(location.hash);
+        if (this._handler) await this._handler(route);
+      })
+      .catch((err) => console.error('Router refresh failed:', err));
+    return this._queue;
   }
 };

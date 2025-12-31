@@ -1,13 +1,14 @@
 /*
   Offline-first service worker:
-  - Cache app shell (HTML/CSS/JS/manifest/icons)
-  - Cache-first for same-origin GET requests
-  - Network fallback (useful during development)
+  - Network-first for JS (so code updates load immediately)
+  - Cache-first for other assets
+  - Network fallback for offline
 */
 
-const CACHE_NAME = 'thingstodo-v1';
+// IMPORTANT: bump this to force clients to pick up new JS/CSS.
+const CACHE_NAME = 'thingstodo-v4';
 
-// Keep this list small and stable; it’s the offline app shell.
+// Keep this list small and stable; it's the offline app shell.
 const APP_SHELL = [
   './',
   './index.html',
@@ -26,8 +27,6 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(CACHE_NAME);
-      // Cache individually so missing optional assets (like extra icon sizes)
-      // don't cause the whole install to fail.
       await Promise.allSettled(APP_SHELL.map((url) => cache.add(url)));
     })()
   );
@@ -52,21 +51,38 @@ self.addEventListener('fetch', (event) => {
   const isSameOrigin = url.origin === self.location.origin;
   if (!isSameOrigin) return;
 
+  // Use NETWORK-FIRST for JS files so code updates are picked up immediately.
+  const isScript = url.pathname.endsWith('.js');
+
   event.respondWith(
     (async () => {
+      if (isScript) {
+        // Network-first for scripts
+        try {
+          const res = await fetch(req);
+          if (res.ok) {
+            const cache = await caches.open(CACHE_NAME);
+            cache.put(req, res.clone());
+          }
+          return res;
+        } catch {
+          const cached = await caches.match(req);
+          return cached || new Response('Offline', { status: 503 });
+        }
+      }
+
+      // Cache-first for everything else
       const cached = await caches.match(req);
       if (cached) return cached;
 
       try {
         const res = await fetch(req);
         const cache = await caches.open(CACHE_NAME);
-        // Cache static-ish requests; avoid caching opaque stuff.
         if (res.ok && res.type !== 'opaque') {
           cache.put(req, res.clone());
         }
         return res;
       } catch (err) {
-        // If offline and request misses cache, fall back to app shell.
         const fallback = await caches.match('./index.html');
         return fallback || new Response('Offline', { status: 503, statusText: 'Offline' });
       }

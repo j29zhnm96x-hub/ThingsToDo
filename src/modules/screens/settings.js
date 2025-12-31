@@ -39,6 +39,7 @@ export async function renderSettings(ctx) {
   const exportBtn = el('button', { class: 'btn btn--primary', type: 'button', onClick: exportData }, 'Export data (JSON)');
   const importBtn = el('button', { class: 'btn', type: 'button', onClick: importData }, 'Import JSON');
   const resetBtn = el('button', { class: 'btn btn--danger', type: 'button', onClick: resetData }, 'Reset / Wipe all data');
+  const debugBtn = el('button', { class: 'btn', type: 'button', onClick: showDebug }, 'Debug: Show raw DB');
 
   main.append(el('div', { class: 'stack' },
     el('div', { class: 'card stack' },
@@ -53,9 +54,42 @@ export async function renderSettings(ctx) {
       el('div', { class: 'small' }, 'Everything is stored locally on this device (IndexedDB).'),
       exportBtn,
       importBtn,
-      resetBtn
+      resetBtn,
+      debugBtn
     )
   ));
+
+  async function showDebug() {
+    // Fetch raw todos directly from IndexedDB (bypass normalization)
+    const dbReq = indexedDB.open('thingstodo-db');
+    dbReq.onsuccess = () => {
+      const idb = dbReq.result;
+      const tx = idb.transaction('todos', 'readonly');
+      const store = tx.objectStore('todos');
+      const allReq = store.getAll();
+      allReq.onsuccess = () => {
+        const rawTodos = allReq.result || [];
+        const projects = [];
+        db.projects.list().then((ps) => {
+          projects.push(...ps);
+          const lines = rawTodos.map((t) => {
+            const pName = t.projectId === '__inbox__' ? 'Inbox'
+              : t.projectId == null ? 'NULL(bug)'
+              : (projects.find((p) => p.id === t.projectId)?.name || t.projectId.slice(0, 8));
+            return `• ${t.title} → projectId: ${t.projectId} (${pName})`;
+          });
+          const content = el('div', { class: 'stack', style: { maxHeight: '60vh', overflow: 'auto' } },
+            el('pre', { style: { fontSize: '11px', whiteSpace: 'pre-wrap' } }, lines.join('\n') || '(no todos)')
+          );
+          openModal(modalHost, {
+            title: 'Raw DB todos',
+            content,
+            actions: [{ label: 'Close', class: 'btn btn--primary', onClick: () => true }]
+          });
+        });
+      };
+    };
+  }
 
   async function exportData() {
     const payload = {

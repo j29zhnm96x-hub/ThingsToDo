@@ -35,6 +35,12 @@ export function initApp(root) {
     });
   });
 
+  // Default route: avoid assigning location.hash here (can fire a hashchange event
+  // that races with the initial router refresh on some platforms).
+  if (!location.hash) {
+    history.replaceState(null, '', `${location.pathname}${location.search}#inbox`);
+  }
+
   router.init({
     async onRoute(route) {
       // Ensure DB is ready once at startup.
@@ -88,7 +94,4 @@ export function initApp(root) {
       requestAnimationFrame(() => main.focus());
     }
   });
-
-  // Default route
-  if (!location.hash) location.hash = '#inbox';
 }

@@ -6,8 +6,14 @@ import { compareTodos, maxOrderFor } from '../logic/sorting.js';
 
 function priorityOptions(select, value) {
   const opts = [Priority.P0, Priority.P1, Priority.P2, Priority.P3];
+  const labels = {
+    [Priority.P0]: 'Highest',
+    [Priority.P1]: 'High',
+    [Priority.P2]: 'Medium',
+    [Priority.P3]: 'Low'
+  };
   for (const p of opts) {
-    const o = el('option', { value: p }, p);
+    const o = el('option', { value: p }, labels[p] || p);
     select.appendChild(o);
   }
   select.value = value || Priority.P2;
