@@ -18,11 +18,12 @@ export function nowIso() {
   return new Date().toISOString();
 }
 
-export function newProject({ name }) {
+export function newProject({ name, type = 'default' }) {
   const t = nowIso();
   return {
     id: uuid(),
     name: name.trim(),
+    type,
     createdAt: t,
     updatedAt: t,
     sortOrder: t // default: by created time

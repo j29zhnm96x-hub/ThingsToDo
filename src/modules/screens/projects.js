@@ -155,8 +155,14 @@ export async function renderProjects(ctx) {
 
 export function openCreateProject({ db, modalHost, onCreated }) {
   const nameInput = el('input', { class: 'input', placeholder: 'Project name', 'aria-label': 'Project name' });
+  const typeSelect = el('select', { class: 'select', 'aria-label': 'Project type' },
+    el('option', { value: 'default', selected: 'selected' }, 'Default'),
+    el('option', { value: 'checklist' }, 'Check List')
+  );
+
   const content = el('div', { class: 'stack' },
-    el('label', { class: 'label' }, el('span', {}, 'Name'), nameInput)
+    el('label', { class: 'label' }, el('span', {}, 'Name'), nameInput),
+    el('label', { class: 'label' }, el('span', {}, 'Project Type'), typeSelect)
   );
 
   openModal(modalHost, {
@@ -173,7 +179,8 @@ export function openCreateProject({ db, modalHost, onCreated }) {
             nameInput.focus();
             return false;
           }
-          await db.projects.put(newProject({ name }));
+          const type = typeSelect.value === 'checklist' ? 'checklist' : 'default';
+          await db.projects.put(newProject({ name, type }));
           onCreated?.();
           return true;
         }

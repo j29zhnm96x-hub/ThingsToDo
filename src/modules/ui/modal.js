@@ -77,11 +77,9 @@ export function openModal(modalHost, { title, content, actions = [], onClose }) 
     if (e.target === modalHost) close();
   }, { once: true });
 
-  // Initial focus
-  requestAnimationFrame(() => {
-    const f = focusables();
-    (f[0] || modal).focus?.();
-  });
+  // Initial focus (synchronous to support mobile keyboard triggering)
+  const f = focusables();
+  (f[0] || modal).focus?.();
 
   return { close };
 }

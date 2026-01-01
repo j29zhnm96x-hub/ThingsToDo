@@ -85,9 +85,13 @@ export function initApp(root) {
         topbarTitle.textContent = project ? project.name : 'Project';
         if (project) {
           topbarActions.append(
-            el('button', { class: 'topbar__backBtn', type: 'button', 'aria-label': 'Back to projects', onClick: () => { hapticLight(); location.hash = '#projects'; } }, '←'),
-            el('button', { class: 'topbar__addBtn', type: 'button', 'aria-label': 'Add todo', onClick: () => { hapticLight(); ctx.openTodoEditor({ mode: 'create', projectId: project.id }); } }, '+')
+            el('button', { class: 'topbar__backBtn', type: 'button', 'aria-label': 'Back to projects', onClick: () => { hapticLight(); location.hash = '#projects'; } }, '←')
           );
+          if ((project.type ?? 'default') !== 'checklist') {
+            topbarActions.append(
+              el('button', { class: 'topbar__addBtn', type: 'button', 'aria-label': 'Add todo', onClick: () => { hapticLight(); ctx.openTodoEditor({ mode: 'create', projectId: project.id }); } }, '+')
+            );
+          }
         }
         await renderProjectDetail(ctx, route.params.projectId);
       } else if (route.name === 'archive') {
