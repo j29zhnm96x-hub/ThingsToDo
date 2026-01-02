@@ -6,7 +6,7 @@
 */
 
 // IMPORTANT: bump this to force clients to pick up new JS/CSS.
-const CACHE_NAME = 'thingstodo-v23';
+const CACHE_NAME = 'thingstodo-v24';
 
 // Keep this list small and stable; it's the offline app shell.
 const APP_SHELL = [
@@ -73,10 +73,32 @@ self.addEventListener('fetch', (event) => {
 
       // Cache-first for everything else
       const cached = await caches.match(req);
-      if (cached) return cached;
+      if (cached) {
+        // Safari fix: "Response served by service worker has redirections"
+        if (cached.redirected) {
+          const body = await cached.blob();
+          return new Response(body, {
+            status: cached.status,
+            statusText: cached.statusText,
+            headers: cached.headers
+          });
+        }
+        return cached;
+      }
 
       try {
-        const res = await fetch(req);
+        let res = await fetch(req);
+        
+        // Safari fix: If response is redirected, recreate it to strip the 'redirected' flag
+        if (res.redirected) {
+          const body = await res.blob();
+          res = new Response(body, {
+            status: res.status,
+            statusText: res.statusText,
+            headers: res.headers
+          });
+        }
+
         const cache = await caches.open(CACHE_NAME);
         if (res.ok && res.type !== 'opaque') {
           cache.put(req, res.clone());
