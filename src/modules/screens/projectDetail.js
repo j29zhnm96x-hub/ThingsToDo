@@ -30,14 +30,28 @@ export async function renderProjectDetail(ctx, projectId) {
   const { projects, map: projectsById } = await buildProjectsById(db);
 
   if ((project.type ?? 'default') === 'checklist') {
-    const listEl = renderChecklist({ todos, onToggleCompleted: async (todo, checked) => {
-      await db.todos.put({
-        ...todo,
-        completed: checked,
-        completedAt: checked ? new Date().toISOString() : null
-      });
-      await renderProjectDetail(ctx, projectId);
-    }});
+    const listEl = renderChecklist({ 
+      todos, 
+      onToggleCompleted: async (todo, checked) => {
+        await db.todos.put({
+          ...todo,
+          completed: checked,
+          completedAt: checked ? new Date().toISOString() : null
+        });
+        await renderProjectDetail(ctx, projectId);
+      },
+      onDelete: async (todo) => {
+        const ok = await confirm(modalHost, {
+          title: 'Delete item?',
+          message: `Delete "${todo.title}"?`,
+          confirmLabel: 'Delete',
+          danger: true
+        });
+        if (!ok) return;
+        await db.todos.delete(todo.id);
+        await renderProjectDetail(ctx, projectId);
+      }
+    });
 
     const hint = el('div', { class: 'checklist__hint' }, 'Double tap to add');
 
@@ -145,22 +159,50 @@ export async function renderProjectDetail(ctx, projectId) {
   main.append(el('div', { class: 'stack' }, todos.length ? list : el('div', { class: 'card small' }, 'No todos in this project yet. Tap + to add one.')));
 }
 
-function renderChecklist({ todos, onToggleCompleted }) {
+function renderChecklist({ todos, onToggleCompleted, onDelete }) {
   const active = todos.filter(t => !t.completed);
   const done = todos.filter(t => t.completed);
 
-  const makeRow = (t, completed) => el('div', {
-    class: completed ? 'checklist__item checklist__item--done' : 'checklist__item'
-  },
-    el('span', { 
-      class: completed ? 'checklist__circle checklist__circle--done' : 'checklist__circle',
-      onClick: (e) => {
-        e.stopPropagation();
-        onToggleCompleted?.(t, !completed);
+  const makeRow = (t, completed) => {
+    let pressTimer = null;
+    let pressStartTime = 0;
+    const LONG_PRESS_DURATION = 1500; // 1.5 seconds
+
+    const textSpan = el('span', { class: 'checklist__text' }, t.title);
+
+    const handlePressStart = (e) => {
+      pressStartTime = Date.now();
+      pressTimer = setTimeout(() => {
+        // Long press detected
+        onDelete?.(t);
+      }, LONG_PRESS_DURATION);
+    };
+
+    const handlePressEnd = (e) => {
+      if (pressTimer) {
+        clearTimeout(pressTimer);
+        pressTimer = null;
       }
-    }, completed ? '✓' : ''),
-    el('span', { class: 'checklist__text' }, t.title)
-  );
+    };
+
+    textSpan.addEventListener('pointerdown', handlePressStart);
+    textSpan.addEventListener('pointerup', handlePressEnd);
+    textSpan.addEventListener('pointercancel', handlePressEnd);
+    textSpan.addEventListener('pointerleave', handlePressEnd);
+
+    return el('div', {
+      class: completed ? 'checklist__item checklist__item--done' : 'checklist__item'
+    },
+      el('span', { 
+        class: completed ? 'checklist__circle checklist__circle--done' : 'checklist__circle',
+        onClick: (e) => {
+          e.stopPropagation();
+          onToggleCompleted?.(t, !completed);
+        }
+      }, completed ? '✓' : ''),
+      textSpan
+    );
+  };
 
   const container = el('div', { class: 'checklist' });
   active.forEach(t => container.appendChild(makeRow(t, false)));

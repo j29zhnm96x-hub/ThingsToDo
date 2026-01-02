@@ -40,6 +40,10 @@ html[data-theme='light'] {
   --accent: #2563eb;
 }
 
+html[data-theme='light'] .projectCard {
+  background: #dbeafe;
+}
+
 * { box-sizing: border-box; }
 html, body { height: 100%; }
 body {
@@ -239,6 +243,14 @@ button { -webkit-tap-highlight-color: transparent; }
 .projectCard:active {
   background: var(--surface2);
   transform: scale(0.98);
+}
+
+.projectCard[data-type='default'] {
+  border-color: #fbbf24;
+}
+
+.projectCard[data-type='checklist'] {
+  border-color: #a855f7;
 }
 
 .projectCard__row {

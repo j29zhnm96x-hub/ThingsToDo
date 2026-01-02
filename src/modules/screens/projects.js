@@ -21,8 +21,10 @@ export async function renderProjects(ctx) {
   const list = el('div', { class: 'list' },
     projects.map((p) => {
       const activeCount = projectCounts.get(p.id) || 0;
+      const projectType = p.type || 'default';
       return el('div', {
         class: 'projectCard',
+        dataset: { type: projectType },
         onClick: (e) => {
           if (e.target.closest('.projectCard__menuBtn')) return;
           hapticLight();
