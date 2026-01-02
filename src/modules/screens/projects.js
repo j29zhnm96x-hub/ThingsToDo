@@ -1,4 +1,4 @@
-import { el, clear } from '../ui/dom.js';
+import { el, clear, emptyState } from '../ui/dom.js';
 import { openModal } from '../ui/modal.js';
 import { confirm } from '../ui/confirm.js';
 import { newProject } from '../data/models.js';
@@ -46,7 +46,7 @@ export async function renderProjects(ctx) {
     })
   );
 
-  main.append(el('div', { class: 'stack' }, projects.length ? list : el('div', { class: 'card small' }, 'No projects yet. Tap + to create one.')));
+  main.append(el('div', { class: 'stack' }, projects.length ? list : emptyState('No projects yet', 'Tap the + button above to create your first project')));
 
   function openProjectMenu(project) {
     const renameBtn = el('button', { class: 'btn', type: 'button' }, 'Rename');

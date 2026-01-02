@@ -1,4 +1,4 @@
-import { el, clear } from '../ui/dom.js';
+import { el, clear, emptyState } from '../ui/dom.js';
 import { renderTodoList } from '../ui/todoList.js';
 import { pickProject } from '../ui/pickProject.js';
 import { confirm } from '../ui/confirm.js';
@@ -20,7 +20,7 @@ export async function renderArchive(ctx) {
   const { projects, map: projectsById } = await buildProjectsById(db);
 
   const empty = archived.length === 0
-    ? el('div', { class: 'card small' }, 'No archived todos.')
+    ? emptyState('No archived todos', 'Todos you archive will appear here')
     : null;
 
   const list = renderTodoList({

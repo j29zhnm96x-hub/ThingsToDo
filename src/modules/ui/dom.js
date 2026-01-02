@@ -47,3 +47,12 @@ export function humanDue(isoOrNull) {
   if (Number.isNaN(d.getTime())) return null;
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
+
+export function emptyState(title, message) {
+  return el('div', { class: 'emptyState' },
+    el('div', { class: 'emptyState__icon' }, '📋'),
+    el('div', { class: 'emptyState__title' }, title),
+    el('div', { class: 'emptyState__message' }, message)
+  );
+}
+

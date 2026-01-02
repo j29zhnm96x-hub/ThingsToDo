@@ -1,4 +1,4 @@
-import { el, clear } from '../ui/dom.js';
+import { el, clear, emptyState } from '../ui/dom.js';
 import { renderTodoList } from '../ui/todoList.js';
 import { pickProject } from '../ui/pickProject.js';
 import { confirm } from '../ui/confirm.js';
@@ -94,5 +94,9 @@ export async function renderInbox(ctx) {
     }
   });
 
-  main.append(el('div', { class: 'stack' }, list));
+  if (todos.length === 0) {
+    main.append(emptyState('Your inbox is empty', 'Tap the + button above to create your first todo'));
+  } else {
+    main.append(el('div', { class: 'stack' }, list));
+  }
 }
