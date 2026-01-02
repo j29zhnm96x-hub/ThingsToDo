@@ -2,7 +2,7 @@ import { el, clear } from '../ui/dom.js';
 import { openModal } from '../ui/modal.js';
 import { confirm } from '../ui/confirm.js';
 import { applyTheme } from '../ui/theme.js';
-import { requestNotificationPermission, sendLocalTestNotification, subscribeToPush } from '../notifications.js';
+import { requestNotificationPermission, subscribeToPush } from '../notifications.js';
 
 async function blobToDataUrl(blob) {
   return new Promise((resolve, reject) => {
@@ -48,21 +48,11 @@ export async function renderSettings(ctx) {
       if (granted) {
         notifBtn.textContent = 'Notifications enabled';
         notifBtn.disabled = true;
-        testNotifBtn.disabled = false;
       } else {
         notifBtn.textContent = 'Notifications denied';
       }
     }
   }, notifPermission === 'granted' ? 'Notifications enabled' : (notifPermission === 'denied' ? 'Notifications denied' : 'Enable Notifications'));
-
-  const testNotifBtn = el('button', {
-    class: 'btn',
-    type: 'button',
-    disabled: notifPermission !== 'granted' ? 'disabled' : null,
-    onClick: () => {
-      sendLocalTestNotification('Hello!', 'This is a test notification from ThingsToDo.');
-    }
-  }, 'Send Test Notification');
 
   const exportBtn = el('button', { class: 'btn btn--primary', type: 'button', onClick: exportData }, 'Export data (JSON)');
   const importBtn = el('button', { class: 'btn', type: 'button', onClick: importData }, 'Import JSON');
@@ -80,8 +70,7 @@ export async function renderSettings(ctx) {
     el('div', { class: 'card stack' },
       el('div', { style: { fontWeight: '700' } }, 'Notifications'),
       el('div', { class: 'small' }, 'Get notified about due tasks.'),
-      notifBtn,
-      testNotifBtn
+      notifBtn
     ),
     el('div', { class: 'card stack' },
       el('div', { style: { fontWeight: '700' } }, 'Data management'),

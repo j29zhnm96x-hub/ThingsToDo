@@ -3,6 +3,7 @@ import { openModal } from '../ui/modal.js';
 import { confirm } from '../ui/confirm.js';
 import { newProject } from '../data/models.js';
 import { hapticLight } from '../ui/haptic.js';
+import { scheduleChecklistReminder } from '../notifications.js';
 
 export async function renderProjects(ctx) {
   const { main, db, modalHost } = ctx;
@@ -182,7 +183,13 @@ export function openCreateProject({ db, modalHost, onCreated }) {
             return false;
           }
           const type = typeSelect.value === 'checklist' ? 'checklist' : 'default';
-          await db.projects.put(newProject({ name, type }));
+          const project = newProject({ name, type });
+          await db.projects.put(project);
+          
+          if (type === 'checklist') {
+            scheduleChecklistReminder(project.id);
+          }
+
           onCreated?.();
           return true;
         }
