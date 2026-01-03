@@ -40,7 +40,7 @@ export async function renderProjects(ctx) {
           ),
           el('button', {
             type: 'button',
-            class: 'projectCard__menuBtn',
+            class: 'projectCard__menuBtn iconBtn',
             'aria-label': 'Project options',
             onClick: (e) => { e.stopPropagation(); hapticLight(); openProjectMenu(p); }
           }, '⋯')
