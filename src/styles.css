@@ -20,6 +20,7 @@
 
   --radius: 14px;
   --tap: 44px;
+  --card-min-height: 72px;
 
   /* iOS safe areas */
   --safe-top: env(safe-area-inset-top, 0px);
@@ -208,9 +209,11 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 
 .todo {
-  display: grid;
+  display: flex;
+  align-items: center;
   gap: 0;
   padding: 4px 8px;
+  min-height: var(--card-min-height);
   border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--field);
@@ -226,9 +229,11 @@ button { -webkit-tap-highlight-color: transparent; }
 
 /* Project cards - same size/style as todo cards but lighter */
 .projectCard {
-  display: grid;
+  display: flex;
+  align-items: center;
   gap: 0;
   padding: 4px 8px;
+  min-height: var(--card-min-height);
   border-radius: var(--radius);
   border: 1px solid var(--border);
   background: rgba(30, 41, 59, 0.6);
