@@ -2,7 +2,6 @@ import { el, clear } from '../ui/dom.js';
 import { openModal } from '../ui/modal.js';
 import { confirm } from '../ui/confirm.js';
 import { applyTheme } from '../ui/theme.js';
-import { requestNotificationPermission, subscribeToPush } from '../notifications.js';
 
 async function blobToDataUrl(blob) {
   return new Promise((resolve, reject) => {
@@ -37,27 +36,9 @@ export async function renderSettings(ctx) {
     applyTheme(nextTheme);
   });
 
-  // Notification controls
-  const notifPermission = Notification.permission;
-  const notifBtn = el('button', { 
-    class: 'btn', 
-    type: 'button',
-    disabled: notifPermission === 'granted' || notifPermission === 'denied' ? 'disabled' : null,
-    onClick: async () => {
-      const granted = await requestNotificationPermission();
-      if (granted) {
-        notifBtn.textContent = 'Notifications enabled';
-        notifBtn.disabled = true;
-      } else {
-        notifBtn.textContent = 'Notifications denied';
-      }
-    }
-  }, notifPermission === 'granted' ? 'Notifications enabled' : (notifPermission === 'denied' ? 'Notifications denied' : 'Enable Notifications'));
-
   const exportBtn = el('button', { class: 'btn btn--primary', type: 'button', onClick: exportData }, 'Export data (JSON)');
   const importBtn = el('button', { class: 'btn', type: 'button', onClick: importData }, 'Import JSON');
   const resetBtn = el('button', { class: 'btn btn--danger', type: 'button', onClick: resetData }, 'Reset / Wipe all data');
-  const debugBtn = el('button', { class: 'btn', type: 'button', onClick: showDebug }, 'Debug: Show raw DB');
 
   main.append(el('div', { class: 'stack' },
     el('div', { class: 'card stack' },
@@ -68,51 +49,13 @@ export async function renderSettings(ctx) {
       )
     ),
     el('div', { class: 'card stack' },
-      el('div', { style: { fontWeight: '700' } }, 'Notifications'),
-      el('div', { class: 'small' }, 'Get notified about due tasks.'),
-      notifBtn
-    ),
-    el('div', { class: 'card stack' },
       el('div', { style: { fontWeight: '700' } }, 'Data management'),
       el('div', { class: 'small' }, 'Everything is stored locally on this device (IndexedDB).'),
       exportBtn,
       importBtn,
-      resetBtn,
-      debugBtn
+      resetBtn
     )
   ));
-
-  async function showDebug() {
-    // Fetch raw todos directly from IndexedDB (bypass normalization)
-    const dbReq = indexedDB.open('thingstodo-db');
-    dbReq.onsuccess = () => {
-      const idb = dbReq.result;
-      const tx = idb.transaction('todos', 'readonly');
-      const store = tx.objectStore('todos');
-      const allReq = store.getAll();
-      allReq.onsuccess = () => {
-        const rawTodos = allReq.result || [];
-        const projects = [];
-        db.projects.list().then((ps) => {
-          projects.push(...ps);
-          const lines = rawTodos.map((t) => {
-            const pName = t.projectId === '__inbox__' ? 'Inbox'
-              : t.projectId == null ? 'NULL(bug)'
-              : (projects.find((p) => p.id === t.projectId)?.name || t.projectId.slice(0, 8));
-            return `• ${t.title} → projectId: ${t.projectId} (${pName})`;
-          });
-          const content = el('div', { class: 'stack', style: { maxHeight: '60vh', overflow: 'auto' } },
-            el('pre', { style: { fontSize: '11px', whiteSpace: 'pre-wrap' } }, lines.join('\n') || '(no todos)')
-          );
-          openModal(modalHost, {
-            title: 'Raw DB todos',
-            content,
-            actions: [{ label: 'Close', class: 'btn btn--primary', onClick: () => true }]
-          });
-        });
-      };
-    };
-  }
 
   async function exportData() {
     const payload = {
