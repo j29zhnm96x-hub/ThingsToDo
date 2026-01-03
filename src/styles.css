@@ -48,7 +48,10 @@ html[data-theme='light'] .projectCard {
   box-sizing: border-box;
   touch-action: manipulation;
 }
-html, body { height: 100%; }
+html, body {
+  height: 100%;
+  overflow: hidden; /* Prevent body scroll */
+}
 body {
   margin: 0;
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
@@ -85,7 +88,9 @@ button { -webkit-tap-highlight-color: transparent; }
 .skip-link:focus { transform: translateY(0); outline: 2px solid #93c5fd; }
 
 .app {
-  min-height: 100vh;
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding-left: var(--safe-left);
   padding-right: var(--safe-right);
 }
