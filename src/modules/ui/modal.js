@@ -8,6 +8,7 @@ export function openModal(modalHost, { title, content, actions = [], onClose }) 
 
   clear(modalHost);
   modalHost.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden'; // Lock body scroll
 
   const modal = el('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true', 'aria-label': title || 'Dialog' });
 
@@ -63,6 +64,7 @@ export function openModal(modalHost, { title, content, actions = [], onClose }) 
   }
 
   function close() {
+    document.body.style.overflow = ''; // Unlock body scroll
     modalHost.setAttribute('aria-hidden', 'true');
     clear(modalHost);
     modalHost.removeEventListener('keydown', onKeyDown);

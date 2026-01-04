@@ -791,9 +791,12 @@ button { -webkit-tap-highlight-color: transparent; }
   max-height: min(82vh, 720px);
   width: 100%;
   max-width: 100%;
-  overflow: auto;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-width: none;
   animation: modalSlideUp 300ms ease;
 }
+.modal::-webkit-scrollbar { display: none; }
 
 .modal__header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; }
 .modal__header .iconBtn { background: transparent; border: none; font-size: 24px; }
