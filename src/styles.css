@@ -172,6 +172,13 @@ button { -webkit-tap-highlight-color: transparent; }
   gap: 10px;
 }
 
+.grid-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  min-width: 0;
+}
+
 .stack { display: grid; gap: 10px; }
 
 .btn {

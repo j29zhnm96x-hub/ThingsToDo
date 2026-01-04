@@ -116,9 +116,9 @@ export async function openTodoEditor({
   const content = el('div', { class: 'stack' },
     el('label', { class: 'label' }, el('span', {}, 'Title *'), titleInput),
     el('label', { class: 'label' }, el('span', {}, 'Notes'), notesInput),
-    el('div', { class: 'row' },
-      el('label', { class: 'label', style: { flex: '1', minWidth: '0' } }, el('span', {}, 'Priority'), prioritySelect),
-      el('label', { class: 'label', style: { flex: '1', minWidth: '0' } }, el('span', {}, 'Due date'), dueInput)
+    el('div', { class: 'grid-row' },
+      el('label', { class: 'label' }, el('span', {}, 'Priority'), prioritySelect),
+      el('label', { class: 'label' }, el('span', {}, 'Due date'), dueInput)
     ),
     el('label', { class: 'label' },
       el('span', {}, 'Completed'),
