@@ -194,6 +194,7 @@ button { -webkit-tap-highlight-color: transparent; }
 
 .input, .select, .textarea {
   width: 100%;
+  min-width: 0;
   min-height: var(--tap);
   padding: 10px 12px;
   border-radius: 12px;
@@ -209,7 +210,7 @@ button { -webkit-tap-highlight-color: transparent; }
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.label { display: grid; gap: 6px; font-weight: 600; color: var(--muted); }
+.label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; color: var(--muted); min-width: 0; }
 
 .list {
   display: grid;
@@ -768,6 +769,8 @@ button { -webkit-tap-highlight-color: transparent; }
   border-radius: 18px;
   padding: 12px;
   max-height: min(82vh, 720px);
+  width: 100%;
+  max-width: 100%;
   overflow: auto;
   animation: modalSlideUp 300ms ease;
 }
