@@ -176,10 +176,7 @@ function renderChecklist({ todos, onToggleCompleted, onDelete }) {
     let pressStartTime = 0;
     const LONG_PRESS_DURATION = 1500; // 1.5 seconds
 
-    const textSpan = el('span', { class: 'checklist__text' }, 
-      t.title,
-      t.protected ? el('img', { src: 'assets/shield.PNG', class: 'icon-protected', alt: 'Protected' }) : null
-    );
+    const textSpan = el('span', { class: 'checklist__text' }, t.title);
 
     const handlePressStart = (e) => {
       pressStartTime = Date.now();
@@ -211,7 +208,8 @@ function renderChecklist({ todos, onToggleCompleted, onDelete }) {
           onToggleCompleted?.(t, !completed);
         }
       }, completed ? '✓' : ''),
-      textSpan
+      textSpan,
+      t.protected ? el('span', { class: 'icon-protected', 'aria-label': 'Protected' }, '🔒') : null
     );
   };
 

@@ -35,12 +35,10 @@ export async function renderProjects(ctx) {
       },
         el('div', { class: 'projectCard__row' },
           el('div', { class: 'projectCard__info' },
-            el('span', { class: 'projectCard__name' }, 
-              p.name,
-              p.protected ? el('img', { src: 'assets/shield.PNG', class: 'icon-protected', alt: 'Protected' }) : null
-            ),
+            el('span', { class: 'projectCard__name' }, p.name),
             activeCount > 0 ? el('span', { class: 'projectCard__count' }, `${activeCount} active`) : null
           ),
+          p.protected ? el('span', { class: 'icon-protected', 'aria-label': 'Protected' }, '🔒') : null,
           el('button', {
             type: 'button',
             class: 'projectCard__menuBtn iconBtn',
