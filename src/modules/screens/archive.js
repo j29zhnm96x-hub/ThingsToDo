@@ -21,14 +21,13 @@ export async function renderArchive(ctx) {
 
   // Add Bin button to topbar
   topbarActions.innerHTML = '';
-  topbarActions.append(
-    el('button', { 
-      class: 'topbar__addBtn', 
-      type: 'button', 
-      'aria-label': 'Bin', 
-      onClick: () => openBinModal(ctx, { onRestore: () => renderArchive(ctx) }) 
-    }, '↺')
-  );
+  const binBtn = el('button', { 
+    class: 'topbar__addBtn', 
+    type: 'button', 
+    'aria-label': 'Bin', 
+    onClick: () => openBinModal(ctx, { onRestore: () => renderArchive(ctx) }) 
+  }, '↺');
+  topbarActions.append(binBtn);
 
   const archived = await db.todos.listArchived();
   const { projects, map: projectsById } = await buildProjectsById(db);
@@ -61,6 +60,29 @@ export async function renderArchive(ctx) {
   try {
     collapsedState = JSON.parse(localStorage.getItem('archive-collapsed') || '{}');
   } catch { /* ignore */ }
+
+  // Calculate allCollapsed
+  const allCollapsed = sortedDates.every(d => collapsedState[d]);
+
+  // Create Collapse/Expand button
+  const collapseBtn = el('button', {
+      class: 'topbar__addBtn',
+      type: 'button',
+      'aria-label': allCollapsed ? 'Expand all' : 'Collapse all',
+      style: 'margin-right: 12px;', 
+      onClick: () => {
+        hapticLight();
+        const newState = !allCollapsed;
+        sortedDates.forEach(d => {
+          collapsedState[d] = newState;
+        });
+        localStorage.setItem('archive-collapsed', JSON.stringify(collapsedState));
+        renderArchive(ctx);
+      }
+  }, allCollapsed ? '▼' : '▲');
+
+  // Insert before Bin button
+  topbarActions.insertBefore(collapseBtn, binBtn);
 
   for (const date of sortedDates) {
     const groupTodos = groups.get(date);
