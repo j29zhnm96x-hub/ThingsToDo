@@ -203,16 +203,59 @@ export function renderTodoList({
 
   // Add divider and completed section if there are completed todos
   if (sortedCompleted.length > 0 && mode !== 'archive') {
-    const divider = el('div', { class: 'todo-divider' },
-      el('span', { class: 'todo-divider__text' }, 'Completed')
-    );
+    const isCollapsed = localStorage.getItem('completed-collapsed') === 'true';
+    
+    const dividerText = el('button', { 
+      type: 'button',
+      class: 'todo-divider__text',
+      onClick: () => {
+        hapticLight();
+        localStorage.setItem('completed-collapsed', (!isCollapsed).toString());
+        // Re-render the whole list to apply state
+        // We can't easily re-call renderTodoList from inside itself without passing a refresh callback.
+        // But since this is usually called from a parent render function, we can trigger a reload via a custom event or just reload page?
+        // Better: toggle visibility in place.
+        const stack = list.querySelector('.completedStack');
+        const cards = list.querySelectorAll('.todo--completed-item');
+        
+        if (isCollapsed) {
+          // Expand
+          localStorage.setItem('completed-collapsed', 'false');
+          if (stack) stack.style.display = 'none';
+          cards.forEach(c => c.style.display = 'grid');
+        } else {
+          // Collapse
+          localStorage.setItem('completed-collapsed', 'true');
+          if (stack) stack.style.display = 'flex';
+          cards.forEach(c => c.style.display = 'none');
+        }
+      }
+    }, 'Completed');
+
+    const divider = el('div', { class: 'todo-divider' }, dividerText);
     list.appendChild(divider);
 
-    for (const t of sortedCompleted) {
-      list.appendChild(renderCard(t));
+    // Stack representation (green lines)
+    const stack = el('div', { 
+      class: 'completedStack', 
+      style: { display: isCollapsed ? 'flex' : 'none' } 
+    });
+    // Limit lines to avoid huge stacks
+    const lineCount = Math.min(sortedCompleted.length, 20); 
+    for (let i = 0; i < lineCount; i++) {
+      stack.appendChild(el('div', { class: 'completedStack__line' }));
     }
-  } else {
+    list.appendChild(stack);
+
+    for (const t of sortedCompleted) {
+      const card = renderCard(t);
+      card.classList.add('todo--completed-item');
+      if (isCollapsed) card.style.display = 'none';
+      list.appendChild(card);
+    }
+  } else if (mode === 'archive') {
     // Archive mode - render completed in normal order
+    // Handled by parent caller usually, but if called directly:
     for (const t of sortedCompleted) {
       list.appendChild(renderCard(t));
     }
