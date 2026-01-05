@@ -2,10 +2,12 @@ import { el, clear, emptyState } from '../ui/dom.js';
 import { renderTodoList } from '../ui/todoList.js';
 import { pickProject } from '../ui/pickProject.js';
 import { confirm } from '../ui/confirm.js';
-import { restoreTodo } from '../logic/todoOps.js';
+import { restoreTodo, recycleTodos, restoreFromBin } from '../logic/todoOps.js';
 import { openTodoMenu } from '../ui/todoMenu.js';
 import { openTodoInfo } from '../ui/todoInfo.js';
 import { hapticLight } from '../ui/haptic.js';
+import { openModal } from '../ui/modal.js';
+import { openBinModal } from '../ui/binModal.js';
 
 async function buildProjectsById(db) {
   const projects = await db.projects.list();
@@ -14,8 +16,19 @@ async function buildProjectsById(db) {
 }
 
 export async function renderArchive(ctx) {
-  const { main, db, modalHost } = ctx;
+  const { main, db, modalHost, topbarActions } = ctx;
   clear(main);
+
+  // Add Bin button to topbar
+  topbarActions.innerHTML = '';
+  topbarActions.append(
+    el('button', { 
+      class: 'topbar__addBtn', 
+      type: 'button', 
+      'aria-label': 'Bin', 
+      onClick: () => openBinModal(ctx, { onRestore: () => renderArchive(ctx) }) 
+    }, '↺')
+  );
 
   const archived = await db.todos.listArchived();
   const { projects, map: projectsById } = await buildProjectsById(db);
@@ -56,8 +69,44 @@ export async function renderArchive(ctx) {
     // Divider
     const dividerText = el('button', {
       type: 'button',
-      class: 'todo-divider__text',
-      onClick: () => {
+      class: 'todo-divider__text'
+    }, date);
+
+    // Long press to delete group
+    let pressTimer = null;
+    let longPressTriggered = false;
+
+    const cancelPress = () => {
+      if (pressTimer) {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+      }
+    };
+
+    dividerText.addEventListener('pointerdown', (e) => {
+      longPressTriggered = false;
+      pressTimer = setTimeout(async () => {
+        longPressTriggered = true;
+        hapticLight();
+        
+        const ok = await confirm(modalHost, {
+          title: 'Delete group?',
+          message: `Delete all ${groupTodos.length} archived todos from ${date}?`,
+          confirmLabel: 'Delete All',
+          danger: true
+        });
+        
+        if (ok) {
+          await recycleTodos(db, groupTodos);
+          await renderArchive(ctx);
+        }
+      }, 1000);
+    });
+
+    dividerText.addEventListener('pointerup', (e) => {
+      cancelPress();
+      if (!longPressTriggered) {
+        // Normal toggle behavior
         hapticLight();
         const nextState = !collapsedState[date];
         collapsedState[date] = nextState;
@@ -75,7 +124,11 @@ export async function renderArchive(ctx) {
           cards.forEach(c => c.style.display = 'grid');
         }
       }
-    }, date);
+    });
+
+    dividerText.addEventListener('pointercancel', cancelPress);
+    dividerText.addEventListener('pointerleave', cancelPress);
+    dividerText.addEventListener('contextmenu', (e) => e.preventDefault());
 
     listContainer.appendChild(el('div', { class: 'todo-divider' }, dividerText));
 
@@ -128,7 +181,7 @@ export async function renderArchive(ctx) {
           danger: true
         });
         if (!ok) return;
-        await db.todos.delete(todo.id);
+        await recycleTodos(db, [todo]);
         await renderArchive(ctx);
       },
       onMenu: (todo) => openTodoMenu(modalHost, {
@@ -160,7 +213,7 @@ export async function renderArchive(ctx) {
               danger: true
             });
             if (ok) {
-              await db.todos.delete(todo.id);
+              await recycleTodos(db, [todo]);
               await renderArchive(ctx);
             }
             return true;

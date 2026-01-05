@@ -8,7 +8,7 @@ import { renderSettings } from './screens/settings.js';
 import { openTodoEditor } from './ui/todoEditor.js';
 import { el } from './ui/dom.js';
 import { applyTheme } from './ui/theme.js';
-import { autoArchiveCompleted } from './logic/todoOps.js';
+import { autoArchiveCompleted, autoEmptyBin } from './logic/todoOps.js';
 import { hapticLight } from './ui/haptic.js';
 
 export function initApp(root) {
@@ -51,6 +51,8 @@ export function initApp(root) {
 
       // Auto-archive completed todos older than 24h (runs on each navigation, but fast)
       await autoArchiveCompleted(db);
+      // Empty bin items older than 24h
+      await autoEmptyBin(db);
 
       // Apply persisted theme (default: dark).
       const settings = await db.settings.get();

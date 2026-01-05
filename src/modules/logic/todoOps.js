@@ -83,3 +83,49 @@ export async function autoArchiveCompleted(db) {
   
   return archivedCount;
 }
+
+/**
+ * Move todos to the Bin (soft delete).
+ */
+export async function recycleTodos(db, todos) {
+  const now = new Date().toISOString();
+  for (const t of todos) {
+    // Store in bin with deletion timestamp
+    await db.bin.put({ ...t, deletedAt: now });
+    // Remove from active store
+    await db.todos.delete(t.id);
+  }
+}
+
+/**
+ * Restore todos from the Bin.
+ */
+export async function restoreFromBin(db, items) {
+  for (const item of items) {
+    const { deletedAt, ...todo } = item;
+    // Put back into todos store
+    await db.todos.put(todo);
+    // Remove from bin
+    await db.bin.delete(item.id);
+  }
+}
+
+/**
+ * Permanently delete items from Bin that are older than 24 hours.
+ */
+export async function autoEmptyBin(db) {
+  const items = await db.bin.list();
+  const now = Date.now();
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  
+  let count = 0;
+  for (const item of items) {
+    if (!item.deletedAt) continue;
+    const deletedTime = new Date(item.deletedAt).getTime();
+    if (now - deletedTime > DAY_MS) {
+      await db.bin.delete(item.id);
+      count++;
+    }
+  }
+  return count;
+}

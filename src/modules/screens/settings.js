@@ -2,6 +2,7 @@ import { el, clear } from '../ui/dom.js';
 import { openModal } from '../ui/modal.js';
 import { confirm } from '../ui/confirm.js';
 import { applyTheme } from '../ui/theme.js';
+import { openBinModal } from '../ui/binModal.js';
 
 async function blobToDataUrl(blob) {
   return new Promise((resolve, reject) => {
@@ -38,6 +39,7 @@ export async function renderSettings(ctx) {
 
   const exportBtn = el('button', { class: 'btn btn--primary', type: 'button', onClick: exportData }, 'Export data (JSON)');
   const importBtn = el('button', { class: 'btn', type: 'button', onClick: importData }, 'Import JSON');
+  const binBtn = el('button', { class: 'btn', type: 'button', onClick: () => openBinModal(ctx) }, 'Open Bin (Recently Deleted)');
   const resetBtn = el('button', { class: 'btn btn--danger', type: 'button', onClick: resetData }, 'Reset / Wipe all data');
 
   main.append(el('div', { class: 'stack' },
@@ -53,6 +55,7 @@ export async function renderSettings(ctx) {
       el('div', { class: 'small' }, 'Everything is stored locally on this device (IndexedDB).'),
       exportBtn,
       importBtn,
+      binBtn,
       resetBtn
     )
   ));

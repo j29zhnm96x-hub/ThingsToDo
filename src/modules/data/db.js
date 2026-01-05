@@ -2,7 +2,7 @@ import { openDb, storeApi, txDone, reqDone } from './idb.js';
 import { nowIso } from './models.js';
 
 const DB_NAME = 'thingstodo-db';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 // IndexedDB indexes cannot use `null` keys reliably across browsers.
 // We store Inbox as a stable string sentinel and normalize at the API boundary.
@@ -44,6 +44,11 @@ function upgrade(db, tx) {
   // single settings record
   if (!db.objectStoreNames.contains('settings')) {
     db.createObjectStore('settings', { keyPath: 'id' });
+  }
+
+  // bin: by id (for soft deleted items)
+  if (!db.objectStoreNames.contains('bin')) {
+    db.createObjectStore('bin', { keyPath: 'id' });
   }
 
   // Migration (v1 -> v2): replace null projectId with sentinel so it indexes.
@@ -203,13 +208,33 @@ export const db = {
     }
   },
 
+  bin: {
+    async put(item) {
+      const dbi = await getDb();
+      return storeApi(dbi, 'bin').put(item);
+    },
+    async get(id) {
+      const dbi = await getDb();
+      return storeApi(dbi, 'bin').get(id);
+    },
+    async delete(id) {
+      const dbi = await getDb();
+      return storeApi(dbi, 'bin').delete(id);
+    },
+    async list() {
+      const dbi = await getDb();
+      return storeApi(dbi, 'bin').list();
+    }
+  },
+
   async wipeAll() {
     const dbi = await getDb();
     await Promise.all([
       storeApi(dbi, 'todos').clear(),
       storeApi(dbi, 'projects').clear(),
       storeApi(dbi, 'attachments').clear(),
-      storeApi(dbi, 'settings').clear()
+      storeApi(dbi, 'settings').clear(),
+      storeApi(dbi, 'bin').clear()
     ]);
   }
 };
