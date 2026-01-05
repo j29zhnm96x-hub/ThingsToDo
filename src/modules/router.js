@@ -20,6 +20,7 @@ function parseHash(hash) {
   if (name === 'projects') return { name: 'projects', group: 'projects', params: {} };
   if (name === 'archive') return { name: 'archive', group: 'archive', params: {} };
   if (name === 'settings') return { name: 'settings', group: 'settings', params: {} };
+  if (name === 'help') return { name: 'help', group: 'settings', params: {} };
 
   return { name: 'inbox', group: 'inbox', params: {} };
 }

@@ -3,7 +3,11 @@ export function el(tag, props = {}, ...children) {
   for (const [k, v] of Object.entries(props || {})) {
     if (k === 'class') node.className = v;
     else if (k === 'dataset') Object.assign(node.dataset, v);
-    else if (k === 'style') Object.assign(node.style, v);
+    else if (k === 'style') {
+      if (typeof v === 'string') node.style.cssText = v;
+      else Object.assign(node.style, v);
+    }
+    else if (k === 'innerHTML') node.innerHTML = v;
     else if (k.startsWith('on') && typeof v === 'function') node.addEventListener(k.slice(2).toLowerCase(), v);
     else if (v === false || v == null) {
       // skip

@@ -40,6 +40,7 @@ export async function renderSettings(ctx) {
   const exportBtn = el('button', { class: 'btn btn--primary', type: 'button', onClick: exportData }, 'Export data (JSON)');
   const importBtn = el('button', { class: 'btn', type: 'button', onClick: importData }, 'Import JSON');
   const binBtn = el('button', { class: 'btn', type: 'button', onClick: () => openBinModal(ctx) }, 'Open Bin (Recently Deleted)');
+  const helpBtn = el('button', { class: 'btn', type: 'button', onClick: () => location.hash = '#help' }, 'Help & Guide');
   const resetBtn = el('button', { class: 'btn btn--danger', type: 'button', onClick: resetData }, 'Reset / Wipe all data');
 
   main.append(el('div', { class: 'stack' },
@@ -49,6 +50,10 @@ export async function renderSettings(ctx) {
         el('div', { class: 'small' }, 'Light mode'),
         themeToggle
       )
+    ),
+    el('div', { class: 'card stack' },
+      el('div', { style: { fontWeight: '700' } }, 'App Info'),
+      helpBtn
     ),
     el('div', { class: 'card stack' },
       el('div', { style: { fontWeight: '700' } }, 'Data management'),

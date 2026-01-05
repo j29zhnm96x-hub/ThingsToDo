@@ -2,7 +2,7 @@ import { openDb, storeApi, txDone, reqDone } from './idb.js';
 import { nowIso } from './models.js';
 
 const DB_NAME = 'thingstodo-db';
-const DB_VERSION = 3;
+const DB_VERSION = 5;
 
 // IndexedDB indexes cannot use `null` keys reliably across browsers.
 // We store Inbox as a stable string sentinel and normalize at the API boundary.

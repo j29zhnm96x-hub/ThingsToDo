@@ -6,7 +6,7 @@
 */
 
 // IMPORTANT: bump this to force clients to pick up new JS/CSS.
-const CACHE_NAME = 'thingstodo-v28';
+const CACHE_NAME = 'thingstodo-v30';
 
 // Keep this list small and stable; it's the offline app shell.
 const APP_SHELL = [

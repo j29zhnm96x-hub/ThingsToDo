@@ -9,6 +9,9 @@ export function openDb({ name, version, upgrade }) {
     req.onupgradeneeded = () => {
       upgrade(req.result, req.transaction);
     };
+    req.onblocked = () => {
+      alert('Database upgrade blocked. Please close other tabs of this app and reload.');
+    };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });

@@ -5,6 +5,7 @@ import { renderProjects, openCreateProject } from './screens/projects.js';
 import { renderProjectDetail } from './screens/projectDetail.js';
 import { renderArchive } from './screens/archive.js';
 import { renderSettings } from './screens/settings.js';
+import { renderHelp } from './screens/help.js';
 import { openTodoEditor } from './ui/todoEditor.js';
 import { el } from './ui/dom.js';
 import { applyTheme } from './ui/theme.js';
@@ -102,6 +103,12 @@ export function initApp(root) {
       } else if (route.name === 'settings') {
         topbarTitle.textContent = 'Settings';
         await renderSettings(ctx);
+      } else if (route.name === 'help') {
+        topbarTitle.textContent = 'Help & Guide';
+        topbarActions.append(
+          el('button', { class: 'topbar__backBtn', type: 'button', 'aria-label': 'Back', onClick: () => { hapticLight(); location.hash = '#settings'; } }, '←')
+        );
+        await renderHelp(ctx);
       } else {
         location.hash = '#inbox';
       }
