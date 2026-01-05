@@ -45,6 +45,14 @@ export async function renderInbox(ctx) {
       await renderInbox(ctx);
     },
     onArchive: async (todo) => {
+      if (todo.protected) {
+        openModal(modalHost, {
+          title: 'Task Protected',
+          content: el('div', {}, 'This task is protected. Please uncheck "Protect task" in the editor to archive it.'),
+          actions: [{ label: 'OK', class: 'btn btn--primary', onClick: () => true }]
+        });
+        return;
+      }
       const ok = await confirm(modalHost, {
         title: 'Archive todo?',
         message: 'You can restore it later from Archive.',
@@ -71,6 +79,14 @@ export async function renderInbox(ctx) {
           return true;
         } },
         { label: 'Archive', class: 'btn btn--danger', onClick: async () => {
+          if (todo.protected) {
+            openModal(modalHost, {
+              title: 'Task Protected',
+              content: el('div', {}, 'This task is protected. Please uncheck "Protect task" in the editor to archive it.'),
+              actions: [{ label: 'OK', class: 'btn btn--primary', onClick: () => true }]
+            });
+            return true;
+          }
           const ok = await confirm(modalHost, {
             title: 'Archive todo?',
             message: 'You can restore it later from Archive.',
