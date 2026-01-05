@@ -24,6 +24,7 @@ export async function renderSettings(ctx) {
 
   const settings = await db.settings.get();
   const isLight = settings.theme === 'light';
+  const compressImages = settings.compressImages !== false; // Default to true
 
   const themeToggle = el('input', {
     type: 'checkbox',
@@ -35,6 +36,16 @@ export async function renderSettings(ctx) {
     const nextTheme = themeToggle.checked ? 'light' : 'dark';
     await db.settings.put({ ...settings, theme: nextTheme });
     applyTheme(nextTheme);
+  });
+
+  const compressToggle = el('input', {
+    type: 'checkbox',
+    checked: compressImages ? 'checked' : null,
+    'aria-label': 'Compress images'
+  });
+
+  compressToggle.addEventListener('change', async () => {
+    await db.settings.put({ ...await db.settings.get(), compressImages: compressToggle.checked });
   });
 
   const exportBtn = el('button', { class: 'btn btn--primary', type: 'button', onClick: exportData }, 'Export data (JSON)');
@@ -49,6 +60,10 @@ export async function renderSettings(ctx) {
       el('div', { class: 'row' },
         el('div', { class: 'small' }, 'Light mode'),
         themeToggle
+      ),
+      el('div', { class: 'row' },
+        el('div', { class: 'small' }, 'Compress images (save space)'),
+        compressToggle
       )
     ),
     el('div', { class: 'card stack' },

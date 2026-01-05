@@ -4,6 +4,51 @@ import { confirm } from './confirm.js';
 import { newAttachment, newTodo, Priority, nowIso } from '../data/models.js';
 import { compareTodos, maxOrderFor } from '../logic/sorting.js';
 
+async function compressImage(file) {
+  // Max dimensions
+  const MAX_WIDTH = 1280;
+  const MAX_HEIGHT = 1280;
+  const QUALITY = 0.8;
+
+  if (!file.type.startsWith('image/')) return file;
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.src = url;
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let w = img.width;
+      let h = img.height;
+
+      if (w > MAX_WIDTH || h > MAX_HEIGHT) {
+        const ratio = w / h;
+        if (w > h) {
+          w = MAX_WIDTH;
+          h = w / ratio;
+        } else {
+          h = MAX_HEIGHT;
+          w = h * ratio;
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      
+      canvas.toBlob((blob) => {
+        resolve(blob || file); // Fallback to original if failure
+      }, 'image/jpeg', QUALITY);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(file);
+    };
+  });
+}
+
 function priorityOptions(select, value) {
   const opts = [Priority.P0, Priority.P1, Priority.P2, Priority.P3];
   const labels = {
@@ -100,8 +145,20 @@ export async function openTodoEditor({
       // We already created one in newTodo().
     }
 
+    const settings = await db.settings.get();
+    const shouldCompress = settings.compressImages !== false;
+
     for (const f of files) {
-      const att = newAttachment({ todoId: todo.id, blob: f, name: f.name, type: f.type });
+      let blob = f;
+      if (shouldCompress) {
+        try {
+          blob = await compressImage(f);
+        } catch (e) {
+          console.error('Compression failed', e);
+        }
+      }
+      
+      const att = newAttachment({ todoId: todo.id, blob, name: f.name, type: blob.type });
       await db.attachments.put(att);
       existingAttachments.push(att);
     }
