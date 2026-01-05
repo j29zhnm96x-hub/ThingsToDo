@@ -70,6 +70,7 @@ export async function autoArchiveCompleted(db) {
       const todo = await db.todos.get(t.id);
       if (!todo) continue;
       if (todo.archived) continue;
+      if (todo.protected) continue; // Skip protected tasks
 
       await db.todos.put({
         ...todo,

@@ -35,7 +35,10 @@ export async function renderProjects(ctx) {
       },
         el('div', { class: 'projectCard__row' },
           el('div', { class: 'projectCard__info' },
-            el('span', { class: 'projectCard__name' }, p.name),
+            el('span', { class: 'projectCard__name' }, 
+              p.name,
+              p.protected ? el('img', { src: 'assets/shield.PNG', class: 'icon-protected', alt: 'Protected' }) : null
+            ),
             activeCount > 0 ? el('span', { class: 'projectCard__count' }, `${activeCount} active`) : null
           ),
           el('button', {
@@ -52,28 +55,34 @@ export async function renderProjects(ctx) {
   main.append(el('div', { class: 'stack' }, projects.length ? list : emptyState('No projects yet', 'Tap the + button above to create your first project')));
 
   function openProjectMenu(project) {
-    const renameBtn = el('button', { class: 'btn', type: 'button' }, 'Rename');
+    const editBtn = el('button', { class: 'btn', type: 'button' }, 'Edit');
     const deleteBtn = el('button', { class: 'btn btn--danger', type: 'button' }, 'Delete');
 
-    renameBtn.addEventListener('click', () => openRename(project));
+    editBtn.addEventListener('click', () => openEdit(project));
     deleteBtn.addEventListener('click', () => openDelete(project));
 
     openModal(modalHost, {
       title: project.name,
       content: el('div', { class: 'stack' },
         el('div', { class: 'small' }, 'Project actions'),
-        renameBtn,
+        editBtn,
         deleteBtn
       ),
       actions: [{ label: 'Close', class: 'btn btn--ghost', onClick: () => true }]
     });
   }
 
-  function openRename(project) {
-    const input = el('input', { class: 'input', value: project.name, 'aria-label': 'New project name' });
+  function openEdit(project) {
+    const input = el('input', { class: 'input', value: project.name, 'aria-label': 'Project name' });
+    const protectedInput = el('input', { type: 'checkbox', checked: project.protected ? 'checked' : null, 'aria-label': 'Protect project' });
+
     openModal(modalHost, {
-      title: 'Rename Project',
-      content: el('div', { class: 'stack' }, el('label', { class: 'label' }, el('span', {}, 'Name'), input)),
+      title: 'Edit Project',
+      content: el('div', { class: 'stack' }, 
+        el('label', { class: 'label' }, el('span', {}, 'Name'), input),
+        el('label', { class: 'label' }, el('span', {}, 'Protect project'), protectedInput),
+        el('div', { class: 'small', style: { marginTop: '-0.5rem', color: 'var(--text-muted)' } }, 'Protected projects cannot be deleted easily.')
+      ),
       actions: [
         { label: 'Cancel', class: 'btn btn--ghost', onClick: () => true },
         {
@@ -82,7 +91,7 @@ export async function renderProjects(ctx) {
           onClick: async () => {
             const name = input.value.trim();
             if (!name) return false;
-            await db.projects.put({ ...project, name });
+            await db.projects.put({ ...project, name, protected: protectedInput.checked });
             await renderProjects(ctx);
             return true;
           }
@@ -93,6 +102,15 @@ export async function renderProjects(ctx) {
   }
 
   async function openDelete(project) {
+    if (project.protected) {
+      openModal(modalHost, {
+        title: 'Project Protected',
+        content: el('div', {}, 'This project is protected. Please uncheck "Protect project" in the edit menu to delete it.'),
+        actions: [{ label: 'OK', class: 'btn btn--primary', onClick: () => true }]
+      });
+      return;
+    }
+
     // Confirmation prompt offering:
     // - Move its todos to Inbox
     // - OR archive its todos

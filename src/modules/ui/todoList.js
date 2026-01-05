@@ -63,7 +63,10 @@ export function renderTodoList({
         onTap?.(t);
       }
     },
-      el('div', { class: t.completed ? 'todo__title todo__title--done' : 'todo__title' }, t.title)
+      el('div', { class: t.completed ? 'todo__title todo__title--done' : 'todo__title' }, 
+        t.title,
+        t.protected ? el('img', { src: 'assets/shield.PNG', class: 'icon-protected', alt: 'Protected' }) : null
+      )
     );
 
     const noteIcon = t.notes ? el('span', { class: 'todo__noteIcon', 'aria-label': 'Has notes' }, '✏️') : null;

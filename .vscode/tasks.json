@@ -1,0 +1,14 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "append_css",
+			"type": "shell",
+			"command": "Add-Content",
+			"args": [
+				"src/styles.css",
+				"\n.icon-protected {\n  width: 18px;\n  height: 18px;\n  object-fit: contain;\n  vertical-align: middle;\n  margin-left: 6px;\n  opacity: 0.8;\n}\n"
+			]
+		}
+	]
+}

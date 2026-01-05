@@ -41,6 +41,14 @@ export async function renderProjectDetail(ctx, projectId) {
         await renderProjectDetail(ctx, projectId);
       },
       onDelete: async (todo) => {
+        if (todo.protected) {
+          openModal(modalHost, {
+            title: 'Task Protected',
+            content: el('div', {}, 'This task is protected. Please uncheck "Protect task" in the editor to delete it.'),
+            actions: [{ label: 'OK', class: 'btn btn--primary', onClick: () => true }]
+          });
+          return;
+        }
         const ok = await confirm(modalHost, {
           title: 'Delete item?',
           message: `Delete "${todo.title}"?`,
@@ -168,7 +176,10 @@ function renderChecklist({ todos, onToggleCompleted, onDelete }) {
     let pressStartTime = 0;
     const LONG_PRESS_DURATION = 1500; // 1.5 seconds
 
-    const textSpan = el('span', { class: 'checklist__text' }, t.title);
+    const textSpan = el('span', { class: 'checklist__text' }, 
+      t.title,
+      t.protected ? el('img', { src: 'assets/shield.PNG', class: 'icon-protected', alt: 'Protected' }) : null
+    );
 
     const handlePressStart = (e) => {
       pressStartTime = Date.now();

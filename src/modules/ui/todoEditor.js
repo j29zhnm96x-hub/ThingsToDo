@@ -95,6 +95,7 @@ export async function openTodoEditor({
 
   const dueInput = el('input', { class: 'input', type: 'date', value: formatDateInput(todo.dueDate), 'aria-label': 'Due date' });
   const completedInput = el('input', { type: 'checkbox', checked: todo.completed ? 'checked' : null, 'aria-label': 'Completed' });
+  const protectedInput = el('input', { type: 'checkbox', checked: todo.protected ? 'checked' : null, 'aria-label': 'Protect task' });
 
   // iOS: use file input (camera roll). We keep it simple and reliable.
   const fileInput = el('input', { class: 'input', type: 'file', accept: 'image/*', multiple: 'multiple', 'aria-label': 'Attach images' });
@@ -181,6 +182,13 @@ export async function openTodoEditor({
       el('span', {}, 'Completed'),
       completedInput
     ),
+    el('label', { class: 'label' },
+      el('span', {}, 'Protect task'),
+      protectedInput
+    ),
+    el('div', { class: 'small', style: { marginTop: '-0.5rem', marginBottom: '0.5rem', color: 'var(--text-muted)' } }, 
+      'Protected tasks cannot be deleted easily and stay in the completed list.'
+    ),
     el('div', { class: 'hr' }),
     el('label', { class: 'label' }, el('span', {}, 'Add images'), fileInput),
     thumbGrid,
@@ -199,6 +207,7 @@ export async function openTodoEditor({
     todo.priority = prioritySelect.value;
     todo.dueDate = toIsoDateOrNull(dueInput.value);
     todo.completed = !!completedInput.checked;
+    todo.protected = !!protectedInput.checked;
 
     // Manual order management:
     // - Default sort: priority -> order -> createdAt
@@ -226,6 +235,15 @@ export async function openTodoEditor({
   }
 
   async function deleteTodo() {
+    if (todo.protected) {
+      openModal(modalHost, {
+        title: 'Task Protected',
+        content: el('div', {}, 'This task is protected. Please uncheck "Protect task" in the editor to delete it.'),
+        actions: [{ label: 'OK', class: 'btn btn--primary', onClick: () => true }]
+      });
+      return false;
+    }
+
     const ok = await confirm(modalHost, {
       title: 'Delete todo?',
       message: 'This will permanently delete the todo and its images.',

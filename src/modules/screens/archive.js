@@ -111,15 +111,27 @@ export async function renderArchive(ctx) {
         longPressTriggered = true;
         hapticLight();
         
+        const unprotected = groupTodos.filter(t => !t.protected);
+        const protectedCount = groupTodos.length - unprotected.length;
+
+        if (unprotected.length === 0 && protectedCount > 0) {
+             openModal(modalHost, {
+                title: 'Group Protected',
+                content: el('div', {}, 'All tasks in this group are protected and cannot be deleted.'),
+                actions: [{ label: 'OK', class: 'btn btn--primary', onClick: () => true }]
+              });
+             return;
+        }
+
         const ok = await confirm(modalHost, {
           title: 'Delete group?',
-          message: `Delete all ${groupTodos.length} archived todos from ${date}?`,
-          confirmLabel: 'Delete All',
+          message: `Delete ${unprotected.length} archived todos from ${date}?` + (protectedCount ? ` (${protectedCount} protected items will be kept)` : ''),
+          confirmLabel: 'Delete',
           danger: true
         });
         
         if (ok) {
-          await recycleTodos(db, groupTodos);
+          await recycleTodos(db, unprotected);
           await renderArchive(ctx);
         }
       }, 1000);
@@ -196,6 +208,14 @@ export async function renderArchive(ctx) {
         await renderArchive(ctx);
       },
       onDelete: async (todo) => {
+        if (todo.protected) {
+          openModal(modalHost, {
+            title: 'Task Protected',
+            content: el('div', {}, 'This task is protected. Please uncheck "Protect task" in the editor to delete it.'),
+            actions: [{ label: 'OK', class: 'btn btn--primary', onClick: () => true }]
+          });
+          return;
+        }
         const ok = await confirm(modalHost, {
           title: 'Delete archived todo?',
           message: 'This will permanently delete the todo and its images.',
@@ -228,6 +248,14 @@ export async function renderArchive(ctx) {
             return true;
           } },
           { label: 'Delete', class: 'btn btn--danger', onClick: async () => {
+            if (todo.protected) {
+              openModal(modalHost, {
+                title: 'Task Protected',
+                content: el('div', {}, 'This task is protected. Please uncheck "Protect task" in the editor to delete it.'),
+                actions: [{ label: 'OK', class: 'btn btn--primary', onClick: () => true }]
+              });
+              return true;
+            }
             const ok = await confirm(modalHost, {
               title: 'Delete archived todo?',
               message: 'This will permanently delete the todo and its images.',
