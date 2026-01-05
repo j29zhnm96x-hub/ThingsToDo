@@ -217,6 +217,7 @@ function quickAddChecklist({ modalHost, db, projectId, onCreated }) {
   openModal(modalHost, {
     title: 'Add item',
     content: input,
+    align: 'top',
     actions: [
       { label: 'Cancel', class: 'btn btn--ghost', onClick: () => true },
       {

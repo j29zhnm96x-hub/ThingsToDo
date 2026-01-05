@@ -796,6 +796,7 @@ button { -webkit-tap-highlight-color: transparent; }
   animation: modalFadeIn 200ms ease;
 }
 .modalHost[aria-hidden="false"] { display: grid; align-items: end; }
+.modalHost[data-align="top"] { align-items: start; }
 
 @keyframes modalFadeIn {
   from { opacity: 0; }
@@ -804,6 +805,11 @@ button { -webkit-tap-highlight-color: transparent; }
 
 @keyframes modalSlideUp {
   from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes modalSlideDown {
+  from { transform: translateY(-100%); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
 
@@ -819,6 +825,9 @@ button { -webkit-tap-highlight-color: transparent; }
   overscroll-behavior-y: contain;
   scrollbar-width: none;
   animation: modalSlideUp 300ms ease;
+}
+.modalHost[data-align="top"] .modal {
+  animation: modalSlideDown 300ms ease;
 }
 .modal::-webkit-scrollbar { display: none; }
 

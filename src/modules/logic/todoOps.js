@@ -59,16 +59,23 @@ export async function autoArchiveCompleted(db) {
   const DAY_MS = 24 * 60 * 60 * 1000;
 
   let archivedCount = 0;
-  for (const todo of allTodos) {
-    if (!todo.completed || !todo.completedAt) continue;
+  for (const t of allTodos) {
+    if (!t.completed || !t.completedAt) continue;
     
-    const completedTime = new Date(todo.completedAt).getTime();
+    const completedTime = new Date(t.completedAt).getTime();
+    if (isNaN(completedTime)) continue;
+
     if (now - completedTime > DAY_MS) {
+      // Fetch fresh to ensure we have the latest state and all fields
+      const todo = await db.todos.get(t.id);
+      if (!todo) continue;
+      if (todo.archived) continue;
+
       await db.todos.put({
         ...todo,
         archived: true,
         archivedAt: new Date().toISOString(),
-        archivedFromProjectId: todo.projectId
+        archivedFromProjectId: todo.projectId ?? null
       });
       archivedCount++;
     }

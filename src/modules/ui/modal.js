@@ -3,11 +3,12 @@ import { hapticLight } from './haptic.js';
 
 // Simple bottom-sheet modal with focus management.
 
-export function openModal(modalHost, { title, content, actions = [], onClose }) {
+export function openModal(modalHost, { title, content, actions = [], onClose, align = 'bottom' }) {
   const previouslyFocused = document.activeElement;
 
   clear(modalHost);
   modalHost.setAttribute('aria-hidden', 'false');
+  modalHost.dataset.align = align;
   document.body.style.overflow = 'hidden'; // Lock body scroll
 
   const modal = el('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true', 'aria-label': title || 'Dialog' });
