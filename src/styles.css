@@ -645,7 +645,7 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 
 .completedStack__line {
-  width: 24px;
+  width: 120px;
   height: 3px;
   border-radius: 2px;
   background: var(--ok);
