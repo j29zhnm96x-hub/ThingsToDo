@@ -1051,3 +1051,37 @@ html[data-theme='light'] .projectCard[data-type='checklist'] {
   background-color: #a855f7;
 }
 
+
+/* Focus Mode (Zen) */
+body.focus-mode .topbar,
+body.focus-mode .tabbar {
+  display: none !important;
+}
+
+body.focus-mode .main {
+  padding-top: calc(env(safe-area-inset-top) + 16px);
+  padding-bottom: calc(env(safe-area-inset-bottom) + 16px);
+}
+
+.focus-exit-btn {
+  display: none;
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000;
+  background: var(--primary);
+  color: white;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  font-size: 24px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+body.focus-mode .focus-exit-btn {
+  display: flex;
+}
+

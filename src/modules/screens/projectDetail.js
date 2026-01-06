@@ -7,6 +7,7 @@ import { openTodoMenu } from '../ui/todoMenu.js';
 import { openTodoInfo } from '../ui/todoInfo.js';
 import { openModal } from '../ui/modal.js';
 import { newTodo } from '../data/models.js';
+import { hapticLight } from '../ui/haptic.js';
 
 async function buildProjectsById(db) {
   const projects = await db.projects.list();
@@ -62,8 +63,18 @@ export async function renderProjectDetail(ctx, projectId) {
     });
 
     const hint = el('div', { class: 'checklist__hint' }, 'Double tap to add');
+    
+    // Exit Focus Mode Button (only visible in focus mode via CSS)
+    const exitFocusBtn = el('button', {
+      class: 'focus-exit-btn', 
+      'aria-label': 'Exit Focus Mode',
+      onClick: () => { 
+        hapticLight();
+        document.body.classList.remove('focus-mode');
+      }
+    }, '✕'); // simple X icon
 
-    const container = el('div', { class: 'stack' }, listEl, hint);
+    const container = el('div', { class: 'stack' }, listEl, hint, exitFocusBtn);
 
     main.append(container);
 

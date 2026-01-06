@@ -50,6 +50,8 @@ export function initApp(root) {
       // Ensure DB is ready once at startup.
       await db.ready();
 
+      document.body.classList.remove('focus-mode');
+
       // Auto-archive completed todos older than 24h (runs on each navigation, but fast)
       await autoArchiveCompleted(db);
       // Empty bin items older than 24h
@@ -94,6 +96,10 @@ export function initApp(root) {
             topbarActions.append(
               el('button', { class: 'topbar__addBtn', type: 'button', 'aria-label': 'Add todo', onClick: () => { hapticLight(); ctx.openTodoEditor({ mode: 'create', projectId: project.id }); } }, '+')
             );
+          } else {
+             topbarActions.append(
+               el('button', { class: 'iconBtn', style: { fontSize: '1.2rem', marginRight: '8px' }, type: 'button', 'aria-label': 'Focus Mode', onClick: () => { hapticLight(); document.body.classList.add('focus-mode'); } }, '⛶')
+             );
           }
         }
         await renderProjectDetail(ctx, route.params.projectId);
