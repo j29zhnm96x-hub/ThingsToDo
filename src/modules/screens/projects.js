@@ -2,7 +2,7 @@ import { el, clear, emptyState } from '../ui/dom.js';
 import { openModal } from '../ui/modal.js';
 import { confirm } from '../ui/confirm.js';
 import { newProject } from '../data/models.js';
-import { hapticLight } from '../ui/haptic.js';
+import { hapticLight, hapticSelection } from '../ui/haptic.js';
 import { scheduleChecklistReminder } from '../notifications.js';
 
 export async function renderProjects(ctx) {
@@ -10,6 +10,19 @@ export async function renderProjects(ctx) {
   clear(main);
 
   const projects = await db.projects.list();
+
+  // Normalize sortOrder: older projects (created before reordering was added) 
+  // used ISO strings. We want to sort by that if numbers aren't set.
+  projects.sort((a, b) => {
+    // If both are numbers, compare numbers
+    if (typeof a.sortOrder === 'number' && typeof b.sortOrder === 'number') {
+      return a.sortOrder - b.sortOrder;
+    }
+    // Fallback to string comparison (ISO dates work fine)
+    if (a.sortOrder < b.sortOrder) return -1;
+    if (a.sortOrder > b.sortOrder) return 1;
+    return 0;
+  });
 
   // Get active todo counts for each project
   const projectCounts = new Map();
@@ -19,15 +32,150 @@ export async function renderProjects(ctx) {
     projectCounts.set(p.id, activeCount);
   }
 
-  const list = el('div', { class: 'list' },
-    projects.map((p) => {
+  const list = el('div', { class: 'list' });
+  
+  // Drag & Drop state
+  let pointerId = null;
+  let dragged = null;
+  let placeholder = null;
+  let startY = 0;
+  let offsetY = 0;
+  let rect;
+  let started = false;
+  const threshold = 5;
+
+  const cleanup = () => {
+    if (dragged) {
+      dragged.classList.remove('todo--dragging');
+      dragged.style.width = '';
+      dragged.style.left = '';
+      dragged.style.top = '';
+      dragged.style.height = ''; 
+    }
+    if (placeholder) placeholder.remove();
+    pointerId = null;
+    dragged = null;
+    placeholder = null;
+    started = false;
+  };
+
+  const cardFromEvent = (e) => e.target.closest('.projectCard');
+  const isInteractive = (el) => ['BUTTON', 'INPUT', 'A'].includes(el.tagName) || el.closest('.projectCard__menuBtn');
+
+  list.addEventListener('pointerdown', (e) => {
+    if (pointerId != null) return;
+    const card = cardFromEvent(e);
+    if (!card) return;
+    if (isInteractive(e.target)) return;
+
+    pointerId = e.pointerId;
+    dragged = card;
+    startY = e.clientY;
+    rect = dragged.getBoundingClientRect();
+    offsetY = e.clientY - rect.top;
+    try { dragged.setPointerCapture(pointerId); } catch { /* ignore */ }
+  });
+
+  list.addEventListener('pointermove', (e) => {
+    if (pointerId == null || e.pointerId !== pointerId || !dragged) return;
+
+    const dy = e.clientY - startY;
+    if (!started && Math.abs(dy) < threshold) return;
+
+    if (!started) {
+      started = true;
+      hapticSelection();
+      placeholder = el('div', { class: 'projectCard', style: 'border: 1px dashed var(--border); background: transparent; opacity: 0.5;' });
+      placeholder.style.height = `${rect.height}px`;
+      dragged.parentNode.insertBefore(placeholder, dragged.nextSibling);
+
+      dragged.classList.add('todo--dragging');
+      dragged.style.width = `${rect.width}px`;
+      dragged.style.left = `${rect.left}px`;
+      dragged.style.top = `${rect.top}px`;
+      dragged.style.height = `${rect.height}px`; // Fix height while dragging
+      dragged.style.boxSizing = 'border-box';
+    }
+
+    e.preventDefault();
+    dragged.style.top = `${e.clientY - offsetY}px`;
+
+    // Swap logic
+    const cards = Array.from(list.children).filter(c => c !== dragged && c !== placeholder && c.classList.contains('projectCard'));
+    
+    // Find where to insert placeholder
+    const y = e.clientY;
+    let inserted = false;
+    for (const card of cards) {
+      const r = card.getBoundingClientRect();
+      const mid = r.top + r.height / 2;
+      if (y < mid) {
+        if (placeholder !== card.previousSibling) {
+            hapticSelection();
+            list.insertBefore(placeholder, card);
+        }
+        inserted = true;
+        break;
+      }
+    }
+    if (!inserted) {
+      const last = cards[cards.length - 1];
+      if (last && last.nextSibling !== placeholder) {
+          hapticSelection();
+          list.insertBefore(placeholder, last.nextSibling);
+      } else if (!last) {
+          // List empty? (won't happen if dragging one)
+          list.appendChild(placeholder);
+      }
+    }
+  }, { passive: false });
+
+  list.addEventListener('pointerup', async (e) => {
+    if (pointerId == null || e.pointerId !== pointerId || !dragged) return;
+    
+    dragged.releasePointerCapture(pointerId);
+
+    if (started && placeholder) {
+      hapticLight();
+      list.insertBefore(dragged, placeholder);
+    }
+
+    cleanup();
+
+    if (started) {
+       // Persist order
+       const newOrder = Array.from(list.children)
+           .filter(c => c.dataset.projectId)
+           .map(c => c.dataset.projectId);
+       
+       for(let i=0; i<newOrder.length; i++) {
+           const pid = newOrder[i];
+           const p = projects.find(x => x.id === pid);
+           if (p && p.sortOrder !== i) {
+               p.sortOrder = i;
+               await db.projects.put(p);
+           }
+       }
+    }
+  });
+  
+  list.addEventListener('pointercancel', (e) => {
+     if (pointerId == null || e.pointerId !== pointerId) return;
+     if (started && placeholder && dragged) {
+         list.insertBefore(dragged, placeholder);
+     }
+     cleanup();
+  });
+
+  projects.map((p) => {
       const activeCount = projectCounts.get(p.id) || 0;
       const projectType = p.type || 'default';
-      return el('div', {
+      const card = el('div', {
         class: 'projectCard',
-        dataset: { type: projectType },
+        dataset: { type: projectType, projectId: p.id },
         onClick: (e) => {
           if (e.target.closest('.projectCard__menuBtn')) return;
+          if (Math.abs(e.clientY - startY) > 5) return; // Ignore drag clicks
           hapticLight();
           location.hash = `#project/${p.id}`;
         },
@@ -47,6 +195,7 @@ export async function renderProjects(ctx) {
           }, '⋯')
         )
       );
+      list.appendChild(card);
     })
   );
 
