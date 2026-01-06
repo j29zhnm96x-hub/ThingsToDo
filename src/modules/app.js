@@ -2,7 +2,7 @@ import { router } from './router.js';
 import { db } from './data/db.js';
 import { renderInbox } from './screens/inbox.js';
 import { renderProjects, openCreateProject } from './screens/projects.js';
-import { renderProjectDetail } from './screens/projectDetail.js';
+import { renderProjectDetail, openProjectAddMenu } from './screens/projectDetail.js';
 import { renderArchive } from './screens/archive.js';
 import { renderSettings } from './screens/settings.js';
 import { renderHelp } from './screens/help.js';
@@ -94,7 +94,15 @@ export function initApp(root) {
           );
           if ((project.type ?? 'default') !== 'checklist') {
             topbarActions.append(
-              el('button', { class: 'topbar__addBtn', type: 'button', 'aria-label': 'Add todo', onClick: () => { hapticLight(); ctx.openTodoEditor({ mode: 'create', projectId: project.id }); } }, '+')
+              el('button', { 
+                  class: 'topbar__addBtn', 
+                  type: 'button', 
+                  'aria-label': 'Add item', 
+                  onClick: () => { 
+                      hapticLight(); 
+                      openProjectAddMenu(ctx, project);
+                  } 
+              }, '+')
             );
           } else {
              topbarActions.append(
