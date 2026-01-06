@@ -276,8 +276,8 @@ export async function openTodoEditor({
     }
   });
 
-  // Focus title for fast entry
-  requestAnimationFrame(() => titleInput.focus());
+  // Focus title for fast entry (synchronously to trigger keyboard on mobile)
+  try { titleInput.focus(); } catch (e) { /* ignore */ }
 
   return modal;
 }
