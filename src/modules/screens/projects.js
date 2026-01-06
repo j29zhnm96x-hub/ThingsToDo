@@ -24,12 +24,15 @@ export async function renderProjects(ctx) {
     return 0;
   });
 
-  // Get active todo counts for each project
-  const projectCounts = new Map();
+  // Get todo counts for each project
+  const projectStats = new Map();
   for (const p of projects) {
     const todos = await db.todos.listByProject(p.id);
-    const activeCount = todos.filter((t) => !t.archived && !t.completed).length;
-    projectCounts.set(p.id, activeCount);
+    const nonArchived = todos.filter((t) => !t.archived);
+    const total = nonArchived.length;
+    const completed = nonArchived.filter(t => t.completed).length;
+    const active = total - completed;
+    projectStats.set(p.id, { total, completed, active });
   }
 
   const list = el('div', { class: 'list' });
@@ -176,10 +179,14 @@ export async function renderProjects(ctx) {
   });
 
   projects.forEach((p) => {
-      const activeCount = projectCounts.get(p.id) || 0;
+      const stats = projectStats.get(p.id) || { total: 0, completed: 0, active: 0 };
       const projectType = p.type || 'default';
+      const progress = stats.total > 0 ? (stats.completed / stats.total) * 100 : 0;
+
       const card = el('div', {
         class: 'projectCard',
+        // Make sure it's relative for absolute positioning of bar
+        style: { position: 'relative' },
         dataset: { type: projectType, projectId: p.id },
         onClick: (e) => {
           if (e.target.closest('.projectCard__menuBtn')) return;
@@ -193,7 +200,9 @@ export async function renderProjects(ctx) {
         el('div', { class: 'projectCard__row' },
           el('div', { class: 'projectCard__info' },
             el('span', { class: 'projectCard__name' }, p.name),
-            activeCount > 0 ? el('span', { class: 'projectCard__count' }, `${activeCount} active`) : null
+             stats.active > 0 
+                ? el('span', { class: 'projectCard__count' }, `${stats.active} active`) 
+                : (stats.total > 0 ? el('span', { class: 'projectCard__count' }, `Done`) : null)
           ),
           p.protected ? el('span', { class: 'icon-protected', 'aria-label': 'Protected' }, '🔒') : null,
           el('button', {
@@ -202,7 +211,12 @@ export async function renderProjects(ctx) {
             'aria-label': 'Project options',
             onClick: (e) => { e.stopPropagation(); hapticLight(); openProjectMenu(p); }
           }, '⋯')
-        )
+        ),
+        // Progress Bar
+        stats.total > 0 ? el('div', { 
+            class: 'projectCard__progress', 
+            style: { width: `${progress}%` } 
+        }) : null
       );
       list.appendChild(card);
     });

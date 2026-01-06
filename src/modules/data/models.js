@@ -45,6 +45,7 @@ export function newTodo({ title, projectId }) {
     archived: false,
     archivedAt: null,
     archivedFromProjectId: null,
+    showInInbox: false,
     order: 0,
     createdAt: t,
     updatedAt: t

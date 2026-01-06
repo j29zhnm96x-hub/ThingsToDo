@@ -112,6 +112,11 @@ export async function renderProjectDetail(ctx, projectId) {
       await moveTodo(db, todo, dest);
       await renderProjectDetail(ctx, projectId);
     },
+    onLinkToggle: async (todo) => {
+        // Toggle inbox link
+        await db.todos.put({ ...todo, showInInbox: !todo.showInInbox });
+        await renderProjectDetail(ctx, projectId);
+    },
     onArchive: async (todo) => {
       if (todo.protected) {
         openModal(modalHost, {
@@ -135,10 +140,19 @@ export async function renderProjectDetail(ctx, projectId) {
       });
       await renderProjectDetail(ctx, projectId);
     },
-    onMenu: (todo) => openTodoMenu(modalHost, {
+    onMenu: (todo, { onLinkToggle } = {}) => openTodoMenu(modalHost, {
       title: todo.title || 'Todo',
       actions: [
         { label: 'Edit', class: 'btn', onClick: () => (ctx.openTodoEditor({ mode: 'edit', todoId: todo.id, projectId: todo.projectId, db }), true) },
+        { label: todo.showInInbox ? 'Unlink from Inbox' : 'Link to Inbox', class: 'btn', onClick: async () => {
+             // If onLinkToggle is passed from todoList, use it. Otherwise (if strict) fallback or do nothing.
+             // In this context, we know we are in projectDetail, so we could also just define the logic here inline or call the outer onLinkToggle.
+             // But using the passed one is cleaner if we rely on todoList to pass everything.
+             // Actually, onLinkToggle is defined in the same scope (renderProjectDetail), so we can just use it directly!
+             // We don't strictly *need* to pick it from the argument, but for consistency with others, let's assume we use the outer one.
+             await onLinkToggle(todo);
+             return true;
+        } },
         { label: 'Move', class: 'btn', onClick: async () => {
           const dest = await pickProject(modalHost, { title: 'Move to…', projects, includeInbox: true, initial: todo.projectId ?? null, confirmLabel: 'Move' });
           if (dest !== undefined) {

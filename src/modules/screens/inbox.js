@@ -16,19 +16,27 @@ export async function renderInbox(ctx) {
   const { main, db, modalHost } = ctx;
   clear(main);
 
-  const todos = (await db.todos.listByProject(null)).filter((t) => !t.archived);
+  const allTodos = await db.todos.listActive();
+  const todos = allTodos.filter(t => t.projectId === null || t.showInInbox === true);
   const { projects, map: projectsById } = await buildProjectsById(db);
 
   const list = renderTodoList({
     todos,
     projectsById,
     mode: 'active',
-    onTap: (todo) => openTodoInfo({
-      todo,
-      db,
-      modalHost,
-      onEdit: () => ctx.openTodoEditor({ mode: 'edit', todoId: todo.id, projectId: todo.projectId, db })
-    }),
+    onTap: (todo) => {
+      // If linked card (has project but shown here), navigate to project
+      if (todo.projectId && todo.showInInbox) {
+         location.hash = '#project/' + todo.projectId;
+         return;
+      }
+      openTodoInfo({
+        todo,
+        db,
+        modalHost,
+        onEdit: () => ctx.openTodoEditor({ mode: 'edit', todoId: todo.id, projectId: todo.projectId, db })
+      });
+    },
     onToggleCompleted: async (todo, checked) => {
       await db.todos.put({ 
         ...todo, 
@@ -43,6 +51,11 @@ export async function renderInbox(ctx) {
       if (dest === undefined) return;
       await moveTodo(db, todo, dest);
       await renderInbox(ctx);
+    },
+    onLinkToggle: async (todo) => {
+        // Toggle inbox link
+        await db.todos.put({ ...todo, showInInbox: !todo.showInInbox });
+        await renderInbox(ctx);
     },
     onArchive: async (todo) => {
       if (todo.protected) {
@@ -67,10 +80,25 @@ export async function renderInbox(ctx) {
       });
       await renderInbox(ctx);
     },
-    onMenu: (todo) => openTodoMenu(modalHost, {
+    onMenu: (todo, { onLinkToggle } = {}) => openTodoMenu(modalHost, {
       title: todo.title || 'Todo',
       actions: [
         { label: 'Edit', class: 'btn', onClick: () => (ctx.openTodoEditor({ mode: 'edit', todoId: todo.id, projectId: todo.projectId, db }), true) },
+        // Only show Unlink for Project tasks that are here via link
+        ...(todo.projectId && todo.showInInbox ? [{
+          label: 'Unlink from Inbox', 
+          class: 'btn', 
+          onClick: async () => {
+             // Use the passed onLinkToggle or the one in scope (they are effectively the same logic but let's use the passed one for correctness)
+             if (onLinkToggle) await onLinkToggle(todo);
+             else {
+                 // Fallback if not passed (though it should be)
+                 await db.todos.put({ ...todo, showInInbox: !todo.showInInbox });
+                 await renderInbox(ctx);
+             }
+             return true;
+          }
+        }] : []),
         { label: 'Move', class: 'btn', onClick: async () => {
           const dest = await pickProject(modalHost, { title: 'Move to…', projects, includeInbox: true, initial: todo.projectId ?? null, confirmLabel: 'Move' });
           if (dest === undefined) return false;

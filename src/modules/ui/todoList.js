@@ -13,6 +13,7 @@ export function renderTodoList({
   onRestore,
   onDelete,
   onMenu,
+  onLinkToggle,
   onReorder,
   onTap,
   mode // 'active' | 'archive'
@@ -52,7 +53,7 @@ export function renderTodoList({
       onClick: (e) => {
         e.stopPropagation();
         hapticLight();
-        onMenu?.(t, { onEdit, onMove, onArchive, onRestore, onDelete, mode });
+        onMenu?.(t, { onEdit, onMove, onArchive, onRestore, onDelete, onLinkToggle, mode });
       }
     }, '⋯');
 
@@ -68,6 +69,13 @@ export function renderTodoList({
 
     const noteIcon = t.notes ? el('span', { class: 'todo__noteIcon', 'aria-label': 'Has notes' }, '✏️') : null;
     const protectedIcon = t.protected ? el('span', { class: 'icon-protected', 'aria-label': 'Protected' }, '🔒') : null;
+    
+    // Link icon if showInInbox is true
+    const linkIcon = t.showInInbox ? el('span', { 
+      class: 'icon-protected', // Re-using protected style for size/margin
+      style: { opacity: 0.6 },
+      'aria-label': 'Linked to Inbox' 
+    }, '🔗') : null;
 
     // Due date row removed (days-left pill is inline next to menu)
     const row2 = null;
@@ -191,6 +199,7 @@ export function renderTodoList({
       dueTagInline,
       noteIcon,
       protectedIcon,
+      linkIcon,
       menuBtn
     ),
     row2);

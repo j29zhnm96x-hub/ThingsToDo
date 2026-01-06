@@ -1032,3 +1032,22 @@ html[data-theme='light'] .projectCard[data-type='checklist'] {
   background: none; /* Remove any background */
 }
 
+
+.projectCard__progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  opacity: 0.8;
+  transition: width 0.3s ease;
+  z-index: 2;
+}
+
+.projectCard[data-type='default'] .projectCard__progress {
+  background-color: #fbbf24;
+}
+
+.projectCard[data-type='checklist'] .projectCard__progress {
+  background-color: #a855f7;
+}
+
