@@ -167,7 +167,7 @@ export async function renderProjects(ctx) {
      cleanup();
   });
 
-  projects.map((p) => {
+  projects.forEach((p) => {
       const activeCount = projectCounts.get(p.id) || 0;
       const projectType = p.type || 'default';
       const card = el('div', {
@@ -196,8 +196,7 @@ export async function renderProjects(ctx) {
         )
       );
       list.appendChild(card);
-    })
-  );
+    });
 
   main.append(el('div', { class: 'stack' }, projects.length ? list : emptyState('No projects yet', 'Tap the + button above to create your first project')));
 
