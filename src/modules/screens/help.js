@@ -24,6 +24,11 @@ export function renderHelp(ctx) {
       'Create Projects to organize related tasks. You can also create "Checklist" projects for simple lists (like groceries) where items are simpler and easier to add.'
     ),
 
+    section('🔒 Protected Items', 
+      'Toggle <b>"Protect"</b> in the editor to lock important tasks or projects. <br><br>' +
+      'Protected items cannot be deleted or auto-archived until you unprotect them. They are marked with a lock icon.'
+    ),
+
     section('⚡ Gestures & Shortcuts', 
       '• <b>Double-tap</b> anywhere in a Checklist project to quickly add a new item.<br>' +
       '• <b>Long-press</b> on a date header in the Archive to delete that entire day\'s group.<br>' +
@@ -37,11 +42,11 @@ export function renderHelp(ctx) {
 
     section('🗑️ Bin & Restoration', 
       'If you delete a task or an archived group, it goes to the <b>Bin</b>. <br><br>' +
-      'Items in the Bin are kept for <b>24 hours</b> before being permanently deleted. You can restore them from the Settings page or the Archive screen.'
+      'Items in the Bin are kept for <b>24 hours</b> before being permanently deleted. You can restore them from Settings or the 🗑️ icon in the Archive.'
     ),
 
     section('🔥 Priorities', 
-      'Use priorities (P0, P1, P2, P3) to sort your list. P0 is for urgent items that appear at the top with a red indicator.'
+      'Use priorities (Highest, High, Medium, Low) to sort your list. <b>Highest</b> priority items appear at the top with a red indicator.'
     ),
 
     el('div', { style: 'height: 40px;' }) // Spacer
