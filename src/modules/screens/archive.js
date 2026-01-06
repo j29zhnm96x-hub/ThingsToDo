@@ -26,7 +26,7 @@ export async function renderArchive(ctx) {
     type: 'button', 
     'aria-label': 'Bin', 
     onClick: () => openBinModal(ctx, { onRestore: () => renderArchive(ctx) }) 
-  }, '↺');
+  }, '🗑️');
   topbarActions.append(binBtn);
 
   const archived = await db.todos.listArchived();
