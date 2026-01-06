@@ -260,6 +260,7 @@ export async function openTodoEditor({
   const modal = openModal(modalHost, {
     title: isEdit ? 'Edit Todo' : 'New Todo',
     content,
+    align: 'top',
     actions: [
       isEdit ? { label: 'Delete', class: 'btn btn--danger', onClick: deleteTodo } : null,
       { label: 'Cancel', class: 'btn btn--ghost', onClick: () => true },
