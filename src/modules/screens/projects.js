@@ -42,6 +42,7 @@ export async function renderProjects(ctx) {
   let offsetY = 0;
   let rect;
   let started = false;
+  let ignoreClick = false; // Flag to prevent click after drag
   const threshold = 5;
 
   const cleanup = () => {
@@ -71,6 +72,7 @@ export async function renderProjects(ctx) {
     pointerId = e.pointerId;
     dragged = card;
     startY = e.clientY;
+    ignoreClick = false; // Reset flag
     rect = dragged.getBoundingClientRect();
     offsetY = e.clientY - rect.top;
     try { dragged.setPointerCapture(pointerId); } catch { /* ignore */ }
@@ -84,6 +86,7 @@ export async function renderProjects(ctx) {
 
     if (!started) {
       started = true;
+      ignoreClick = true; // Mark as drag to prevent click
       hapticSelection();
       placeholder = el('div', { class: 'projectCard', style: 'border: 1px dashed var(--border); background: transparent; opacity: 0.5;' });
       placeholder.style.height = `${rect.height}px`;
@@ -135,14 +138,16 @@ export async function renderProjects(ctx) {
     
     dragged.releasePointerCapture(pointerId);
 
-    if (started && placeholder) {
+    const wasStarted = started; // Capture state
+
+    if (wasStarted && placeholder) {
       hapticLight();
       list.insertBefore(dragged, placeholder);
     }
 
     cleanup();
 
-    if (started) {
+    if (wasStarted) {
        // Persist order
        const newOrder = Array.from(list.children)
            .filter(c => c.dataset.projectId)
@@ -156,6 +161,9 @@ export async function renderProjects(ctx) {
                await db.projects.put(p);
            }
        }
+       
+       // Keep ignoreClick true for a short moment to ensure click is skipped
+       setTimeout(() => { ignoreClick = false; }, 100);
     }
   });
   
@@ -175,7 +183,8 @@ export async function renderProjects(ctx) {
         dataset: { type: projectType, projectId: p.id },
         onClick: (e) => {
           if (e.target.closest('.projectCard__menuBtn')) return;
-          if (Math.abs(e.clientY - startY) > 5) return; // Ignore drag clicks
+          if (ignoreClick) return; // Prevent click if dragged
+          if (Math.abs(e.clientY - startY) > 5) return; // Fallback check
           hapticLight();
           location.hash = `#project/${p.id}`;
         },
