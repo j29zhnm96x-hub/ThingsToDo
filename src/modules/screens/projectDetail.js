@@ -8,6 +8,7 @@ import { openTodoInfo } from '../ui/todoInfo.js';
 import { openModal } from '../ui/modal.js';
 import { newTodo } from '../data/models.js';
 import { hapticLight } from '../ui/haptic.js';
+import { openCreateProject } from './projects.js';
 
 async function buildProjectsById(db) {
   const projects = await db.projects.list();
@@ -29,6 +30,60 @@ export async function renderProjectDetail(ctx, projectId) {
   const todos = all.filter((t) => !t.archived).sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
 
   const { projects, map: projectsById } = await buildProjectsById(db);
+
+  // Fetch sub-projects
+  const allProjects = await db.projects.list();
+  const subProjects = allProjects.filter(p => p.parentId === projectId);
+  
+  // Calculate sub-project stats
+  const subProjectStats = new Map();
+  for (const p of subProjects) {
+      const pTodos = await db.todos.listByProject(p.id);
+      const nonArchived = pTodos.filter((t) => !t.archived);
+      const total = nonArchived.length;
+      const completed = nonArchived.filter(t => t.completed).length;
+      const active = total - completed;
+      subProjectStats.set(p.id, { total, completed, active });
+  }
+
+  // Render Sub-projects section
+  let subProjectsGrid = null;
+  if (subProjects.length > 0) {
+      subProjectsGrid = el('div', { class: 'subProjects' });
+      
+      subProjects.forEach(p => {
+          const stats = subProjectStats.get(p.id);
+          const projectType = p.type || 'default';
+          const progress = stats.total > 0 ? (stats.completed / stats.total) * 100 : 0;
+          
+          const card = el('div', {
+            class: 'projectCard',
+            style: { position: 'relative', fontSize: '0.9rem' }, // Slightly smaller for sub-projects
+            dataset: { type: projectType, projectId: p.id },
+            onClick: () => {
+              hapticLight();
+              location.hash = `#project/${p.id}`;
+            }
+          },
+            el('div', { class: 'projectCard__row' },
+              el('div', { class: 'projectCard__info' },
+                el('span', { class: 'projectCard__name' }, p.name),
+                // Simplified stats for sub-projects to save space
+                 stats.active > 0 
+                ? el('span', { class: 'projectCard__count' }, `${stats.active}`) 
+                : (stats.total > 0 ? el('span', { class: 'projectCard__count' }, `✓`) : null)
+              ),
+              p.protected ? el('span', { class: 'icon-protected', 'aria-label': 'Protected' }, '🔒') : null
+            ),
+             // Progress Bar
+            stats.total > 0 ? el('div', { 
+                class: 'projectCard__progress', 
+                style: { width: `${progress}%` } 
+            }) : null
+          );
+          subProjectsGrid.appendChild(card);
+      });
+  }
 
   if ((project.type ?? 'default') === 'checklist') {
     const listEl = renderChecklist({ 
@@ -205,7 +260,48 @@ export async function renderProjectDetail(ctx, projectId) {
     }
   });
 
-  main.append(el('div', { class: 'stack' }, todos.length ? list : el('div', { class: 'card small' }, 'No todos in this project yet. Tap + to add one.')));
+  main.append(el('div', { class: 'stack' }, 
+      subProjectsGrid, // Add sub-projects grid at the top
+      todos.length ? list : el('div', { class: 'card small' }, 'No todos in this project yet. Tap + to add one.')
+  ));
+}
+
+// New function to handle the "+" menu
+export function openProjectAddMenu(ctx, project) {
+    const { modalHost, db } = ctx;
+    
+    // Bottom sheet style
+    openModal(modalHost, {
+        title: 'Add to Project',
+        align: 'bottom',
+        content: el('div', { class: 'stack' }, 
+            el('button', { 
+                class: 'btn btn--primary',
+                style: { justifyContent: 'flex-start', padding: '16px' }, 
+                onClick: () => {
+                   ctx.openTodoEditor({ mode: 'create', projectId: project.id });
+                   return true; // close modal
+                }
+            }, '📄 New Task'),
+             el('button', { 
+                class: 'btn', 
+                style: { justifyContent: 'flex-start', padding: '16px' }, 
+                onClick: () => {
+                   // Open Create Project with parentId preset
+                   openCreateProject({ 
+                       db, 
+                       modalHost, 
+                       parentId: project.id,
+                       onCreated: () => renderProjectDetail(ctx, project.id)
+                   });
+                   return true; // close modal
+                }
+            }, '📁 New Sub-Project')
+        ),
+        actions: [
+            { label: 'Cancel', class: 'btn btn--ghost', onClick: () => true }
+        ]
+    });
 }
 
 function renderChecklist({ todos, onToggleCompleted, onDelete }) {

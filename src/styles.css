@@ -1085,3 +1085,13 @@ body.focus-mode .focus-exit-btn {
   display: flex;
 }
 
+
+.subProjects {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px dashed var(--border);
+}
+
