@@ -9,7 +9,9 @@ export async function renderProjects(ctx) {
   const { main, db, modalHost } = ctx;
   clear(main);
 
-  const projects = await db.projects.list();
+  // List all projects but filter to show only top-level (parentId == null)
+  const allProjects = await db.projects.list();
+  const projects = allProjects.filter(p => !p.parentId);
 
   // Normalize sortOrder: older projects (created before reordering was added) 
   // used ISO strings. We want to sort by that if numbers aren't set.
@@ -343,7 +345,7 @@ export async function renderProjects(ctx) {
   }
 }
 
-export function openCreateProject({ db, modalHost, onCreated }) {
+export function openCreateProject({ db, modalHost, onCreated, parentId = null }) {
   const nameInput = el('input', { class: 'input', placeholder: 'Project name', 'aria-label': 'Project name' });
   const typeSelect = el('select', { class: 'select', 'aria-label': 'Project type' },
     el('option', { value: 'default', selected: 'selected' }, 'Default'),
@@ -370,7 +372,7 @@ export function openCreateProject({ db, modalHost, onCreated }) {
             return false;
           }
           const type = typeSelect.value === 'checklist' ? 'checklist' : 'default';
-          const project = newProject({ name, type });
+          const project = newProject({ name, type, parentId });
           await db.projects.put(project);
           
           if (type === 'checklist') {
