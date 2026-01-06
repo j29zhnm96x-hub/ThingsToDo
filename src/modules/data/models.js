@@ -1,6 +1,7 @@
 // Core data models. Keep these as plain objects for easy export/import.
 
 export const Priority = {
+  URGENT: 'URGENT',
   P0: 'P0',
   P1: 'P1',
   P2: 'P2',

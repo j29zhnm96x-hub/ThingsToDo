@@ -50,8 +50,9 @@ async function compressImage(file) {
 }
 
 function priorityOptions(select, value) {
-  const opts = [Priority.P0, Priority.P1, Priority.P2, Priority.P3];
+  const opts = [Priority.URGENT, Priority.P0, Priority.P1, Priority.P2, Priority.P3];
   const labels = {
+    [Priority.URGENT]: 'Urgent!',
     [Priority.P0]: 'Highest',
     [Priority.P1]: 'High',
     [Priority.P2]: 'Medium',

@@ -1,5 +1,6 @@
 :root {
   /* Priority colors */
+  --pUrgent: #ff0000; /* Urgent */
   --p0: #ef4444; /* Highest (red) */
   --p1: #f97316; /* High (orange) */
   --p2: #eab308; /* Medium (yellow) */
@@ -568,15 +569,27 @@ html[data-theme='light'] .projectCard[data-type='checklist'] {
   background: rgba(34,197,94,0.18);
 }
 
+.todo[data-priority='URGENT'] .todo__check { border-color: var(--pUrgent); }
 .todo[data-priority='P0'] .todo__check { border-color: var(--p0); }
 .todo[data-priority='P1'] .todo__check { border-color: var(--p1); }
 .todo[data-priority='P2'] .todo__check { border-color: var(--p2); }
 .todo[data-priority='P3'] .todo__check { border-color: var(--p3); }
 
+.todo[data-priority='URGENT'] .todo__checkIcon { color: var(--pUrgent); }
 .todo[data-priority='P0'] .todo__checkIcon { color: var(--p0); }
 .todo[data-priority='P1'] .todo__checkIcon { color: var(--p1); }
 .todo[data-priority='P2'] .todo__checkIcon { color: var(--p2); }
 .todo[data-priority='P3'] .todo__checkIcon { color: var(--p3); }
+
+@keyframes urgentFlash {
+  0%, 100% { border-color: #ff0000; box-shadow: 0 0 5px rgba(255, 0, 0, 0.5); }
+  50% { border-color: #ffff00; box-shadow: 0 0 5px rgba(255, 255, 0, 0.5); }
+}
+
+.todo[data-priority='URGENT'] {
+  animation: urgentFlash 0.3s infinite alternate;
+  border-width: 2px;
+}
 
 .todo__check:focus-visible {
   outline: 2px solid #93c5fd;
@@ -763,6 +776,7 @@ html[data-theme='light'] .projectCard[data-type='checklist'] {
   font-weight: 700;
   border: 1px solid rgba(148,163,184,0.25);
 }
+.badge--pUrgent { color: var(--pUrgent); animation: urgentFlash 0.3s infinite alternate; }
 .badge--p0 { color: var(--p0); }
 .badge--p1 { color: var(--p1); }
 .badge--p2 { color: var(--p2); }

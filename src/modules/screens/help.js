@@ -32,7 +32,8 @@ export function renderHelp(ctx) {
     section('⚡ Gestures & Shortcuts', 
       '• <b>Double-tap</b> anywhere in a Checklist project to quickly add a new item.<br>' +
       '• <b>Long-press</b> on a date header in the Archive to delete that entire day\'s group.<br>' +
-      '• <b>Drag & Drop</b> tasks to reorder them within the same priority group.'
+      '• <b>Drag & Drop</b> tasks to reorder them within the same priority group.<br>' +
+      '• <b>Drag & Drop</b> projects on the main screen to reorder them.'
     ),
 
     section('✅ Completion & Archive', 
@@ -46,7 +47,8 @@ export function renderHelp(ctx) {
     ),
 
     section('🔥 Priorities', 
-      'Use priorities (Highest, High, Medium, Low) to sort your list. <b>Highest</b> priority items appear at the top with a red indicator.'
+      'Use priorities (Urgent!, Highest, High, Medium, Low). <br><br>' +
+      '<b>Urgent!</b> items flash rapidly to grab attention. <b>Highest</b> priority items are marked red.'
     ),
 
     el('div', { style: 'height: 40px;' }) // Spacer

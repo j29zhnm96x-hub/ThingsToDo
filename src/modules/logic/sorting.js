@@ -1,4 +1,4 @@
-const PRIORITY_RANK = { P0: 0, P1: 1, P2: 2, P3: 3 };
+const PRIORITY_RANK = { URGENT: -1, P0: 0, P1: 1, P2: 2, P3: 3 };
 
 export function compareTodos(a, b) {
   const pa = PRIORITY_RANK[a.priority] ?? 99;
