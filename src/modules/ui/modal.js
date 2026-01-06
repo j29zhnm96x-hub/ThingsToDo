@@ -3,7 +3,7 @@ import { hapticLight } from './haptic.js';
 
 // Simple bottom-sheet modal with focus management.
 
-export function openModal(modalHost, { title, content, actions = [], onClose, align = 'bottom' }) {
+export function openModal(modalHost, { title, content, actions = [], headerActions = [], onClose, align = 'bottom' }) {
   const previouslyFocused = document.activeElement;
 
   clear(modalHost);
@@ -15,12 +15,24 @@ export function openModal(modalHost, { title, content, actions = [], onClose, al
 
   const header = el('div', { class: 'modal__header' },
     el('div', { class: 'modal__title' }, title || 'Dialog'),
-    el('button', {
-      type: 'button',
-      class: 'iconBtn',
-      'aria-label': 'Close',
-      onClick: () => { hapticLight(); close(); }
-    }, '×')
+    el('div', { style: 'display:flex; align-items:center; gap:8px' },
+      ...headerActions.map(a => el('button', {
+        type: 'button',
+        class: a.class || 'btn',
+        style: a.style || 'padding: 6px 12px; min-height: 32px; font-size: 14px;', // Smaller override for header
+        onClick: async () => {
+          hapticLight();
+          const shouldClose = await a.onClick?.();
+          if (shouldClose !== false) close();
+        }
+      }, a.label)),
+      el('button', {
+        type: 'button',
+        class: 'iconBtn',
+        'aria-label': 'Close',
+        onClick: () => { hapticLight(); close(); }
+      }, '×')
+    )
   );
 
   const body = el('div', { class: 'stack' }, content);

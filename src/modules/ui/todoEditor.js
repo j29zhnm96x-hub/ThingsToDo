@@ -261,6 +261,9 @@ export async function openTodoEditor({
     title: isEdit ? 'Edit Todo' : 'New Todo',
     content,
     align: 'top',
+    headerActions: [
+      { label: 'Save', class: 'btn btn--primary', onClick: save }
+    ],
     actions: [
       isEdit ? { label: 'Delete', class: 'btn btn--danger', onClick: deleteTodo } : null,
       { label: 'Cancel', class: 'btn btn--ghost', onClick: () => true },

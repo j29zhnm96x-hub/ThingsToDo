@@ -239,25 +239,30 @@ function renderChecklist({ todos, onToggleCompleted, onDelete }) {
 function quickAddChecklist({ modalHost, db, projectId, onCreated }) {
   const input = el('input', { class: 'input', placeholder: 'Item name', 'aria-label': 'Item name' });
 
+  const addItem = async () => {
+    const title = input.value.trim();
+    if (!title) {
+      input.focus();
+      return false;
+    }
+    await db.todos.put(newTodo({ title, projectId }));
+    onCreated?.();
+    return true;
+  };
+
   openModal(modalHost, {
     title: 'Add item',
     content: input,
     align: 'top',
+    headerActions: [
+      { label: 'Add', class: 'btn btn--primary', onClick: addItem }
+    ],
     actions: [
       { label: 'Cancel', class: 'btn btn--ghost', onClick: () => true },
       {
         label: 'Add',
         class: 'btn btn--primary',
-        onClick: async () => {
-          const title = input.value.trim();
-          if (!title) {
-            input.focus();
-            return false;
-          }
-          await db.todos.put(newTodo({ title, projectId }));
-          onCreated?.();
-          return true;
-        }
+        onClick: addItem
       }
     ]
   });
