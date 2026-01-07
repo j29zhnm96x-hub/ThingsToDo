@@ -9,6 +9,8 @@ import { openModal } from '../ui/modal.js';
 import { newTodo } from '../data/models.js';
 import { hapticLight } from '../ui/haptic.js';
 import { openCreateProject } from './projects.js';
+import { openProjectMenu } from '../ui/projectMenu.js';
+import { renderProjectCard } from '../ui/projectCard.js';
 
 async function buildProjectsById(db) {
   const projects = await db.projects.list();
@@ -53,50 +55,20 @@ export async function renderProjectDetail(ctx, projectId) {
       
       subProjects.forEach(p => {
           const stats = subProjectStats.get(p.id);
-          const projectType = p.type || 'default';
-          const progress = stats.total > 0 ? (stats.completed / stats.total) * 100 : 0;
-          
-          const card = el('div', {
-            class: 'projectCard',
-            style: { position: 'relative' },
-            dataset: { type: projectType, projectId: p.id },
-            onClick: () => {
+
+          const card = renderProjectCard({
+            project: p,
+            stats,
+            onOpen: () => {
               hapticLight();
               location.hash = `#project/${p.id}`;
+            },
+            onMenu: () => {
+              hapticLight();
+              openProjectMenu(modalHost, { db, project: p, onChange: () => renderProjectDetail(ctx, projectId) });
             }
-          },
-            el('div', { class: 'projectCard__row' },
-              el('div', { class: 'projectCard__info' },
-                el('span', { class: 'projectCard__name' }, p.name),
-                 stats.active > 0 
-                ? el('span', { class: 'projectCard__count' }, `${stats.active} active`) 
-                : (stats.total > 0 ? el('span', { class: 'projectCard__count' }, `Done`) : null)
-              ),
-              p.protected ? el('span', { class: 'icon-protected', 'aria-label': 'Protected' }, '🔒') : null,
-              el('button', {
-                type: 'button',
-                class: 'projectCard__menuBtn iconBtn',
-                'aria-label': 'Project options',
-                // Reusing menu logic requires the menu function. 
-                // We'll create a minimal inline menu or we need to extract `openProjectMenu`.
-                // For now, let's keep it consistent: subprojects can be edited/deleted too.
-                onClick: (e) => { 
-                   e.stopPropagation(); 
-                   hapticLight(); 
-                   // We need the context from app to open menus, or we can use the same pattern.
-                   // The openProjectMenu from projects.js is not exported currently.
-                   // Let's implement a simple direct drill-down for now or we can export/import it.
-                   // Assuming user wants full modification rights:
-                   openSubProjectMenu(ctx, p, () => renderProjectDetail(ctx, projectId));
-                 }
-              }, '⋯')
-            ),
-             // Progress Bar
-            stats.total > 0 ? el('div', { 
-                class: 'projectCard__progress', 
-                style: { width: `${progress}%` } 
-            }) : null
-          );
+          });
+
           subProjectsList.appendChild(card);
       });
   }
@@ -402,50 +374,4 @@ function quickAddChecklist({ modalHost, db, projectId, onCreated }) {
 
   // Focus immediately (synchronously) to trigger mobile keyboard during the user gesture.
   try { input.focus(); input.select?.(); } catch (e) { /* ignore */ }
-}
-
-
-
-function openSubProjectMenu(ctx, project, onUpdate) {
-  const { modalHost, db } = ctx;
-  const editBtn = el('button', { class: 'btn', type: 'button' }, 'Edit');
-  const deleteBtn = el('button', { class: 'btn btn--danger', type: 'button' }, 'Delete');
-
-  editBtn.addEventListener('click', () => {
-     const input = el('input', { class: 'input', value: project.name });
-     openModal(modalHost, {
-       title: 'Edit Project',
-       content: el('div', { class: 'stack' }, el('label', { class: 'label' }, el('span', {}, 'Name'), input)),
-       actions: [
-         { label: 'Cancel', class: 'btn btn--ghost', onClick: () => true },
-         { label: 'Save', class: 'btn btn--primary', onClick: async () => {
-            if (!input.value.trim()) return false;
-            await db.projects.put({ ...project, name: input.value.trim() });
-            onUpdate();
-            return true;
-         }}
-       ]
-     });
-  });
-
-  deleteBtn.addEventListener('click', async () => {
-      const ok = await confirm(modalHost, {
-          title: 'Delete sub-project?',
-          message: 'This will delete the sub-project and its tasks.',
-          confirmLabel: 'Delete',
-          danger: true
-      });
-      if (!ok) return;
-      // Recursively delete tasks
-      const todos = await db.todos.listByProject(project.id);
-      for (const t of todos) await db.todos.delete(t.id);
-      await db.projects.delete(project.id);
-      onUpdate();
-  });
-
-  openModal(modalHost, {
-    title: project.name,
-    content: el('div', { class: 'stack' }, editBtn, deleteBtn),
-    actions: [{ label: 'Close', class: 'btn btn--ghost', onClick: () => true }]
-  });
 }

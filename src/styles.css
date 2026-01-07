@@ -1053,9 +1053,13 @@ html[data-theme='light'] .projectCard[data-type='checklist'] {
 
 
 /* Focus Mode (Zen) */
-body.focus-mode .topbar,
 body.focus-mode .tabbar {
   display: none !important;
+}
+
+/* Keep topbar mounted so the focus toggle remains accessible */
+body.focus-mode .topbar {
+  display: flex !important;
 }
 
 body.focus-mode .main {
@@ -1116,7 +1120,7 @@ body.focus-mode .focus-exit-btn {
 body.focus-mode .topbar {
   background: transparent;
   border: none;
-  pointer-events: none;
+  pointer-events: auto;
   backdrop-filter: none;
 }
 
@@ -1127,7 +1131,7 @@ body.focus-mode .topbar > * {
 
 body.focus-mode .topbar .topbar__actions {
   opacity: 1;
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 body.focus-mode .topbar__actions > *:not(.focus-toggle-btn) {
@@ -1158,7 +1162,7 @@ body.focus-mode .topbar {
   border-bottom: none !important;
   box-shadow: none !important;
   backdrop-filter: none !important;
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 body.focus-mode .topbar__title, 
@@ -1172,7 +1176,7 @@ body.focus-mode .topbar__addBtn {
 
 body.focus-mode .topbar__actions {
   visibility: visible; 
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 body.focus-mode .focus-toggle-btn {
