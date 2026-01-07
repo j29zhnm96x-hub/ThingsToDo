@@ -51,6 +51,7 @@ export async function renderProjects(ctx) {
   let rect = null;
   let ignoreClick = false; // Flag to prevent click after drag
   const threshold = 6;
+  let prevTouchAction = '';
 
   const cleanup = () => {
     if (dragged) {
@@ -61,6 +62,10 @@ export async function renderProjects(ctx) {
       dragged.style.height = ''; 
     }
     if (placeholder) placeholder.remove();
+
+    // Restore scrolling behavior.
+    list.style.touchAction = prevTouchAction;
+
     pointerId = null;
     dragged = null;
     placeholder = null;
@@ -96,6 +101,11 @@ export async function renderProjects(ctx) {
       started = true;
       ignoreClick = true; // Mark as drag to prevent click
       hapticSelection();
+
+      // Prevent the browser from treating this as a scroll gesture while dragging.
+      prevTouchAction = list.style.touchAction || '';
+      list.style.touchAction = 'none';
+
       placeholder = el('div', { class: 'projectCard todo--placeholder' });
       placeholder.style.height = `${rect.height}px`;
       dragged.parentNode.insertBefore(placeholder, dragged.nextSibling);
