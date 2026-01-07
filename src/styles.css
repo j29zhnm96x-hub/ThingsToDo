@@ -1095,3 +1095,48 @@ body.focus-mode .focus-exit-btn {
   border-bottom: 1px dashed var(--border);
 }
 
+
+.todo--dragging {
+  margin: 0 !important;
+}
+
+.focus-toggle-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  margin-right: 8px;
+  z-index: 2000;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  color: var(--text);
+  transition: opacity 0.2s;
+}
+
+body.focus-mode .topbar {
+  background: transparent;
+  border: none;
+  pointer-events: none;
+  backdrop-filter: none;
+}
+
+body.focus-mode .topbar > * {
+  opacity: 0;
+  pointer-events: none;
+}
+
+body.focus-mode .topbar .topbar__actions {
+  opacity: 1;
+  pointer-events: none;
+}
+
+body.focus-mode .topbar__actions > *:not(.focus-toggle-btn) {
+  opacity: 0;
+  pointer-events: none;
+}
+
+body.focus-mode .focus-toggle-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+

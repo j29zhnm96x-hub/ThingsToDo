@@ -90,7 +90,19 @@ export function initApp(root) {
         topbarTitle.textContent = project ? project.name : 'Project';
         if (project) {
           topbarActions.append(
-            el('button', { class: 'topbar__backBtn', type: 'button', 'aria-label': 'Back to projects', onClick: () => { hapticLight(); location.hash = '#projects'; } }, '←')
+            el('button', { 
+                class: 'topbar__backBtn', 
+                type: 'button', 
+                'aria-label': 'Back', 
+                onClick: () => { 
+                    hapticLight(); 
+                    if (project.parentId) {
+                        location.hash = '#project/' + project.parentId;
+                    } else {
+                        location.hash = '#projects'; 
+                    }
+                } 
+            }, '←')
           );
           if ((project.type ?? 'default') !== 'checklist') {
             topbarActions.append(
@@ -105,9 +117,17 @@ export function initApp(root) {
               }, '+')
             );
           } else {
-             topbarActions.append(
-               el('button', { class: 'iconBtn', style: { fontSize: '1.2rem', marginRight: '8px' }, type: 'button', 'aria-label': 'Focus Mode', onClick: () => { hapticLight(); document.body.classList.add('focus-mode'); } }, '⛶')
-             );
+             // Focus Mode Toggle
+             const toggleBtn = el('button', { 
+                 class: 'focus-toggle-btn', 
+                 type: 'button', 
+                 'aria-label': 'Focus Mode', 
+                 onClick: () => { 
+                     hapticLight(); 
+                     document.body.classList.toggle('focus-mode'); 
+                 } 
+             }, '⛶');
+             topbarActions.append(toggleBtn);
           }
         }
         await renderProjectDetail(ctx, route.params.projectId);

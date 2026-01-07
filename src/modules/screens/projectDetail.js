@@ -47,9 +47,9 @@ export async function renderProjectDetail(ctx, projectId) {
   }
 
   // Render Sub-projects section
-  let subProjectsGrid = null;
+  let subProjectsList = null;
   if (subProjects.length > 0) {
-      subProjectsGrid = el('div', { class: 'subProjects' });
+      subProjectsList = el('div', { class: 'list', style: { marginBottom: '16px' } });
       
       subProjects.forEach(p => {
           const stats = subProjectStats.get(p.id);
@@ -58,7 +58,8 @@ export async function renderProjectDetail(ctx, projectId) {
           
           const card = el('div', {
             class: 'projectCard',
-            style: { position: 'relative', fontSize: '0.9rem' }, // Slightly smaller for sub-projects
+            // Match the standard relative positioning for progress bar
+            style: { position: 'relative' }, 
             dataset: { type: projectType, projectId: p.id },
             onClick: () => {
               hapticLight();
@@ -68,10 +69,9 @@ export async function renderProjectDetail(ctx, projectId) {
             el('div', { class: 'projectCard__row' },
               el('div', { class: 'projectCard__info' },
                 el('span', { class: 'projectCard__name' }, p.name),
-                // Simplified stats for sub-projects to save space
                  stats.active > 0 
-                ? el('span', { class: 'projectCard__count' }, `${stats.active}`) 
-                : (stats.total > 0 ? el('span', { class: 'projectCard__count' }, `✓`) : null)
+                ? el('span', { class: 'projectCard__count' }, `${stats.active} active`) 
+                : (stats.total > 0 ? el('span', { class: 'projectCard__count' }, `Done`) : null)
               ),
               p.protected ? el('span', { class: 'icon-protected', 'aria-label': 'Protected' }, '🔒') : null
             ),
@@ -81,7 +81,7 @@ export async function renderProjectDetail(ctx, projectId) {
                 style: { width: `${progress}%` } 
             }) : null
           );
-          subProjectsGrid.appendChild(card);
+          subProjectsList.appendChild(card);
       });
   }
 
@@ -119,17 +119,13 @@ export async function renderProjectDetail(ctx, projectId) {
 
     const hint = el('div', { class: 'checklist__hint' }, 'Double tap to add');
     
-    // Exit Focus Mode Button (only visible in focus mode via CSS)
-    const exitFocusBtn = el('button', {
-      class: 'focus-exit-btn', 
-      'aria-label': 'Exit Focus Mode',
-      onClick: () => { 
-        hapticLight();
-        document.body.classList.remove('focus-mode');
-      }
-    }, '✕'); // simple X icon
+    // Exit button in Focus Mode now uses the header toggle, no extra button needed on screen.
 
-    const container = el('div', { class: 'stack' }, listEl, hint, exitFocusBtn);
+    const container = el('div', { class: 'stack' }, 
+       subProjectsList, // Add sub-projects list at the top (if any)
+       listEl, 
+       hint
+    );
 
     main.append(container);
 
@@ -261,7 +257,7 @@ export async function renderProjectDetail(ctx, projectId) {
   });
 
   main.append(el('div', { class: 'stack' }, 
-      subProjectsGrid, // Add sub-projects grid at the top
+      subProjectsList, // Add sub-projects list at the top
       todos.length ? list : el('div', { class: 'card small' }, 'No todos in this project yet. Tap + to add one.')
   ));
 }
