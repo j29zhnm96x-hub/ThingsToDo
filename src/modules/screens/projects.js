@@ -3,6 +3,9 @@ import { openModal } from '../ui/modal.js';
 import { confirm } from '../ui/confirm.js';
 import { newProject } from '../data/models.js';
 import { hapticLight, hapticSelection } from '../ui/haptic.js';
+  let downTime = 0;
+  let scrollBaseline = 0;
+  const appEl = typeof document !== 'undefined' ? document.getElementById('app') : null;
 import { scheduleChecklistReminder } from '../notifications.js';
 import { openProjectMenu } from '../ui/projectMenu.js';
 import { renderProjectCard } from '../ui/projectCard.js';
@@ -16,7 +19,8 @@ export async function renderProjects(ctx) {
   const projects = allProjects.filter(p => !p.parentId);
 
   // Normalize sortOrder: older projects (created before reordering was added) 
-  // used ISO strings. We want to sort by that if numbers aren't set.
+    downTime = Date.now();
+    scrollBaseline = appEl ? appEl.scrollTop : (document.scrollingElement?.scrollTop || 0);
   projects.sort((a, b) => {
     // If both are numbers, compare numbers
     if (typeof a.sortOrder === 'number' && typeof b.sortOrder === 'number') {
@@ -26,6 +30,13 @@ export async function renderProjects(ctx) {
     if (a.sortOrder < b.sortOrder) return -1;
     if (a.sortOrder > b.sortOrder) return 1;
     return 0;
+      // If the app scroller moved, treat this as a scroll, not a drag.
+      const currentScroll = appEl ? appEl.scrollTop : (document.scrollingElement?.scrollTop || 0);
+      if (currentScroll !== scrollBaseline) return;
+
+      // Require a brief hold to start drag to avoid accidental drags during scroll.
+      const HOLD_MS = 120;
+      if (Date.now() - downTime < HOLD_MS) return;
   });
 
   // Get todo counts for each project

@@ -35,7 +35,14 @@ export async function renderProjectDetail(ctx, projectId) {
 
   // Fetch sub-projects
   const allProjects = await db.projects.list();
-  const subProjects = allProjects.filter(p => p.parentId === projectId);
+  const subProjects = allProjects
+    .filter(p => p.parentId === projectId)
+    .sort((a, b) => {
+      if (typeof a.sortOrder === 'number' && typeof b.sortOrder === 'number') return a.sortOrder - b.sortOrder;
+      if (a.sortOrder < b.sortOrder) return -1;
+      if (a.sortOrder > b.sortOrder) return 1;
+      return 0;
+    });
   
   // Calculate sub-project stats
   const subProjectStats = new Map();
@@ -70,6 +77,143 @@ export async function renderProjectDetail(ctx, projectId) {
           });
 
           subProjectsList.appendChild(card);
+      });
+
+      // Enable drag reordering for sub-projects (sibling order)
+      let pointerId = null;
+      let dragged = null;
+      let placeholder = null;
+      let started = false;
+      let startY = 0;
+      let offsetY = 0;
+      let rect = null;
+      let prevTouchAction = '';
+      let downTime = 0;
+      let scrollBaseline = 0;
+      let ignoreClick = false;
+      const threshold = 6;
+      const appEl = typeof document !== 'undefined' ? document.getElementById('app') : null;
+
+      const isInteractive = (node) => !!node.closest('button, input, a, select, textarea') || !!node.closest('.projectCard__menuBtn');
+      const cardFromEvent = (e) => e.target.closest('.projectCard');
+
+      function cleanup() {
+        if (dragged) {
+          dragged.classList.remove('todo--dragging');
+          dragged.style.width = '';
+          dragged.style.left = '';
+          dragged.style.top = '';
+        }
+        if (placeholder) placeholder.remove();
+        document.body.classList.remove('dragging-reorder');
+        subProjectsList.style.touchAction = prevTouchAction;
+        pointerId = null;
+        dragged = null;
+        placeholder = null;
+        started = false;
+        rect = null;
+        setTimeout(() => { ignoreClick = false; }, 100);
+      }
+
+      subProjectsList.addEventListener('pointerdown', (e) => {
+        if (pointerId != null) return;
+        const card = cardFromEvent(e);
+        if (!card) return;
+        if (isInteractive(e.target)) return;
+
+        pointerId = e.pointerId;
+        dragged = card;
+        startY = e.clientY;
+        rect = dragged.getBoundingClientRect();
+        offsetY = e.clientY - rect.top;
+        downTime = Date.now();
+        scrollBaseline = appEl ? appEl.scrollTop : (document.scrollingElement?.scrollTop || 0);
+      });
+
+      subProjectsList.addEventListener('pointermove', (e) => {
+        if (pointerId == null || e.pointerId !== pointerId || !dragged) return;
+
+        const dy = e.clientY - startY;
+        if (!started && Math.abs(dy) < threshold) return;
+
+        if (!started) {
+          const currentScroll = appEl ? appEl.scrollTop : (document.scrollingElement?.scrollTop || 0);
+          if (currentScroll !== scrollBaseline) return;
+          const HOLD_MS = 120;
+          if (Date.now() - downTime < HOLD_MS) return;
+
+          started = true;
+          ignoreClick = true;
+          prevTouchAction = subProjectsList.style.touchAction || '';
+          subProjectsList.style.touchAction = 'none';
+          document.body.classList.add('dragging-reorder');
+          try { dragged.setPointerCapture(pointerId); } catch { /* ignore */ }
+
+          placeholder = el('div', { class: 'projectCard todo--placeholder' });
+          placeholder.style.height = `${rect.height}px`;
+          dragged.parentNode.insertBefore(placeholder, dragged.nextSibling);
+
+          dragged.classList.add('todo--dragging');
+          dragged.style.width = `${rect.width}px`;
+          dragged.style.left = `${rect.left}px`;
+          dragged.style.top = `${rect.top}px`;
+        }
+
+        e.preventDefault();
+        dragged.style.top = `${e.clientY - offsetY}px`;
+
+        const group = Array.from(subProjectsList.querySelectorAll('.projectCard')).filter((n) => n !== dragged && n !== placeholder);
+        if (!group.length) return;
+
+        const y = e.clientY;
+        let inserted = false;
+        for (const card of group) {
+          const r = card.getBoundingClientRect();
+          const mid = r.top + r.height / 2;
+          if (y < mid) {
+            if (placeholder !== card.previousSibling) {
+              subProjectsList.insertBefore(placeholder, card);
+            }
+            inserted = true;
+            break;
+          }
+        }
+        if (!inserted) {
+          const last = group[group.length - 1];
+          if (last && last.nextSibling !== placeholder) {
+            subProjectsList.insertBefore(placeholder, last.nextSibling);
+          }
+        }
+      }, { passive: false });
+
+      subProjectsList.addEventListener('pointerup', async (e) => {
+        if (pointerId == null || e.pointerId !== pointerId || !dragged) return;
+        try { dragged.releasePointerCapture(pointerId); } catch { /* ignore */ }
+
+        const wasStarted = started;
+        if (started && placeholder) {
+          hapticLight();
+          subProjectsList.insertBefore(dragged, placeholder);
+        }
+
+        cleanup();
+
+        if (wasStarted) {
+          const newOrder = Array.from(subProjectsList.querySelectorAll('.projectCard[data-project-id]')).map((n) => n.dataset.projectId);
+          for (let i = 0; i < newOrder.length; i++) {
+            const pid = newOrder[i];
+            const sp = subProjects.find((x) => x.id === pid);
+            if (sp && sp.sortOrder !== i) {
+              sp.sortOrder = i;
+              await db.projects.put(sp);
+            }
+          }
+        }
+      });
+
+      subProjectsList.addEventListener('pointercancel', () => {
+        if (started && placeholder && dragged) subProjectsList.insertBefore(dragged, placeholder);
+        cleanup();
       });
   }
 
