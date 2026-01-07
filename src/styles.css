@@ -279,7 +279,7 @@ html[data-theme='dark'] .topbar__addBtn {
 
 .projectCard:active {
   background: var(--surface2);
-  transform: scale(0.98);
+  /* Removed transform scale to match todo behavior and fix dragging jump */
 }
 
 .projectCard[data-type='default'] {
@@ -1153,44 +1153,38 @@ html, body {
 }
 
 /* Improved Focus Mode Logic */
-html:has(body.focus-mode) .topbar {
-  visibility: hidden;
-}
-
-html:has(body.focus-mode) .topbar .focus-toggle-btn {
-  visibility: visible;
-  pointer-events: auto;
-}
-
-/* Fallback for older browsers without :has */
 body.focus-mode .topbar {
   background: transparent !important;
   border-bottom: none !important;
   box-shadow: none !important;
   backdrop-filter: none !important;
+  pointer-events: none;
 }
 
 body.focus-mode .topbar__title, 
 body.focus-mode .topbar__menuBtn,
 body.focus-mode .topbar__backBtn,
 body.focus-mode .topbar__addBtn {
-  visibility: hidden;
-  opacity: 0;
-  pointer-events: none;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden; /* Ensure they don't block clicks if opacity fails */
 }
 
 body.focus-mode .topbar__actions {
-  visibility: visible;
+  visibility: visible; 
   pointer-events: none;
 }
 
 body.focus-mode .focus-toggle-btn {
   visibility: visible;
-  opacity: 1;
-  pointer-events: auto;
+  opacity: 1 !important;
+  pointer-events: auto !important;
   background: transparent;
   color: var(--text);
   border: none;
   box-shadow: none;
+  /* Ensure it sits on top of scrolling content */
+  position: relative; 
+  z-index: 5000;
 }
 

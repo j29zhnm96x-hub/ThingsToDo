@@ -404,3 +404,48 @@ function quickAddChecklist({ modalHost, db, projectId, onCreated }) {
   try { input.focus(); input.select?.(); } catch (e) { /* ignore */ }
 }
 
+
+
+function openSubProjectMenu(ctx, project, onUpdate) {
+  const { modalHost, db } = ctx;
+  const editBtn = el('button', { class: 'btn', type: 'button' }, 'Edit');
+  const deleteBtn = el('button', { class: 'btn btn--danger', type: 'button' }, 'Delete');
+
+  editBtn.addEventListener('click', () => {
+     const input = el('input', { class: 'input', value: project.name });
+     openModal(modalHost, {
+       title: 'Edit Project',
+       content: el('div', { class: 'stack' }, el('label', { class: 'label' }, el('span', {}, 'Name'), input)),
+       actions: [
+         { label: 'Cancel', class: 'btn btn--ghost', onClick: () => true },
+         { label: 'Save', class: 'btn btn--primary', onClick: async () => {
+            if (!input.value.trim()) return false;
+            await db.projects.put({ ...project, name: input.value.trim() });
+            onUpdate();
+            return true;
+         }}
+       ]
+     });
+  });
+
+  deleteBtn.addEventListener('click', async () => {
+      const ok = await confirm(modalHost, {
+          title: 'Delete sub-project?',
+          message: 'This will delete the sub-project and its tasks.',
+          confirmLabel: 'Delete',
+          danger: true
+      });
+      if (!ok) return;
+      // Recursively delete tasks
+      const todos = await db.todos.listByProject(project.id);
+      for (const t of todos) await db.todos.delete(t.id);
+      await db.projects.delete(project.id);
+      onUpdate();
+  });
+
+  openModal(modalHost, {
+    title: project.name,
+    content: el('div', { class: 'stack' }, editBtn, deleteBtn),
+    actions: [{ label: 'Close', class: 'btn btn--ghost', onClick: () => true }]
+  });
+}
