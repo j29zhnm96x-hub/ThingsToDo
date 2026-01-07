@@ -278,6 +278,9 @@ export function renderTodoList({
     let startY = 0;
     let offsetY = 0;
     let rect = null;
+    let downTime = 0;
+    let scrollBaseline = 0;
+    const appEl = typeof document !== 'undefined' ? document.getElementById('app') : null;
 
     const threshold = 6;
 
@@ -319,17 +322,29 @@ export function renderTodoList({
       startY = e.clientY;
       rect = dragged.getBoundingClientRect();
       offsetY = e.clientY - rect.top;
-      try { dragged.setPointerCapture(pointerId); } catch { /* ignore */ }
+      downTime = Date.now();
+      scrollBaseline = appEl ? appEl.scrollTop : (document.scrollingElement?.scrollTop || 0);
     });
 
     list.addEventListener('pointermove', (e) => {
       if (pointerId == null || e.pointerId !== pointerId || !dragged) return;
 
       const dy = e.clientY - startY;
-      if (!started && Math.abs(dy) < threshold) return;
+      if (!started) {
+        // If the app scroller moved, treat this as a scroll, not a drag.
+        const currentScroll = appEl ? appEl.scrollTop : (document.scrollingElement?.scrollTop || 0);
+        if (currentScroll !== scrollBaseline) return;
+
+        // Require a brief hold to start drag to avoid accidental drags during scroll.
+        const HOLD_MS = 120;
+        if (Date.now() - downTime < HOLD_MS) return;
+
+        if (Math.abs(dy) < threshold) return;
+      }
 
       if (!started) {
         started = true;
+        try { dragged.setPointerCapture(pointerId); } catch { /* ignore */ }
         placeholder = el('div', { class: 'todo todo--placeholder' });
         placeholder.style.height = `${rect.height}px`;
         dragged.parentNode.insertBefore(placeholder, dragged.nextSibling);
