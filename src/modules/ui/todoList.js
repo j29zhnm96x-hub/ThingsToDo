@@ -281,6 +281,7 @@ export function renderTodoList({
     let downTime = 0;
     let scrollBaseline = 0;
     const appEl = typeof document !== 'undefined' ? document.getElementById('app') : null;
+    let prevTouchAction = '';
 
     const threshold = 6;
 
@@ -295,6 +296,11 @@ export function renderTodoList({
         dragged.style.width = '';
       }
       if (placeholder && placeholder.parentNode) placeholder.parentNode.removeChild(placeholder);
+
+      // Restore scrolling behavior
+      document.body.classList.remove('dragging-reorder');
+      list.style.touchAction = prevTouchAction;
+
       pointerId = null;
       dragged = null;
       placeholder = null;
@@ -345,6 +351,12 @@ export function renderTodoList({
       if (!started) {
         started = true;
         try { dragged.setPointerCapture(pointerId); } catch { /* ignore */ }
+
+        // Prevent the browser from treating this as a scroll gesture while dragging.
+        prevTouchAction = list.style.touchAction || '';
+        list.style.touchAction = 'none';
+        document.body.classList.add('dragging-reorder');
+
         placeholder = el('div', { class: 'todo todo--placeholder' });
         placeholder.style.height = `${rect.height}px`;
         dragged.parentNode.insertBefore(placeholder, dragged.nextSibling);
