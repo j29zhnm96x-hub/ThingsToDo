@@ -1140,3 +1140,57 @@ body.focus-mode .focus-toggle-btn {
   pointer-events: auto;
 }
 
+
+html, body {
+  scroll-behavior: auto !important;
+}
+
+.todo--dragging {
+  margin: 0 !important;
+  transform: none !important;
+  transition: none !important;
+  pointer-events: none;
+}
+
+/* Improved Focus Mode Logic */
+html:has(body.focus-mode) .topbar {
+  visibility: hidden;
+}
+
+html:has(body.focus-mode) .topbar .focus-toggle-btn {
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* Fallback for older browsers without :has */
+body.focus-mode .topbar {
+  background: transparent !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+body.focus-mode .topbar__title, 
+body.focus-mode .topbar__menuBtn,
+body.focus-mode .topbar__backBtn,
+body.focus-mode .topbar__addBtn {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+body.focus-mode .topbar__actions {
+  visibility: visible;
+  pointer-events: none;
+}
+
+body.focus-mode .focus-toggle-btn {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  background: transparent;
+  color: var(--text);
+  border: none;
+  box-shadow: none;
+}
+

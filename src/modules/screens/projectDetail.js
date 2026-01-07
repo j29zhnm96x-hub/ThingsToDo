@@ -58,8 +58,7 @@ export async function renderProjectDetail(ctx, projectId) {
           
           const card = el('div', {
             class: 'projectCard',
-            // Match the standard relative positioning for progress bar
-            style: { position: 'relative' }, 
+            style: { position: 'relative' },
             dataset: { type: projectType, projectId: p.id },
             onClick: () => {
               hapticLight();
@@ -73,7 +72,24 @@ export async function renderProjectDetail(ctx, projectId) {
                 ? el('span', { class: 'projectCard__count' }, `${stats.active} active`) 
                 : (stats.total > 0 ? el('span', { class: 'projectCard__count' }, `Done`) : null)
               ),
-              p.protected ? el('span', { class: 'icon-protected', 'aria-label': 'Protected' }, '🔒') : null
+              p.protected ? el('span', { class: 'icon-protected', 'aria-label': 'Protected' }, '🔒') : null,
+              el('button', {
+                type: 'button',
+                class: 'projectCard__menuBtn iconBtn',
+                'aria-label': 'Project options',
+                // Reusing menu logic requires the menu function. 
+                // We'll create a minimal inline menu or we need to extract `openProjectMenu`.
+                // For now, let's keep it consistent: subprojects can be edited/deleted too.
+                onClick: (e) => { 
+                   e.stopPropagation(); 
+                   hapticLight(); 
+                   // We need the context from app to open menus, or we can use the same pattern.
+                   // The openProjectMenu from projects.js is not exported currently.
+                   // Let's implement a simple direct drill-down for now or we can export/import it.
+                   // Assuming user wants full modification rights:
+                   openSubProjectMenu(ctx, p, () => renderProjectDetail(ctx, projectId));
+                 }
+              }, '⋯')
             ),
              // Progress Bar
             stats.total > 0 ? el('div', { 
