@@ -5,6 +5,9 @@ import { confirm } from '../ui/confirm.js';
 import { moveTodo, reorderBucket } from '../logic/todoOps.js';
 import { openTodoMenu } from '../ui/todoMenu.js';
 import { openTodoInfo } from '../ui/todoInfo.js';
+import { renderProjectCard } from '../ui/projectCard.js';
+import { openProjectMenu } from '../ui/projectMenu.js';
+import { hapticLight } from '../ui/haptic.js';
 
 async function buildProjectsById(db) {
   const projects = await db.projects.list();
@@ -19,6 +22,18 @@ export async function renderInbox(ctx) {
   const allTodos = await db.todos.listActive();
   const todos = allTodos.filter(t => t.projectId === null || t.showInInbox === true);
   const { projects, map: projectsById } = await buildProjectsById(db);
+
+  // Projects linked to Inbox
+  const linkedProjects = projects.filter((p) => p.showInInbox);
+  const linkedProjectStats = new Map();
+  for (const p of linkedProjects) {
+    const pTodos = await db.todos.listByProject(p.id);
+    const nonArchived = pTodos.filter((t) => !t.archived);
+    const total = nonArchived.length;
+    const completed = nonArchived.filter((t) => t.completed).length;
+    const active = total - completed;
+    linkedProjectStats.set(p.id, { total, completed, active });
+  }
 
   const list = renderTodoList({
     todos,
@@ -138,9 +153,26 @@ export async function renderInbox(ctx) {
     }
   });
 
-  if (todos.length === 0) {
+  const linkedProjectsList = linkedProjects.length
+    ? el('div', { class: 'list' },
+        ...linkedProjects.map((p) => renderProjectCard({
+          project: p,
+          stats: linkedProjectStats.get(p.id) || { total: 0, completed: 0, active: 0 },
+          onOpen: () => {
+            hapticLight();
+            location.hash = `#project/${p.id}`;
+          },
+          onMenu: () => {
+            hapticLight();
+            openProjectMenu(modalHost, { db, project: p, onChange: () => renderInbox(ctx) });
+          }
+        }))
+      )
+    : null;
+
+  if (todos.length === 0 && linkedProjects.length === 0) {
     main.append(emptyState('Your inbox is empty', 'Tap the + button above to create your first todo'));
   } else {
-    main.append(el('div', { class: 'stack' }, list));
+    main.append(el('div', { class: 'stack' }, linkedProjectsList, todos.length ? list : null));
   }
 }

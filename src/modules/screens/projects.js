@@ -66,6 +66,8 @@ export async function renderProjects(ctx) {
     // Restore scrolling behavior.
     list.style.touchAction = prevTouchAction;
 
+    document.body.classList.remove('dragging-reorder');
+
     pointerId = null;
     dragged = null;
     placeholder = null;
@@ -105,6 +107,8 @@ export async function renderProjects(ctx) {
       // Prevent the browser from treating this as a scroll gesture while dragging.
       prevTouchAction = list.style.touchAction || '';
       list.style.touchAction = 'none';
+
+      document.body.classList.add('dragging-reorder');
 
       placeholder = el('div', { class: 'projectCard todo--placeholder' });
       placeholder.style.height = `${rect.height}px`;

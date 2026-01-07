@@ -27,6 +27,7 @@ export function renderProjectCard({
           : (stats.total > 0 ? el('span', { class: 'projectCard__count' }, 'Done') : null)
       ),
       project.protected ? el('span', { class: 'icon-protected', 'aria-label': 'Protected' }, '🔒') : null,
+      project.showInInbox ? el('span', { class: 'icon-protected', style: { opacity: 0.6 }, 'aria-label': 'Linked to Inbox' }, '🔗') : null,
       el('button', {
         type: 'button',
         class: 'projectCard__menuBtn iconBtn',

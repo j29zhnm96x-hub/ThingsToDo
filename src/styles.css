@@ -629,6 +629,17 @@ html[data-theme='light'] .projectCard[data-type='checklist'] {
   opacity: 0.6;
 }
 
+/* During drag reordering, prevent the app scroller from stealing the gesture */
+body.dragging-reorder .app {
+  overflow: hidden !important;
+  -webkit-overflow-scrolling: auto;
+}
+
+/* A project placeholder should not look like a real card */
+.projectCard.todo--placeholder {
+  background: transparent !important;
+}
+
 .todo__title--done { text-decoration: line-through; opacity: 0.7; }
 
 .todo__titleArea {

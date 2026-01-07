@@ -123,9 +123,14 @@ async function openDeleteProject(modalHost, { db, project, onChange }) {
 
 export function openProjectMenu(modalHost, { db, project, onChange }) {
   const editBtn = el('button', { class: 'btn', type: 'button' }, 'Edit');
+  const linkBtn = el('button', { class: 'btn', type: 'button' }, project.showInInbox ? 'Unlink from Inbox' : 'Link to Inbox');
   const deleteBtn = el('button', { class: 'btn btn--danger', type: 'button' }, 'Delete');
 
   editBtn.addEventListener('click', () => openEditProject(modalHost, { db, project, onChange }));
+  linkBtn.addEventListener('click', async () => {
+    await db.projects.put({ ...project, showInInbox: !project.showInInbox });
+    onChange?.();
+  });
   deleteBtn.addEventListener('click', () => openDeleteProject(modalHost, { db, project, onChange }));
 
   openModal(modalHost, {
@@ -133,6 +138,7 @@ export function openProjectMenu(modalHost, { db, project, onChange }) {
     content: el('div', { class: 'stack' },
       el('div', { class: 'small' }, 'Project actions'),
       editBtn,
+      linkBtn,
       deleteBtn
     ),
     actions: [{ label: 'Close', class: 'btn btn--ghost', onClick: () => true }]

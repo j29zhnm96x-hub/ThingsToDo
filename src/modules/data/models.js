@@ -26,6 +26,7 @@ export function newProject({ name, type = 'default', parentId = null }) {
     name: name.trim(),
     type,
     parentId, // Parent project ID if it is a sub-project
+    showInInbox: false,
     createdAt: t,
     updatedAt: t,
     sortOrder: t // default: by created time
