@@ -274,12 +274,11 @@ html[data-theme='dark'] .topbar__addBtn {
   overflow: hidden;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: background 150ms ease, border-color 150ms ease, transform 100ms ease;
+  transition: background 150ms ease, border-color 150ms ease;
 }
 
-.projectCard:active {
+.projectCard:active:not(.todo--dragging) {
   background: var(--surface2);
-  /* Removed transform scale to match todo behavior and fix dragging jump */
 }
 
 .projectCard[data-type='default'] {
@@ -625,11 +624,23 @@ html[data-theme='light'] .projectCard[data-type='checklist'] {
 }
 
 .todo--dragging {
-  position: fixed;
+  position: fixed !important;
   z-index: 120;
   box-shadow: 0 10px 30px rgba(0,0,0,0.35);
   pointer-events: none;
   touch-action: none;
+  margin: 0 !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+/* Project card specific drag overrides */
+.projectCard.todo--dragging {
+  position: fixed !important;
+  z-index: 120;
+  margin: 0 !important;
+  transform: none !important;
+  transition: none !important;
 }
 
 .todo--placeholder {
@@ -1138,10 +1149,6 @@ body.focus-mode .focus-exit-btn {
 }
 
 
-.todo--dragging {
-  margin: 0 !important;
-}
-
 .focus-toggle-btn {
   background: transparent;
   border: none;
@@ -1185,13 +1192,6 @@ body.focus-mode .focus-toggle-btn {
 
 html, body {
   scroll-behavior: auto !important;
-}
-
-.todo--dragging {
-  margin: 0 !important;
-  transform: none !important;
-  transition: none !important;
-  pointer-events: none;
 }
 
 /* Improved Focus Mode Logic */

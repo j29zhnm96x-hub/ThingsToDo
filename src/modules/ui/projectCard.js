@@ -11,7 +11,6 @@ export function renderProjectCard({
 
   return el('div', {
     class: 'projectCard',
-    style: { position: 'relative' },
     dataset: { type: projectType, projectId: project.id },
     onClick: (e) => {
       if (e.target.closest('.projectCard__menuBtn')) return;

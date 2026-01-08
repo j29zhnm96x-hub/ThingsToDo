@@ -49,7 +49,6 @@ export async function renderProjectDetail(ctx, projectId) {
   // Calculate sub-project stats
   const subProjectStats = new Map();
   for (const p of subProjects) {
-  await compressAttachmentsForArchive(db, todo.id);
       const pTodos = await db.todos.listByProject(p.id);
       const nonArchived = pTodos.filter((t) => !t.archived);
       const total = nonArchived.length;
