@@ -54,13 +54,14 @@ export function newTodo({ title, projectId }) {
   };
 }
 
-export function newAttachment({ todoId, blob, name, type }) {
+export function newAttachment({ todoId, blob, name, type, thumb = null }) {
   return {
     id: uuid(),
     todoId,
     name: name || 'image',
     type: type || blob.type || 'application/octet-stream',
     blob,
+    thumb,
     createdAt: nowIso()
   };
 }

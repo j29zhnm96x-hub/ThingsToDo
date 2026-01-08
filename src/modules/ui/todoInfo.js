@@ -98,17 +98,25 @@ export async function openTodoInfo({ todo, db, modalHost, onEdit }) {
 
   // Images
   let imagesEl = null;
-  const allImageUrls = [];
+  const fullImageUrls = [];
   if (attachments.length > 0) {
     const thumbs = attachments.map((att, index) => {
-      const url = URL.createObjectURL(att.blob);
-      objectUrls.push(url);
-      allImageUrls.push(url);
+      const thumbBlob = att.thumb || att.blob;
+      const thumbUrl = URL.createObjectURL(thumbBlob);
+      objectUrls.push(thumbUrl);
+
+      let fullUrl = thumbUrl;
+      if (thumbBlob !== att.blob) {
+        fullUrl = URL.createObjectURL(att.blob);
+        objectUrls.push(fullUrl);
+      }
+      fullImageUrls.push(fullUrl);
+
       return el('div', { 
         class: 'thumb thumb--clickable',
-        onClick: () => openImageViewer(allImageUrls, index)
+        onClick: () => openImageViewer(fullImageUrls, index)
       },
-        el('img', { src: url, alt: att.name || 'Attachment' })
+        el('img', { src: thumbUrl, alt: att.name || 'Attachment', loading: 'lazy', decoding: 'async' })
       );
     });
     imagesEl = el('div', { class: 'todoInfo__section' },

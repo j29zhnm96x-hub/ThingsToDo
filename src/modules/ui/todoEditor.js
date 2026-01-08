@@ -2,52 +2,11 @@ import { el, formatDateInput, toIsoDateOrNull } from './dom.js';
 import { openModal } from './modal.js';
 import { confirm } from './confirm.js';
 import { newAttachment, newTodo, Priority, nowIso } from '../data/models.js';
-import { compareTodos, maxOrderFor } from '../logic/sorting.js';
+import { maxOrderFor } from '../logic/sorting.js';
+import { compressImageBlob, createThumbnailBlob } from '../utils/image.js';
 
-async function compressImage(file) {
-  // Max dimensions
-  const MAX_WIDTH = 1280;
-  const MAX_HEIGHT = 1280;
-  const QUALITY = 0.8;
-
-  if (!file.type.startsWith('image/')) return file;
-
-  return new Promise((resolve) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.src = url;
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      let w = img.width;
-      let h = img.height;
-
-      if (w > MAX_WIDTH || h > MAX_HEIGHT) {
-        const ratio = w / h;
-        if (w > h) {
-          w = MAX_WIDTH;
-          h = w / ratio;
-        } else {
-          h = MAX_HEIGHT;
-          w = h * ratio;
-        }
-      }
-
-      const canvas = document.createElement('canvas');
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, w, h);
-      
-      canvas.toBlob((blob) => {
-        resolve(blob || file); // Fallback to original if failure
-      }, 'image/jpeg', QUALITY);
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      resolve(file);
-    };
-  });
-}
+const EDIT_COMPRESS_SPEC = { maxSize: 1280, quality: 0.8 };
+const THUMB_COMPRESS_SPEC = { maxSize: 320, quality: 0.6 };
 
 function priorityOptions(select, value) {
   const opts = [Priority.URGENT, Priority.P0, Priority.P1, Priority.P2, Priority.P3];
@@ -107,14 +66,17 @@ export async function openTodoEditor({
     thumbGrid.innerHTML = '';
     const all = [...existingAttachments];
     for (const att of all) {
-      const url = URL.createObjectURL(att.blob);
+      const previewBlob = att.thumb || att.blob;
+      const url = URL.createObjectURL(previewBlob);
       objectUrls.push(url);
       thumbGrid.appendChild(
         el('div', { class: 'thumb' },
-          el('img', { src: url, alt: att.name || 'Attachment' }),
+          el('img', { src: url, alt: att.name || 'Attachment', loading: 'lazy', decoding: 'async' }),
           el('button', {
             type: 'button',
+            class: 'thumb__removeBtn',
             'aria-label': 'Remove image',
+            title: 'Remove',
             onClick: async () => {
               const ok = await confirm(modalHost, {
                 title: 'Remove image?',
@@ -151,16 +113,26 @@ export async function openTodoEditor({
     const shouldCompress = settings.compressImages !== false;
 
     for (const f of files) {
+      const isImage = typeof f.type === 'string' && f.type.startsWith('image/');
       let blob = f;
-      if (shouldCompress) {
+      if (isImage && shouldCompress) {
         try {
-          blob = await compressImage(f);
+          blob = await compressImageBlob(f, EDIT_COMPRESS_SPEC);
         } catch (e) {
           console.error('Compression failed', e);
         }
       }
+
+      let thumb = null;
+      if (isImage) {
+        try {
+          thumb = await createThumbnailBlob(blob, THUMB_COMPRESS_SPEC);
+        } catch (e) {
+          console.error('Thumbnail failed', e);
+        }
+      }
       
-      const att = newAttachment({ todoId: todo.id, blob, name: f.name, type: blob.type });
+      const att = newAttachment({ todoId: todo.id, blob, name: f.name, type: blob.type || f.type, thumb });
       await db.attachments.put(att);
       existingAttachments.push(att);
     }

@@ -25,6 +25,7 @@ export async function renderSettings(ctx) {
   const settings = await db.settings.get();
   const isLight = settings.theme === 'light';
   const compressImages = settings.compressImages !== false; // Default to true
+  const compressArchivedImages = settings.compressArchivedImages !== false; // Default to true
 
   const themeToggle = el('input', {
     type: 'checkbox',
@@ -48,6 +49,16 @@ export async function renderSettings(ctx) {
     await db.settings.put({ ...await db.settings.get(), compressImages: compressToggle.checked });
   });
 
+  const compressArchiveToggle = el('input', {
+    type: 'checkbox',
+    checked: compressArchivedImages ? 'checked' : null,
+    'aria-label': 'Extra compress archived images'
+  });
+
+  compressArchiveToggle.addEventListener('change', async () => {
+    await db.settings.put({ ...await db.settings.get(), compressArchivedImages: compressArchiveToggle.checked });
+  });
+
   const exportBtn = el('button', { class: 'btn btn--primary', type: 'button', onClick: exportData }, 'Export data (JSON)');
   const importBtn = el('button', { class: 'btn', type: 'button', onClick: importData }, 'Import JSON');
   const binBtn = el('button', { class: 'btn', type: 'button', onClick: () => openBinModal(ctx) }, 'Open Bin (Recently Deleted)');
@@ -64,6 +75,10 @@ export async function renderSettings(ctx) {
       el('div', { class: 'row' },
         el('div', { class: 'small' }, 'Compress images (save space)'),
         compressToggle
+      ),
+      el('div', { class: 'row' },
+        el('div', { class: 'small' }, 'Extra compress on archive'),
+        compressArchiveToggle
       )
     ),
     el('div', { class: 'card stack' },
@@ -99,7 +114,8 @@ export async function renderSettings(ctx) {
         name: a.name,
         type: a.type,
         createdAt: a.createdAt,
-        dataUrl: await blobToDataUrl(a.blob)
+        dataUrl: await blobToDataUrl(a.blob),
+        thumbDataUrl: a.thumb ? await blobToDataUrl(a.thumb) : null
       });
     }
 
@@ -165,13 +181,15 @@ export async function renderSettings(ctx) {
             for (const a of (parsed.attachments || [])) {
               if (!a.dataUrl || !a.todoId) continue;
               const blob = await dataUrlToBlob(a.dataUrl);
+              const thumbBlob = a.thumbDataUrl ? await dataUrlToBlob(a.thumbDataUrl) : null;
               await db.attachments.put({
                 id: a.id,
                 todoId: a.todoId,
                 name: a.name,
                 type: a.type,
                 createdAt: a.createdAt,
-                blob
+                blob,
+                thumb: thumbBlob
               });
             }
 

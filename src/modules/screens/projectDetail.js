@@ -13,6 +13,7 @@ import { openProjectMenu } from '../ui/projectMenu.js';
 import { renderProjectCard } from '../ui/projectCard.js';
 import { Priority } from '../data/models.js';
 
+import { compressAttachmentsForArchive } from '../logic/attachments.js';
 async function buildProjectsById(db) {
   const projects = await db.projects.list();
   const map = new Map(projects.map((p) => [p.id, p]));
@@ -48,6 +49,7 @@ export async function renderProjectDetail(ctx, projectId) {
   // Calculate sub-project stats
   const subProjectStats = new Map();
   for (const p of subProjects) {
+  await compressAttachmentsForArchive(db, todo.id);
       const pTodos = await db.todos.listByProject(p.id);
       const nonArchived = pTodos.filter((t) => !t.archived);
       const total = nonArchived.length;
@@ -335,6 +337,7 @@ export async function renderProjectDetail(ctx, projectId) {
         archivedFromProjectId: todo.projectId,
         priority: Priority.P3
       });
+      await compressAttachmentsForArchive(db, todo.id);
       await renderProjectDetail(ctx, projectId);
     },
     onMenu: (todo, { onLinkToggle } = {}) => openTodoMenu(modalHost, {
@@ -379,6 +382,7 @@ export async function renderProjectDetail(ctx, projectId) {
               archivedAt: new Date().toISOString(),
               archivedFromProjectId: todo.projectId
             });
+            await compressAttachmentsForArchive(db, todo.id);
             await renderProjectDetail(ctx, projectId);
           }
           return true;

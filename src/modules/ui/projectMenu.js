@@ -1,6 +1,7 @@
 import { el } from './dom.js';
 import { openModal } from './modal.js';
 import { confirm } from './confirm.js';
+import { compressAttachmentsForArchive } from '../logic/attachments.js';
 
 async function deleteProjectRecursive(db, projectId) {
   const allProjects = await db.projects.list();
@@ -110,6 +111,7 @@ async function openDeleteProject(modalHost, { db, project, onChange }) {
               archivedAt: new Date().toISOString(),
               archivedFromProjectId: project.id
             });
+            await compressAttachmentsForArchive(db, t.id);
           }
 
           await deleteProjectRecursive(db, project.id);

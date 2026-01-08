@@ -1,4 +1,5 @@
 import { maxOrderFor } from './sorting.js';
+import { compressAttachmentsForArchive } from './attachments.js';
 
 // Shared operations that must keep ordering rules consistent.
 // Default sorting:
@@ -78,6 +79,7 @@ export async function autoArchiveCompleted(db) {
         archivedAt: new Date().toISOString(),
         archivedFromProjectId: todo.projectId ?? null
       });
+      await compressAttachmentsForArchive(db, todo.id);
       archivedCount++;
     }
   }

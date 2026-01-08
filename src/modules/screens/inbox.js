@@ -3,6 +3,7 @@ import { renderTodoList } from '../ui/todoList.js';
 import { pickProject } from '../ui/pickProject.js';
 import { confirm } from '../ui/confirm.js';
 import { moveTodo, reorderBucket } from '../logic/todoOps.js';
+import { compressAttachmentsForArchive } from '../logic/attachments.js';
 import { openTodoMenu } from '../ui/todoMenu.js';
 import { openTodoInfo } from '../ui/todoInfo.js';
 import { renderProjectCard } from '../ui/projectCard.js';
@@ -96,6 +97,7 @@ export async function renderInbox(ctx) {
         archivedFromProjectId: todo.projectId,
         priority: Priority.P3
       });
+      await compressAttachmentsForArchive(db, todo.id);
       await renderInbox(ctx);
     },
     onMenu: (todo, { onLinkToggle } = {}) => openTodoMenu(modalHost, {
@@ -145,6 +147,7 @@ export async function renderInbox(ctx) {
             archivedAt: new Date().toISOString(),
             archivedFromProjectId: todo.projectId
           });
+          await compressAttachmentsForArchive(db, todo.id);
           await renderInbox(ctx);
           return true;
         } }
