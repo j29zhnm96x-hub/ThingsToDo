@@ -39,14 +39,12 @@ export async function renderProjects(ctx) {
 
   const list = el('div', { class: 'list' });
   
-  // Touch-friendly drag reordering (reuse inbox todo behavior).
+  // Touch-friendly drag reordering (exact copy of inbox todo behavior).
   let pointerId = null;
   let dragged = null;
   let placeholder = null;
   let started = false;
-  let startX = 0;
   let startY = 0;
-  let offsetX = 0;
   let offsetY = 0;
   let rect = null;
   let downTime = 0;
@@ -54,11 +52,11 @@ export async function renderProjects(ctx) {
   const appEl = typeof document !== 'undefined' ? document.getElementById('app') : null;
   let prevTouchAction = '';
   let ignoreClick = false;
+
   const threshold = 6;
 
+  const isInteractive = (node) => !!node.closest('button, input, a, select, textarea');
   const cardFromEvent = (e) => e.target.closest('.projectCard');
-  const isInteractive = (node) => !!node.closest('button, input, a, select, textarea') || !!node.closest('.projectCard__menuBtn');
-  const cards = () => Array.from(list.querySelectorAll('.projectCard[data-project-id]'));
 
   function cleanup() {
     if (dragged) {
@@ -69,6 +67,7 @@ export async function renderProjects(ctx) {
     }
     if (placeholder && placeholder.parentNode) placeholder.parentNode.removeChild(placeholder);
 
+    // Restore scrolling behavior
     document.body.classList.remove('dragging-reorder');
     list.style.touchAction = prevTouchAction;
 
@@ -79,8 +78,12 @@ export async function renderProjects(ctx) {
     rect = null;
   }
 
+  function getCards() {
+    return Array.from(list.querySelectorAll('.projectCard[data-project-id]'));
+  }
+
   async function finalize() {
-    const orderedIds = cards().map((n) => n.dataset.projectId);
+    const orderedIds = getCards().map((n) => n.dataset.projectId);
     for (let i = 0; i < orderedIds.length; i++) {
       const pid = orderedIds[i];
       const project = projects.find((p) => p.id === pid);
@@ -99,10 +102,8 @@ export async function renderProjects(ctx) {
 
     pointerId = e.pointerId;
     dragged = card;
-    startX = e.clientX;
     startY = e.clientY;
     rect = dragged.getBoundingClientRect();
-    offsetX = e.clientX - rect.left;
     offsetY = e.clientY - rect.top;
     downTime = Date.now();
     scrollBaseline = appEl ? appEl.scrollTop : (document.scrollingElement?.scrollTop || 0);
@@ -114,9 +115,11 @@ export async function renderProjects(ctx) {
 
     const dy = e.clientY - startY;
     if (!started) {
+      // If the app scroller moved, treat this as a scroll, not a drag.
       const currentScroll = appEl ? appEl.scrollTop : (document.scrollingElement?.scrollTop || 0);
       if (currentScroll !== scrollBaseline) return;
 
+      // Require a brief hold to start drag to avoid accidental drags during scroll.
       const HOLD_MS = 120;
       if (Date.now() - downTime < HOLD_MS) return;
 
@@ -128,44 +131,43 @@ export async function renderProjects(ctx) {
       ignoreClick = true;
       try { dragged.setPointerCapture(pointerId); } catch { /* ignore */ }
 
+      // Prevent the browser from treating this as a scroll gesture while dragging.
       prevTouchAction = list.style.touchAction || '';
       list.style.touchAction = 'none';
       document.body.classList.add('dragging-reorder');
 
       placeholder = el('div', { class: 'projectCard todo--placeholder' });
       placeholder.style.height = `${rect.height}px`;
-      placeholder.style.width = `${rect.width}px`;
       dragged.parentNode.insertBefore(placeholder, dragged.nextSibling);
 
       dragged.classList.add('todo--dragging');
       dragged.style.width = `${rect.width}px`;
       dragged.style.left = `${rect.left}px`;
       dragged.style.top = `${rect.top}px`;
-      dragged.style.height = `${rect.height}px`;
     }
 
     e.preventDefault();
 
-    dragged.style.left = `${e.clientX - offsetX}px`;
     dragged.style.top = `${e.clientY - offsetY}px`;
 
-    const group = cards().filter((n) => n !== dragged);
+    const group = getCards().filter((n) => n !== dragged);
     if (!group.length) return;
 
+    // Clamp placeholder movement to the card group.
     const y = e.clientY;
     let inserted = false;
     for (const card of group) {
       const r = card.getBoundingClientRect();
       const mid = r.top + r.height / 2;
       if (y < mid) {
-        if (placeholder && placeholder !== card.previousSibling) {
+        if (placeholder !== card.previousSibling) {
           list.insertBefore(placeholder, card);
         }
         inserted = true;
         break;
       }
     }
-    if (!inserted && placeholder) {
+    if (!inserted) {
       const last = group[group.length - 1];
       if (last && last.nextSibling !== placeholder) {
         list.insertBefore(placeholder, last.nextSibling);
@@ -184,6 +186,7 @@ export async function renderProjects(ctx) {
 
     cleanup();
 
+    // Persist ordering after the DOM is settled.
     if (wasStarted) {
       await finalize();
       setTimeout(() => { ignoreClick = false; }, 50);
@@ -192,6 +195,7 @@ export async function renderProjects(ctx) {
 
   list.addEventListener('pointercancel', (e) => {
     if (pointerId == null || e.pointerId !== pointerId) return;
+    // Put it back where it started.
     if (started && placeholder && dragged) {
       list.insertBefore(dragged, placeholder);
     }
