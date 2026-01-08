@@ -44,7 +44,9 @@ export async function renderProjects(ctx) {
   let dragged = null;
   let placeholder = null;
   let started = false;
+  let startX = 0;
   let startY = 0;
+  let offsetX = 0;
   let offsetY = 0;
   let rect = null;
   let downTime = 0;
@@ -97,8 +99,10 @@ export async function renderProjects(ctx) {
 
     pointerId = e.pointerId;
     dragged = card;
+    startX = e.clientX;
     startY = e.clientY;
     rect = dragged.getBoundingClientRect();
+    offsetX = e.clientX - rect.left;
     offsetY = e.clientY - rect.top;
     downTime = Date.now();
     scrollBaseline = appEl ? appEl.scrollTop : (document.scrollingElement?.scrollTop || 0);
@@ -130,16 +134,19 @@ export async function renderProjects(ctx) {
 
       placeholder = el('div', { class: 'projectCard todo--placeholder' });
       placeholder.style.height = `${rect.height}px`;
+      placeholder.style.width = `${rect.width}px`;
       dragged.parentNode.insertBefore(placeholder, dragged.nextSibling);
 
       dragged.classList.add('todo--dragging');
       dragged.style.width = `${rect.width}px`;
       dragged.style.left = `${rect.left}px`;
       dragged.style.top = `${rect.top}px`;
+      dragged.style.height = `${rect.height}px`;
     }
 
     e.preventDefault();
 
+    dragged.style.left = `${e.clientX - offsetX}px`;
     dragged.style.top = `${e.clientY - offsetY}px`;
 
     const group = cards().filter((n) => n !== dragged);
