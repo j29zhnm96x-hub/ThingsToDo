@@ -1,11 +1,7 @@
 import { el, clear, emptyState } from '../ui/dom.js';
 import { openModal } from '../ui/modal.js';
-import { confirm } from '../ui/confirm.js';
 import { newProject } from '../data/models.js';
-import { hapticLight, hapticSelection } from '../ui/haptic.js';
-  let downTime = 0;
-  let scrollBaseline = 0;
-  const appEl = typeof document !== 'undefined' ? document.getElementById('app') : null;
+import { hapticLight } from '../ui/haptic.js';
 import { scheduleChecklistReminder } from '../notifications.js';
 import { openProjectMenu } from '../ui/projectMenu.js';
 import { renderProjectCard } from '../ui/projectCard.js';
@@ -19,8 +15,6 @@ export async function renderProjects(ctx) {
   const projects = allProjects.filter(p => !p.parentId);
 
   // Normalize sortOrder: older projects (created before reordering was added) 
-    downTime = Date.now();
-    scrollBaseline = appEl ? appEl.scrollTop : (document.scrollingElement?.scrollTop || 0);
   projects.sort((a, b) => {
     // If both are numbers, compare numbers
     if (typeof a.sortOrder === 'number' && typeof b.sortOrder === 'number') {
@@ -30,13 +24,6 @@ export async function renderProjects(ctx) {
     if (a.sortOrder < b.sortOrder) return -1;
     if (a.sortOrder > b.sortOrder) return 1;
     return 0;
-      // If the app scroller moved, treat this as a scroll, not a drag.
-      const currentScroll = appEl ? appEl.scrollTop : (document.scrollingElement?.scrollTop || 0);
-      if (currentScroll !== scrollBaseline) return;
-
-      // Require a brief hold to start drag to avoid accidental drags during scroll.
-      const HOLD_MS = 120;
-      if (Date.now() - downTime < HOLD_MS) return;
   });
 
   // Get todo counts for each project
@@ -52,7 +39,7 @@ export async function renderProjects(ctx) {
 
   const list = el('div', { class: 'list' });
   
-  // Drag & Drop state
+  // Touch-friendly drag reordering (reuse inbox todo behavior).
   let pointerId = null;
   let dragged = null;
   let placeholder = null;
@@ -60,34 +47,47 @@ export async function renderProjects(ctx) {
   let startY = 0;
   let offsetY = 0;
   let rect = null;
-  let ignoreClick = false; // Flag to prevent click after drag
-  const threshold = 6;
+  let downTime = 0;
+  let scrollBaseline = 0;
+  const appEl = typeof document !== 'undefined' ? document.getElementById('app') : null;
   let prevTouchAction = '';
+  let ignoreClick = false;
+  const threshold = 6;
 
-  const cleanup = () => {
+  const cardFromEvent = (e) => e.target.closest('.projectCard');
+  const isInteractive = (node) => !!node.closest('button, input, a, select, textarea') || !!node.closest('.projectCard__menuBtn');
+  const cards = () => Array.from(list.querySelectorAll('.projectCard[data-project-id]'));
+
+  function cleanup() {
     if (dragged) {
       dragged.classList.remove('todo--dragging');
-      dragged.style.width = '';
       dragged.style.left = '';
       dragged.style.top = '';
-      dragged.style.height = ''; 
+      dragged.style.width = '';
     }
-    if (placeholder) placeholder.remove();
-
-    // Restore scrolling behavior.
-    list.style.touchAction = prevTouchAction;
+    if (placeholder && placeholder.parentNode) placeholder.parentNode.removeChild(placeholder);
 
     document.body.classList.remove('dragging-reorder');
+    list.style.touchAction = prevTouchAction;
 
     pointerId = null;
     dragged = null;
     placeholder = null;
     started = false;
     rect = null;
-  };
+  }
 
-  const cardFromEvent = (e) => e.target.closest('.projectCard');
-  const isInteractive = (node) => !!node.closest('button, input, a, select, textarea') || !!node.closest('.projectCard__menuBtn');
+  async function finalize() {
+    const orderedIds = cards().map((n) => n.dataset.projectId);
+    for (let i = 0; i < orderedIds.length; i++) {
+      const pid = orderedIds[i];
+      const project = projects.find((p) => p.id === pid);
+      if (project && project.sortOrder !== i) {
+        project.sortOrder = i;
+        await db.projects.put(project);
+      }
+    }
+  }
 
   list.addEventListener('pointerdown', (e) => {
     if (pointerId != null) return;
@@ -98,27 +98,34 @@ export async function renderProjects(ctx) {
     pointerId = e.pointerId;
     dragged = card;
     startY = e.clientY;
-    ignoreClick = false; // Reset flag
     rect = dragged.getBoundingClientRect();
     offsetY = e.clientY - rect.top;
-    try { dragged.setPointerCapture(pointerId); } catch { /* ignore */ }
+    downTime = Date.now();
+    scrollBaseline = appEl ? appEl.scrollTop : (document.scrollingElement?.scrollTop || 0);
+    ignoreClick = false;
   });
 
   list.addEventListener('pointermove', (e) => {
     if (pointerId == null || e.pointerId !== pointerId || !dragged) return;
 
     const dy = e.clientY - startY;
-    if (!started && Math.abs(dy) < threshold) return;
+    if (!started) {
+      const currentScroll = appEl ? appEl.scrollTop : (document.scrollingElement?.scrollTop || 0);
+      if (currentScroll !== scrollBaseline) return;
+
+      const HOLD_MS = 120;
+      if (Date.now() - downTime < HOLD_MS) return;
+
+      if (Math.abs(dy) < threshold) return;
+    }
 
     if (!started) {
       started = true;
-      ignoreClick = true; // Mark as drag to prevent click
-      hapticSelection();
+      ignoreClick = true;
+      try { dragged.setPointerCapture(pointerId); } catch { /* ignore */ }
 
-      // Prevent the browser from treating this as a scroll gesture while dragging.
       prevTouchAction = list.style.touchAction || '';
       list.style.touchAction = 'none';
-
       document.body.classList.add('dragging-reorder');
 
       placeholder = el('div', { class: 'projectCard todo--placeholder' });
@@ -132,9 +139,10 @@ export async function renderProjects(ctx) {
     }
 
     e.preventDefault();
+
     dragged.style.top = `${e.clientY - offsetY}px`;
 
-    const group = Array.from(list.querySelectorAll('.projectCard')).filter((n) => n !== dragged && n !== placeholder);
+    const group = cards().filter((n) => n !== dragged);
     if (!group.length) return;
 
     const y = e.clientY;
@@ -143,14 +151,14 @@ export async function renderProjects(ctx) {
       const r = card.getBoundingClientRect();
       const mid = r.top + r.height / 2;
       if (y < mid) {
-        if (placeholder !== card.previousSibling) {
+        if (placeholder && placeholder !== card.previousSibling) {
           list.insertBefore(placeholder, card);
         }
         inserted = true;
         break;
       }
     }
-    if (!inserted) {
+    if (!inserted && placeholder) {
       const last = group[group.length - 1];
       if (last && last.nextSibling !== placeholder) {
         list.insertBefore(placeholder, last.nextSibling);
@@ -160,41 +168,27 @@ export async function renderProjects(ctx) {
 
   list.addEventListener('pointerup', async (e) => {
     if (pointerId == null || e.pointerId !== pointerId || !dragged) return;
-    try { dragged.releasePointerCapture(pointerId); } catch { /* ignore */ }
 
     const wasStarted = started;
 
     if (started && placeholder) {
-      hapticLight();
       list.insertBefore(dragged, placeholder);
     }
 
     cleanup();
 
     if (wasStarted) {
-       // Persist order
-       const newOrder = Array.from(list.querySelectorAll('.projectCard[data-project-id]')).map((n) => n.dataset.projectId);
-       
-       for(let i=0; i<newOrder.length; i++) {
-           const pid = newOrder[i];
-           const p = projects.find(x => x.id === pid);
-           if (p && p.sortOrder !== i) {
-               p.sortOrder = i;
-               await db.projects.put(p);
-           }
-       }
-       
-       // Keep ignoreClick true for a short moment to ensure click is skipped
-       setTimeout(() => { ignoreClick = false; }, 100);
+      await finalize();
+      setTimeout(() => { ignoreClick = false; }, 50);
     }
   });
-  
+
   list.addEventListener('pointercancel', (e) => {
-     if (pointerId == null || e.pointerId !== pointerId) return;
-     if (started && placeholder && dragged) {
-         list.insertBefore(dragged, placeholder);
-     }
-     cleanup();
+    if (pointerId == null || e.pointerId !== pointerId) return;
+    if (started && placeholder && dragged) {
+      list.insertBefore(dragged, placeholder);
+    }
+    cleanup();
   });
 
   projects.forEach((p) => {
