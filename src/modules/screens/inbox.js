@@ -8,6 +8,7 @@ import { openTodoInfo } from '../ui/todoInfo.js';
 import { renderProjectCard } from '../ui/projectCard.js';
 import { openProjectMenu } from '../ui/projectMenu.js';
 import { hapticLight } from '../ui/haptic.js';
+import { Priority } from '../data/models.js';
 
 async function buildProjectsById(db) {
   const projects = await db.projects.list();
@@ -56,7 +57,8 @@ export async function renderInbox(ctx) {
       await db.todos.put({ 
         ...todo, 
         completed: checked,
-        completedAt: checked ? new Date().toISOString() : null
+        completedAt: checked ? new Date().toISOString() : null,
+        priority: checked ? Priority.P3 : todo.priority
       });
       await renderInbox(ctx);
     },
@@ -91,7 +93,8 @@ export async function renderInbox(ctx) {
         ...todo,
         archived: true,
         archivedAt: new Date().toISOString(),
-        archivedFromProjectId: todo.projectId
+        archivedFromProjectId: todo.projectId,
+        priority: Priority.P3
       });
       await renderInbox(ctx);
     },

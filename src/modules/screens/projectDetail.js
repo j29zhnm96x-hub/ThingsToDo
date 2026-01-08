@@ -11,6 +11,7 @@ import { hapticLight } from '../ui/haptic.js';
 import { openCreateProject } from './projects.js';
 import { openProjectMenu } from '../ui/projectMenu.js';
 import { renderProjectCard } from '../ui/projectCard.js';
+import { Priority } from '../data/models.js';
 
 async function buildProjectsById(db) {
   const projects = await db.projects.list();
@@ -295,7 +296,8 @@ export async function renderProjectDetail(ctx, projectId) {
       await db.todos.put({ 
         ...todo, 
         completed: checked,
-        completedAt: checked ? new Date().toISOString() : null
+        completedAt: checked ? new Date().toISOString() : null,
+        priority: checked ? Priority.P3 : todo.priority
       });
       await renderProjectDetail(ctx, projectId);
     },
@@ -330,7 +332,8 @@ export async function renderProjectDetail(ctx, projectId) {
         ...todo,
         archived: true,
         archivedAt: new Date().toISOString(),
-        archivedFromProjectId: todo.projectId
+        archivedFromProjectId: todo.projectId,
+        priority: Priority.P3
       });
       await renderProjectDetail(ctx, projectId);
     },

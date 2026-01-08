@@ -190,7 +190,7 @@ export function renderTodoList({
 
     const item = el('div', {
       class: 'todo',
-      dataset: { todoId: t.id, priority: t.priority, projectId: t.projectId ?? '' },
+      dataset: { todoId: t.id, priority: t.priority, projectId: t.projectId ?? '', completed: t.completed ? 'true' : 'false' },
       'aria-label': t.title
     },
     el('div', { class: 'todo__row1' },
