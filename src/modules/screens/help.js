@@ -1,4 +1,5 @@
 import { el, clear } from '../ui/dom.js';
+import { t } from '../utils/i18n.js';
 
 export function renderHelp(ctx) {
   const { main } = ctx;
@@ -12,8 +13,8 @@ export function renderHelp(ctx) {
   const container = el('div', { class: 'stack' },
     el('div', { style: 'text-align: center; padding: 20px 0;' },
       el('div', { style: 'font-size: 40px; margin-bottom: 10px;' }, '💡'),
-      el('div', { style: 'font-weight: 800; font-size: 24px;' }, 'How to use'),
-      el('div', { style: 'color: var(--muted);' }, 'Master your productivity')
+      el('div', { style: 'font-weight: 800; font-size: 24px;' }, t('howToUse')),
+      el('div', { style: 'color: var(--muted);' }, t('masterProductivity'))
     ),
 
     section('📥 Inbox & Quick Capture', 
@@ -23,7 +24,8 @@ export function renderHelp(ctx) {
 
     section('📂 Projects & Progress', 
       'Projects organize your work. The main list shows <b>Progress Bars</b> (Yellow for tasks, Purple for checklists) so you can see your status at a glance.<br><br>' +
-      '<b>Sub-Projects:</b> Break large projects down! Inside a project, tap <b>+</b> then <b>New Sub-Project</b>. They appear at the top of the list.'
+      '<b>Sub-Projects:</b> Break large projects down! Inside a project, tap <b>+</b> then <b>New Sub-Project</b>. They appear at the top of the list and can be reordered by dragging.<br><br>' +
+      '<b>Project Types:</b> Choose Default for general work or Checklist for step-by-step lists with notifications.'
     ),
 
     section('⚡ Focus Mode (Zen)', 
@@ -50,8 +52,9 @@ export function renderHelp(ctx) {
 
     section('👆 Gestures & Shortcuts', 
       '• <b>Double-tap</b> in a Checklist to quick-add items.<br>' +
-      '• <b>Drag & Drop</b> tasks to reorder them.<br>' +
-      '• <b>Drag & Drop</b> projects to arrange your dashboard.'
+      '• <b>Drag & Drop</b> tasks to reorder them (hold briefly, then drag).<br>' +
+      '• <b>Drag & Drop</b> projects and sub-projects to arrange your dashboard.<br>' +
+      '• <b>Long press</b> prevents accidental drags while scrolling.'
     ),
 
     el('div', { style: 'height: 40px;' }) // Spacer

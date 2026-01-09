@@ -10,6 +10,7 @@ import { renderProjectCard } from '../ui/projectCard.js';
 import { openProjectMenu } from '../ui/projectMenu.js';
 import { hapticLight } from '../ui/haptic.js';
 import { Priority } from '../data/models.js';
+import { t } from '../utils/i18n.js';
 
 async function buildProjectsById(db) {
   const projects = await db.projects.list();
@@ -177,7 +178,7 @@ export async function renderInbox(ctx) {
     : null;
 
   if (todos.length === 0 && linkedProjects.length === 0) {
-    main.append(emptyState('Your inbox is empty', 'Tap the + button above to create your first todo'));
+    main.append(emptyState(t('noTasks'), t('noTasksHint')));
   } else {
     main.append(el('div', { class: 'stack' }, linkedProjectsList, todos.length ? list : null));
   }

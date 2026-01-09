@@ -11,6 +11,7 @@ import { el } from './ui/dom.js';
 import { applyTheme } from './ui/theme.js';
 import { autoArchiveCompleted, autoEmptyBin } from './logic/todoOps.js';
 import { hapticLight } from './ui/haptic.js';
+import { t } from './utils/i18n.js';
 
 export function initApp(root) {
   const main = document.getElementById('main');
@@ -61,6 +62,17 @@ export function initApp(root) {
       const settings = await db.settings.get();
       applyTheme(settings.theme || 'dark');
 
+      // Update tab labels with translations
+      tabButtons.forEach((btn) => {
+        const route = btn.getAttribute('data-route') || '';
+        const key = route.replace('#', '');
+        const label = btn.querySelector('.tabbar__label');
+        if (label && t(key) !== key) {
+          label.textContent = t(key);
+          btn.setAttribute('aria-label', t(key));
+        }
+      });
+
       // Update active tab
       const current = route.group;
       tabButtons.forEach((btn) => {
@@ -74,15 +86,15 @@ export function initApp(root) {
 
       // Render screen
       if (route.name === 'inbox') {
-        topbarTitle.textContent = 'Inbox';
+        topbarTitle.textContent = t('inbox');
         topbarActions.append(
-          el('button', { class: 'topbar__addBtn', type: 'button', 'aria-label': 'Add todo', onClick: () => { hapticLight(); ctx.openTodoEditor({ mode: 'create', projectId: null }); } }, '+')
+          el('button', { class: 'topbar__addBtn', type: 'button', 'aria-label': t('addTask'), onClick: () => { hapticLight(); ctx.openTodoEditor({ mode: 'create', projectId: null }); } }, '+')
         );
         await renderInbox(ctx);
       } else if (route.name === 'projects') {
-        topbarTitle.textContent = 'Projects';
+        topbarTitle.textContent = t('projects');
         topbarActions.append(
-          el('button', { class: 'topbar__addBtn', type: 'button', 'aria-label': 'Add project', onClick: () => { hapticLight(); openCreateProject({ db, modalHost, onCreated: () => router.refresh() }); } }, '+')
+          el('button', { class: 'topbar__addBtn', type: 'button', 'aria-label': t('newProject'), onClick: () => { hapticLight(); openCreateProject({ db, modalHost, onCreated: () => router.refresh() }); } }, '+')
         );
         await renderProjects(ctx);
       } else if (route.name === 'project') {
@@ -132,13 +144,13 @@ export function initApp(root) {
         }
         await renderProjectDetail(ctx, route.params.projectId);
       } else if (route.name === 'archive') {
-        topbarTitle.textContent = 'Archive';
+        topbarTitle.textContent = t('archive');
         await renderArchive(ctx);
       } else if (route.name === 'settings') {
-        topbarTitle.textContent = 'Settings';
+        topbarTitle.textContent = t('settings');
         await renderSettings(ctx);
       } else if (route.name === 'help') {
-        topbarTitle.textContent = 'Help & Guide';
+        topbarTitle.textContent = t('help');
         topbarActions.append(
           el('button', { class: 'topbar__backBtn', type: 'button', 'aria-label': 'Back', onClick: () => { hapticLight(); location.hash = '#settings'; } }, '←')
         );

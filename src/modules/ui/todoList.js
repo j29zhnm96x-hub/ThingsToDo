@@ -2,6 +2,7 @@ import { el, humanDue } from './dom.js';
 import { compareTodos } from '../logic/sorting.js';
 import { daysLeftText, daysLeftClass } from './todoInfo.js';
 import { hapticLight, hapticSelection } from './haptic.js';
+import { t } from '../utils/i18n.js';
 
 export function renderTodoList({
   todos,
@@ -115,7 +116,7 @@ export function renderTodoList({
               let divider = listEl.querySelector('.todo-divider');
               if (!divider) {
                 divider = el('div', { class: 'todo-divider' },
-                  el('span', { class: 'todo-divider__text' }, 'Completed')
+                  el('span', { class: 'todo-divider__text' }, t('completed'))
                 );
                 listEl.appendChild(divider);
               }
@@ -237,7 +238,7 @@ export function renderTodoList({
           cards.forEach(c => c.style.display = 'none');
         }
       }
-    }, 'Completed');
+    }, t('completed'));
 
     const divider = el('div', { class: 'todo-divider' }, dividerText);
     list.appendChild(divider);

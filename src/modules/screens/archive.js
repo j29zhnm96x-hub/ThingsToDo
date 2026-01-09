@@ -8,6 +8,7 @@ import { openTodoInfo } from '../ui/todoInfo.js';
 import { hapticLight } from '../ui/haptic.js';
 import { openModal } from '../ui/modal.js';
 import { openBinModal } from '../ui/binModal.js';
+import { t } from '../utils/i18n.js';
 
 async function buildProjectsById(db) {
   const projects = await db.projects.list();
@@ -33,7 +34,7 @@ export async function renderArchive(ctx) {
   const { projects, map: projectsById } = await buildProjectsById(db);
 
   if (archived.length === 0) {
-    main.append(emptyState('No archived todos', 'Todos you archive will appear here'));
+    main.append(emptyState(t('nothingHere'), t('allCaughtUp')));
     return;
   }
 

@@ -3,6 +3,7 @@ import { openModal } from '../ui/modal.js';
 import { confirm } from '../ui/confirm.js';
 import { applyTheme } from '../ui/theme.js';
 import { openBinModal } from '../ui/binModal.js';
+import { t, getLang, setLang, languageNames, getAvailableLanguages } from '../utils/i18n.js';
 
 async function blobToDataUrl(blob) {
   return new Promise((resolve, reject) => {
@@ -59,17 +60,37 @@ export async function renderSettings(ctx) {
     await db.settings.put({ ...await db.settings.get(), compressArchivedImages: compressArchiveToggle.checked });
   });
 
-  const exportBtn = el('button', { class: 'btn btn--primary', type: 'button', onClick: exportData }, 'Export data (JSON)');
-  const importBtn = el('button', { class: 'btn', type: 'button', onClick: importData }, 'Import JSON');
-  const binBtn = el('button', { class: 'btn', type: 'button', onClick: () => openBinModal(ctx) }, 'Open Bin (Recently Deleted)');
-  const helpBtn = el('button', { class: 'btn', type: 'button', onClick: () => location.hash = '#help' }, 'Help & Guide');
-  const resetBtn = el('button', { class: 'btn btn--danger', type: 'button', onClick: resetData }, 'Reset / Wipe all data');
+  // Language selector
+  const currentLang = getLang();
+  const langSelect = el('select', {
+    class: 'select',
+    'aria-label': t('language'),
+    onChange: (e) => {
+      setLang(e.target.value);
+      // Re-render the entire app by triggering a hash change
+      const hash = location.hash;
+      location.hash = '';
+      setTimeout(() => { location.hash = hash || '#settings'; }, 10);
+    }
+  }, ...getAvailableLanguages().map(code =>
+    el('option', { value: code, selected: code === currentLang ? 'selected' : null }, languageNames[code])
+  ));
+
+  const exportBtn = el('button', { class: 'btn btn--primary', type: 'button', onClick: exportData }, t('exportData'));
+  const importBtn = el('button', { class: 'btn', type: 'button', onClick: importData }, t('importData'));
+  const binBtn = el('button', { class: 'btn', type: 'button', onClick: () => openBinModal(ctx) }, t('bin'));
+  const helpBtn = el('button', { class: 'btn', type: 'button', onClick: () => location.hash = '#help' }, t('help'));
+  const resetBtn = el('button', { class: 'btn btn--danger', type: 'button', onClick: resetData }, t('clearAllData'));
 
   main.append(el('div', { class: 'stack' },
     el('div', { class: 'card stack' },
-      el('div', { style: { fontWeight: '700' } }, 'Appearance'),
+      el('div', { style: { fontWeight: '700' } }, t('language')),
+      langSelect
+    ),
+    el('div', { class: 'card stack' },
+      el('div', { style: { fontWeight: '700' } }, t('theme')),
       el('div', { class: 'row' },
-        el('div', { class: 'small' }, 'Light mode'),
+        el('div', { class: 'small' }, t('themeLight')),
         themeToggle
       ),
       el('div', { class: 'row' },
@@ -82,7 +103,7 @@ export async function renderSettings(ctx) {
       )
     ),
     el('div', { class: 'card stack' },
-      el('div', { style: { fontWeight: '700' } }, 'App Info'),
+      el('div', { style: { fontWeight: '700' } }, t('help')),
       helpBtn
     ),
     el('div', { class: 'card stack' },

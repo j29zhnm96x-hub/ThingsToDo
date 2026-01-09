@@ -5,6 +5,7 @@ import { hapticLight } from '../ui/haptic.js';
 import { scheduleChecklistReminder } from '../notifications.js';
 import { openProjectMenu } from '../ui/projectMenu.js';
 import { renderProjectCard } from '../ui/projectCard.js';
+import { t } from '../utils/i18n.js';
 
 export async function renderProjects(ctx) {
   const { main, db, modalHost } = ctx;
@@ -222,30 +223,30 @@ export async function renderProjects(ctx) {
     list.appendChild(card);
   });
 
-  main.append(el('div', { class: 'stack' }, projects.length ? list : emptyState('No projects yet', 'Tap the + button above to create your first project')));
+  main.append(el('div', { class: 'stack' }, projects.length ? list : emptyState(t('noProjects'), t('noProjectsHint'))));
 
 
 }
 
 export function openCreateProject({ db, modalHost, onCreated, parentId = null }) {
-  const nameInput = el('input', { class: 'input', placeholder: 'Project name', 'aria-label': 'Project name' });
-  const typeSelect = el('select', { class: 'select', 'aria-label': 'Project type' },
-    el('option', { value: 'default', selected: 'selected' }, 'Default'),
-    el('option', { value: 'checklist' }, 'Check List')
+  const nameInput = el('input', { class: 'input', placeholder: t('projectName'), 'aria-label': t('projectName') });
+  const typeSelect = el('select', { class: 'select', 'aria-label': t('projectType') },
+    el('option', { value: 'default', selected: 'selected' }, t('default')),
+    el('option', { value: 'checklist' }, t('checklist'))
   );
 
   const content = el('div', { class: 'stack' },
-    el('label', { class: 'label' }, el('span', {}, 'Name'), nameInput),
-    el('label', { class: 'label' }, el('span', {}, 'Project Type'), typeSelect)
+    el('label', { class: 'label' }, el('span', {}, t('projectName')), nameInput),
+    el('label', { class: 'label' }, el('span', {}, t('projectType')), typeSelect)
   );
 
   openModal(modalHost, {
-    title: 'Create Project',
+    title: parentId ? t('newSubProject') : t('createProject'),
     content,
     actions: [
-      { label: 'Cancel', class: 'btn btn--ghost', onClick: () => true },
+      { label: t('cancel'), class: 'btn btn--ghost', onClick: () => true },
       {
-        label: 'Create',
+        label: t('create'),
         class: 'btn btn--primary',
         onClick: async () => {
           const name = nameInput.value.trim();

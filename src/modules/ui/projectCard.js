@@ -1,4 +1,5 @@
 import { el } from './dom.js';
+import { t } from '../utils/i18n.js';
 
 export function renderProjectCard({
   project,
@@ -16,21 +17,21 @@ export function renderProjectCard({
       if (e.target.closest('.projectCard__menuBtn')) return;
       onOpen?.(project, e);
     },
-    'aria-label': `Open project ${project.name}`
+    'aria-label': `${t('project')}: ${project.name}`
   },
     el('div', { class: 'projectCard__row' },
       el('div', { class: 'projectCard__info' },
         el('span', { class: 'projectCard__name' }, project.name),
         stats.active > 0
-          ? el('span', { class: 'projectCard__count' }, `${stats.active} active`)
-          : (stats.total > 0 ? el('span', { class: 'projectCard__count' }, 'Done') : null)
+          ? el('span', { class: 'projectCard__count' }, `${stats.active} ${t('active')}`)
+          : (stats.total > 0 ? el('span', { class: 'projectCard__count' }, t('done')) : null)
       ),
-      project.protected ? el('span', { class: 'icon-protected', 'aria-label': 'Protected' }, '🔒') : null,
-      project.showInInbox ? el('span', { class: 'icon-protected', style: { opacity: 0.6 }, 'aria-label': 'Linked to Inbox' }, '🔗') : null,
+      project.protected ? el('span', { class: 'icon-protected', 'aria-label': t('protect') }, '🔒') : null,
+      project.showInInbox ? el('span', { class: 'icon-protected', style: { opacity: 0.6 }, 'aria-label': t('linkToInbox') }, '🔗') : null,
       el('button', {
         type: 'button',
         class: 'projectCard__menuBtn iconBtn',
-        'aria-label': 'Project options',
+        'aria-label': t('menu'),
         onClick: (e) => {
           e.stopPropagation();
           onMenu?.(project, e);
