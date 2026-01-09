@@ -94,11 +94,11 @@ export async function renderSettings(ctx) {
         themeToggle
       ),
       el('div', { class: 'row' },
-        el('div', { class: 'small' }, 'Compress images (save space)'),
+        el('div', { class: 'small' }, t('compressImages')),
         compressToggle
       ),
       el('div', { class: 'row' },
-        el('div', { class: 'small' }, 'Extra compress on archive'),
+        el('div', { class: 'small' }, t('extraCompressArchive')),
         compressArchiveToggle
       )
     ),
@@ -107,8 +107,8 @@ export async function renderSettings(ctx) {
       helpBtn
     ),
     el('div', { class: 'card stack' },
-      el('div', { style: { fontWeight: '700' } }, 'Data management'),
-      el('div', { class: 'small' }, 'Everything is stored locally on this device (IndexedDB).'),
+      el('div', { style: { fontWeight: '700' } }, t('dataManagement')),
+      el('div', { class: 'small' }, t('dataStoredLocally')),
       exportBtn,
       importBtn,
       binBtn,
