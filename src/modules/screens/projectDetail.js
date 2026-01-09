@@ -59,6 +59,8 @@ export async function renderProjectDetail(ctx, projectId) {
 
   // Render Sub-projects section
   let subProjectsList = null;
+  let ignoreSubProjectClick = false; // Flag to prevent click after drag
+
   if (subProjects.length > 0) {
       subProjectsList = el('div', { class: 'list', style: { marginBottom: '16px' } });
       
@@ -69,6 +71,7 @@ export async function renderProjectDetail(ctx, projectId) {
             project: p,
             stats,
             onOpen: () => {
+              if (ignoreSubProjectClick) return;
               hapticLight();
               location.hash = `#project/${p.id}`;
             },
@@ -92,7 +95,6 @@ export async function renderProjectDetail(ctx, projectId) {
       let prevTouchAction = '';
       let downTime = 0;
       let scrollBaseline = 0;
-      let ignoreClick = false;
       const threshold = 6;
       const appEl = typeof document !== 'undefined' ? document.getElementById('app') : null;
 
@@ -114,7 +116,6 @@ export async function renderProjectDetail(ctx, projectId) {
         placeholder = null;
         started = false;
         rect = null;
-        setTimeout(() => { ignoreClick = false; }, 100);
       }
 
       subProjectsList.addEventListener('pointerdown', (e) => {
@@ -130,6 +131,7 @@ export async function renderProjectDetail(ctx, projectId) {
         offsetY = e.clientY - rect.top;
         downTime = Date.now();
         scrollBaseline = appEl ? appEl.scrollTop : (document.scrollingElement?.scrollTop || 0);
+        ignoreSubProjectClick = false;
       });
 
       subProjectsList.addEventListener('pointermove', (e) => {
@@ -145,7 +147,7 @@ export async function renderProjectDetail(ctx, projectId) {
           if (Date.now() - downTime < HOLD_MS) return;
 
           started = true;
-          ignoreClick = true;
+          ignoreSubProjectClick = true;
           prevTouchAction = subProjectsList.style.touchAction || '';
           subProjectsList.style.touchAction = 'none';
           document.body.classList.add('dragging-reorder');
@@ -210,6 +212,7 @@ export async function renderProjectDetail(ctx, projectId) {
               await db.projects.put(sp);
             }
           }
+          setTimeout(() => { ignoreSubProjectClick = false; }, 50);
         }
       });
 
