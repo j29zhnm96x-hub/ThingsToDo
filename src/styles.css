@@ -212,6 +212,7 @@ html[data-theme='dark'] .topbar__addBtn {
   border: 1px solid var(--border);
   background: var(--field);
   color: var(--text);
+  font-size: 16px;
   transition: border-color 150ms ease, box-shadow 150ms ease;
   appearance: none;
   -webkit-appearance: none;
@@ -237,7 +238,7 @@ html[data-theme='dark'] .topbar__addBtn {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; color: var(--muted); min-width: 0; }
+.label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 15px; color: var(--muted); min-width: 0; }
 
 .list {
   display: grid;
@@ -333,7 +334,7 @@ html[data-theme='light'] .projectCard[data-type='checklist'] {
 }
 
 .projectCard__count {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--muted);
   white-space: nowrap;
   flex-shrink: 0;
@@ -387,7 +388,7 @@ html[data-theme='light'] .projectCard[data-type='checklist'] {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 14px;
   color: var(--muted);
 }
 
@@ -408,7 +409,7 @@ html[data-theme='light'] .projectCard[data-type='checklist'] {
 
 .checklist__hint {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
   text-align: center;
   padding: 6px 0;
   touch-action: manipulation;
@@ -513,7 +514,7 @@ html[data-theme='light'] .projectCard[data-type='checklist'] {
   align-items: center;
   gap: 8px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 13px;
   min-height: 16px;
   padding-left: 28px;
 }
@@ -544,7 +545,7 @@ html[data-theme='light'] .projectCard[data-type='checklist'] {
 
 .todo__checkIcon {
   display: none;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   line-height: 1;
   color: var(--p3);
@@ -695,7 +696,7 @@ body.dragging-reorder .app {
 }
 
 .todo-divider__text {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--muted);
   text-transform: uppercase;
@@ -731,7 +732,7 @@ body.dragging-reorder .app {
   display: inline-block;
   padding: 2px 8px;
   border-radius: 6px;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   background: rgba(148,163,184,0.15);
   color: var(--muted);
@@ -783,7 +784,7 @@ body.dragging-reorder .app {
 }
 
 .todoInfo__label {
-  font-size: 13px;
+  font-size: 15px;
   color: var(--muted);
   font-weight: 600;
 }
@@ -816,7 +817,7 @@ body.dragging-reorder .app {
   align-items: center;
   padding: 4px 8px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   border: 1px solid rgba(148,163,184,0.25);
 }
@@ -948,7 +949,7 @@ body.dragging-reorder .app {
 }
 .thumb__removeBtn:active { transform: scale(0.94); opacity: 0.9; }
 
-.small { font-size: 12px; color: var(--muted); }
+.small { font-size: 14px; color: var(--muted); }
 .hr { height: 1px; background: rgba(36,50,77,0.8); margin: 10px 0; }
 
 /* Empty state */

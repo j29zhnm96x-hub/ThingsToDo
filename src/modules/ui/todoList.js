@@ -26,8 +26,8 @@ export function renderTodoList({
   const FADE_IN_MS = 1200;
 
   // Separate active and recently completed todos
-  const activeTodos = todos.filter(t => !t.completed);
-  const completedTodos = todos.filter(t => t.completed);
+  const activeTodos = todos.filter(todo => !todo.completed);
+  const completedTodos = todos.filter(todo => todo.completed);
   
   // Sort each group
   const sortedActive = [...activeTodos].sort(compareTodos);
@@ -38,12 +38,12 @@ export function renderTodoList({
     return bTime - aTime;
   });
 
-  function renderCard(t) {
-    const due = humanDue(t.dueDate);
-    const daysLeft = daysLeftText(t.dueDate);
-    const daysLeftCls = daysLeftClass(t.dueDate);
+  function renderCard(todo) {
+    const due = humanDue(todo.dueDate);
+    const daysLeft = daysLeftText(todo.dueDate);
+    const daysLeftCls = daysLeftClass(todo.dueDate);
 
-    const dueTagInline = (!t.completed && (due || daysLeft) && daysLeft)
+    const dueTagInline = (!todo.completed && (due || daysLeft) && daysLeft)
       ? el('span', { class: `dueTag ${daysLeftCls} todo__dueInline` }, daysLeft)
       : null;
 
@@ -54,7 +54,7 @@ export function renderTodoList({
       onClick: (e) => {
         e.stopPropagation();
         hapticLight();
-        onMenu?.(t, { onEdit, onMove, onArchive, onRestore, onDelete, onLinkToggle, mode });
+        onMenu?.(todo, { onEdit, onMove, onArchive, onRestore, onDelete, onLinkToggle, mode });
       }
     }, '⋯');
 
@@ -62,17 +62,17 @@ export function renderTodoList({
       class: 'todo__titleArea',
       onClick: () => {
         hapticLight();
-        onTap?.(t);
+        onTap?.(todo);
       }
     },
-      el('div', { class: t.completed ? 'todo__title todo__title--done' : 'todo__title' }, t.title)
+      el('div', { class: todo.completed ? 'todo__title todo__title--done' : 'todo__title' }, todo.title)
     );
 
-    const noteIcon = t.notes ? el('span', { class: 'todo__noteIcon', 'aria-label': 'Has notes' }, '✏️') : null;
-    const protectedIcon = t.protected ? el('span', { class: 'icon-protected', 'aria-label': 'Protected' }, '🔒') : null;
+    const noteIcon = todo.notes ? el('span', { class: 'todo__noteIcon', 'aria-label': 'Has notes' }, '✏️') : null;
+    const protectedIcon = todo.protected ? el('span', { class: 'icon-protected', 'aria-label': 'Protected' }, '🔒') : null;
     
     // Link icon if showInInbox is true
-    const linkIcon = t.showInInbox ? el('span', { 
+    const linkIcon = todo.showInInbox ? el('span', { 
       class: 'icon-protected', // Re-using protected style for size/margin
       style: { opacity: 0.6 },
       'aria-label': 'Linked to Inbox' 
@@ -86,8 +86,8 @@ export function renderTodoList({
       el('input', {
         type: 'checkbox',
         class: 'todo__check',
-        'aria-label': `Mark ${t.title} completed`,
-        checked: t.completed ? 'checked' : null,
+        'aria-label': `Mark ${todo.title} completed`,
+        checked: todo.completed ? 'checked' : null,
         disabled: mode === 'archive' ? 'disabled' : null,
         onChange: (e) => {
           e.stopPropagation();
@@ -99,7 +99,7 @@ export function renderTodoList({
           if (nextState && card && mode !== 'archive') {
             const listEl = card.closest('.list');
             if (!listEl) {
-              onToggleCompleted?.(t, true);
+              onToggleCompleted?.(todo, true);
               return;
             }
 
@@ -176,14 +176,14 @@ export function renderTodoList({
                 }
 
                 // Persist after the visual completes (avoids re-render hiccup mid-animation).
-                setTimeout(() => onToggleCompleted?.(t, true), FADE_IN_MS + 50);
+                setTimeout(() => onToggleCompleted?.(todo, true), FADE_IN_MS + 50);
               }, shiftDelay);
             }, FADE_OUT_MS);
 
             return;
           }
 
-          onToggleCompleted?.(t, nextState);
+          onToggleCompleted?.(todo, nextState);
         }
       }),
       el('span', { class: 'todo__checkIcon' }, '✓')
@@ -191,8 +191,8 @@ export function renderTodoList({
 
     const item = el('div', {
       class: 'todo',
-      dataset: { todoId: t.id, priority: t.priority, projectId: t.projectId ?? '', completed: t.completed ? 'true' : 'false' },
-      'aria-label': t.title
+      dataset: { todoId: todo.id, priority: todo.priority, projectId: todo.projectId ?? '', completed: todo.completed ? 'true' : 'false' },
+      'aria-label': todo.title
     },
     el('div', { class: 'todo__row1' },
       checkbox,
@@ -209,8 +209,8 @@ export function renderTodoList({
   }
 
   // Render active todos
-  for (const t of sortedActive) {
-    list.appendChild(renderCard(t));
+  for (const todo of sortedActive) {
+    list.appendChild(renderCard(todo));
   }
 
   // Add divider and completed section if there are completed todos
@@ -255,8 +255,8 @@ export function renderTodoList({
     }
     list.appendChild(stack);
 
-    for (const t of sortedCompleted) {
-      const card = renderCard(t);
+    for (const todo of sortedCompleted) {
+      const card = renderCard(todo);
       card.classList.add('todo--completed-item');
       if (isCollapsed) card.style.display = 'none';
       list.appendChild(card);
@@ -264,8 +264,8 @@ export function renderTodoList({
   } else if (mode === 'archive') {
     // Archive mode - render completed in normal order
     // Handled by parent caller usually, but if called directly:
-    for (const t of sortedCompleted) {
-      list.appendChild(renderCard(t));
+    for (const todo of sortedCompleted) {
+      list.appendChild(renderCard(todo));
     }
   }
 
