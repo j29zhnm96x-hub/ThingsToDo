@@ -155,6 +155,22 @@ const translations = {
     nothingHere: 'Nothing here',
     allCaughtUp: 'All caught up!',
     
+    // Help sections
+    helpInbox: 'Inbox & Quick Capture',
+    helpInboxContent: 'The Inbox is your landing zone for quick thoughts. Tap <b>+</b> to add tasks immediately.<br><br><b>Link to Inbox:</b> Working deep in a Project? Use the task menu ("...") to <b>Link to Inbox</b>. The task stays in the project but appears in your Inbox for focus. Tap the link icon (🔗) to jump to its project.',
+    helpProjects: 'Projects & Progress',
+    helpProjectsContent: 'Projects organize your work. The main list shows <b>Progress Bars</b> (Yellow for tasks, Purple for checklists) so you can see your status at a glance.<br><br><b>Sub-Projects:</b> Break large projects down! Inside a project, tap <b>+</b> then <b>New Sub-Project</b>. They appear at the top of the list and can be reordered by dragging.<br><br><b>Project Types:</b> Choose Default for general work or Checklist for step-by-step lists with notifications.',
+    helpFocusMode: 'Focus Mode (Zen)',
+    helpFocusModeContent: 'When using a <b>Checklist</b> project (great for shopping or packing), tap the <b>⛶</b> icon in the header.<br><br>This hides all navigation and lets you focus purely on the list. Great for when you are on the go!',
+    helpProtected: 'Protected Items',
+    helpProtectedContent: 'Mark a task or project as <b>"Protected"</b> to prevent accidental deletion or archiving.<br><br>Protected items have a lock icon (🔒) and must be unprotected before you can remove them. Perfect for grocery masters or recurring lists.',
+    helpPriorities: 'Priorities',
+    helpPrioritiesContent: 'Prioritize effectively with visual cues:<br>• <b>Urgent!</b>: Flashes red. Do this NOW.<br>• <b>Highest</b>: Solid red border.<br>• <b>High/Medium/Low</b>: Colored indicators help you sort less critical work.',
+    helpCompletion: 'Completion & Automation',
+    helpCompletionContent: 'Completed tasks move to the bottom stack. After <b>24 hours</b>, they are auto-archived by date.<br><br><b>Bin:</b> Deleted items stay in the Bin for 24 hours before vanishing forever.',
+    helpGestures: 'Gestures & Shortcuts',
+    helpGesturesContent: '• <b>Double-tap</b> in a Checklist to quick-add items.<br>• <b>Drag & Drop</b> tasks to reorder them (hold briefly, then drag).<br>• <b>Drag & Drop</b> projects and sub-projects to arrange your dashboard.<br>• <b>Long press</b> prevents accidental drags while scrolling.',
+    
     // Time
     justNow: 'Just now',
     minutesAgo: '{n} minutes ago',
@@ -327,6 +343,22 @@ const translations = {
     // Empty states
     nothingHere: 'Ovdje nema ničega',
     allCaughtUp: 'Sve je odrađeno!',
+    
+    // Help sections
+    helpInbox: 'Inbox & brzo bilježenje',
+    helpInboxContent: 'Inbox je vaša zona za brzo zabilježene misli. Dodirnite <b>+</b> da odmah dodate zadatke.<br><br><b>Poveži s Inboxom:</b> Radite duboko u projektu? Koristite izbornik zadatka ("...") za <b>Poveži s Inboxom</b>. Zadatak ostaje u projektu, ali se pojavljuje u vašem Inboxu. Dodirnite ikonu lanca (🔗) da skočite na njegov projekt.',
+    helpProjects: 'Projekti & napredak',
+    helpProjectsContent: 'Projekti organiziraju vašu tehniku. Glavna lista prikazuje <b>Trake napretka</b> (Žuta za zadatke, Ljubičasta za popise) tako da vidite svoj status na prvi pogled.<br><br><b>Podprojekti:</b> Razložite velike projekte! U projektu dodirnite <b>+</b> zatim <b>Novi podprojekt</b>. Pojavljuju se na početku popisa i mogu se prenositi povlačenjem.<br><br><b>Vrste projekata:</b> Odaberite Standardni za opće radove ili Popis za korak-po-korak popise s obavijestima.',
+    helpFocusMode: 'Fokus mod (Zen)',
+    helpFocusModeContent: 'Kada koristite projekt <b>Popis</b> (odličan za kupovinu ili pakiranje), dodirnite ikonu <b>⛶</b> u zaglavlju.<br><br>Ovo skriva svu navigaciju i omogućava vam da se fokusirate čisto na popis. Odličan je kada ste na putu!',
+    helpProtected: 'Zaštićene stavke',
+    helpProtectedContent: 'Označite zadatak ili projekt kao <b>"Zaštićen"</b> da izbjegnete slučajno brisanje ili arhiviranje.<br><br>Zaštićene stavke imaju ikonu zaključavanja (🔒) i moraju biti odblokane prije nego što ih možete ukloniti. Savršeno za upravitelje namirnica ili ponavljućih popisa.',
+    helpPriorities: 'Prioriteti',
+    helpPrioritiesContent: 'Efektivno prioritizirajte vizualnim znakovima:<br>• <b>Hitno!</b>: Trepće crveno. Učini sada.<br>• <b>Najviši</b>: Čvrstin crvena granica.<br>• <b>Visoki/Srednji/Niski</b>: Obojeni indikatori vam pomažu da sortirate manje kritične radove.',
+    helpCompletion: 'Završetak & automatizacija',
+    helpCompletionContent: 'Završeni zadaci se prebacuju na donji stog. Nakon <b>24 sata</b>, automatski se arhiviraju po datumu.<br><br><b>Koš:</b> Obrisane stavke ostaju u košu 24 sata prije nego što zauvijek nestanu.',
+    helpGestures: 'Geste & prečaci',
+    helpGesturesContent: '• <b>Dvostruki dodir</b> u Popisu za brzo dodavanje stavki.<br>• <b>Povlačenje & ispuštanje</b> zadataka da ih preuredite (kratko držite, zatim povucite).<br>• <b>Povlačenje & ispuštanje</b> projekata i podprojekta da uredite nadzornu ploču.<br>• <b>Dugi pritisak</b> sprječava slučajno povlačenje tijekom klizanja.',
     
     // Time
     justNow: 'Upravo sada',
@@ -501,6 +533,22 @@ const translations = {
     nothingHere: 'Niente qui',
     allCaughtUp: 'Tutto in ordine!',
     
+    // Help sections
+    helpInbox: 'Posta in arrivo & acquisizione rapida',
+    helpInboxContent: 'La Posta in arrivo è la tua zona di atterraggio per i pensieri rapidi. Tocca <b>+</b> per aggiungere attività immediatamente.<br><br><b>Collega alla posta:</b> Lavorare a fondo in un progetto? Usa il menu attività ("...") per <b>Collega alla posta in arrivo</b>. L\'attività rimane nel progetto ma appare nella tua Posta in arrivo per il focus. Tocca l\'icona del collegamento (🔗) per saltare al suo progetto.',
+    helpProjects: 'Progetti & avanzamento',
+    helpProjectsContent: 'I progetti organizzano il tuo lavoro. L\'elenco principale mostra <b>Barre di avanzamento</b> (Giallo per attività, Viola per elenchi di controllo) così puoi vedere il tuo stato a colpo d\'occhio.<br><br><b>Sottoprogetti:</b> Suddividi grandi progetti! All\'interno di un progetto, tocca <b>+</b> poi <b>Nuovo sottoprogetto</b>. Appaiono in cima all\'elenco e possono essere riordinati trascinando.<br><br><b>Tipi di progetto:</b> Scegli Predefinito per il lavoro generale o Elenco di controllo per elenchi passo dopo passo con notifiche.',
+    helpFocusMode: 'Modalità focus (Zen)',
+    helpFocusModeContent: 'Quando usi un progetto <b>Elenco di controllo</b> (ottimo per lo shopping o l\'imballaggio), tocca l\'icona <b>⛶</b> nell\'intestazione.<br><br>Questo nasconde tutta la navigazione e ti consente di concentrarti puramente sull\'elenco. Ottimo quando sei in movimento!',
+    helpProtected: 'Elementi protetti',
+    helpProtectedContent: 'Marca un\'attività o un progetto come <b>"Protetto"</b> per prevenire l\'eliminazione o l\'archiviazione accidentale.<br><br>Gli elementi protetti hanno un\'icona di blocco (🔒) e devono essere sbloccati prima di poterli rimuovere. Perfetto per i maestri della spesa o gli elenchi ricorrenti.',
+    helpPriorities: 'Priorità',
+    helpPrioritiesContent: 'Dai priorità in modo efficace con segnali visivi:<br>• <b>Urgente!</b>: Lampeggia rosso. Fallo ORA.<br>• <b>Massima</b>: Bordo rosso solido.<br>• <b>Alta/Media/Bassa</b>: Gli indicatori colorati ti aiutano a ordinare i lavori meno critici.',
+    helpCompletion: 'Completamento & automazione',
+    helpCompletionContent: 'Le attività completate si spostano nella pila inferiore. Dopo <b>24 ore</b>, vengono archiviate automaticamente per data.<br><br><b>Cestino:</b> Gli elementi eliminati rimangono nel Cestino per 24 ore prima di scomparire per sempre.',
+    helpGestures: 'Gesti & scorciatoie',
+    helpGesturesContent: '• <b>Doppio tocco</b> in un Elenco di controllo per aggiungere rapidamente elementi.<br>• <b>Trascina & rilascia</b> attività per riordinarle (tieni premuto brevemente, quindi trascina).<br>• <b>Trascina & rilascia</b> progetti e sottoprogetti per organizzare il tuo dashboard.<br>• <b>Pressione lunga</b> impedisce trascinamenti accidentali durante lo scorrimento.',
+    
     // Time
     justNow: 'Proprio ora',
     minutesAgo: '{n} minuti fa',
@@ -673,6 +721,22 @@ const translations = {
     // Empty states
     nothingHere: 'Hier ist nichts',
     allCaughtUp: 'Alles erledigt!',
+    
+    // Help sections
+    helpInbox: 'Posteingang & schnelle Erfassung',
+    helpInboxContent: 'Der Posteingang ist Ihre Landungszone für schnelle Gedanken. Tippen Sie auf <b>+</b>, um sofort Aufgaben hinzuzufügen.<br><br><b>Mit Posteingang verknüpfen:</b> Arbeiten Sie tief in einem Projekt? Nutzen Sie das Aufgabenmenü ("...") zum <b>Mit Posteingang verknüpfen</b>. Die Aufgabe bleibt im Projekt, erscheint aber in Ihrem Posteingang. Tippen Sie auf das Kettensymbol (🔗), um zu seinem Projekt zu springen.',
+    helpProjects: 'Projekte & Fortschritt',
+    helpProjectsContent: 'Projekte organisieren Ihre Arbeit. Die Hauptliste zeigt <b>Fortschrittsbalken</b> (Gelb für Aufgaben, Violett für Checklisten), damit Sie Ihren Status auf einen Blick sehen.<br><br><b>Unterprojekte:</b> Teilen Sie große Projekte auf! Tippen Sie in einem Projekt auf <b>+</b> und dann <b>Neues Unterprojekt</b>. Sie erscheinen oben in der Liste und können durch Ziehen neu angeordnet werden.<br><br><b>Projekttypen:</b> Wählen Sie Standard für allgemeine Arbeiten oder Checkliste für Schritt-für-Schritt-Listen mit Benachrichtigungen.',
+    helpFocusMode: 'Fokusmodus (Zen)',
+    helpFocusModeContent: 'Wenn Sie ein <b>Checklisten</b>projekt verwenden (ideal zum Einkaufen oder Packen), tippen Sie auf das Symbol <b>⛶</b> in der Kopfzeile.<br><br>Dies blendet alle Navigation aus und lässt Sie sich rein auf die Liste konzentrieren. Großartig, wenn Sie unterwegs sind!',
+    helpProtected: 'Geschützte Elemente',
+    helpProtectedContent: 'Markieren Sie eine Aufgabe oder ein Projekt als <b>"Geschützt"</b>, um versehentliches Löschen oder Archivieren zu verhindern.<br><br>Geschützte Elemente haben ein Schlosssymbol (🔒) und müssen entsperrt werden, bevor Sie sie entfernen können. Perfekt für Einkaufsmeister oder wiederkehrende Listen.',
+    helpPriorities: 'Prioritäten',
+    helpPrioritiesContent: 'Priorisieren Sie effektiv mit visuellen Hinweisen:<br>• <b>Dringend!</b>: Blinkt rot. Tu das JETZT.<br>• <b>Höchste</b>: Durchgehend rote Grenze.<br>• <b>Hoch/Mittel/Niedrig</b>: Farbige Indikatoren helfen Ihnen, weniger kritische Arbeiten zu sortieren.',
+    helpCompletion: 'Abschluss & Automatisierung',
+    helpCompletionContent: 'Abgeschlossene Aufgaben werden in den unteren Stapel verschoben. Nach <b>24 Stunden</b> werden sie automatisch nach Datum archiviert.<br><br><b>Papierkorb:</b> Gelöschte Elemente bleiben 24 Stunden im Papierkorb, bevor sie für immer verschwinden.',
+    helpGestures: 'Gesten & Verknüpfungen',
+    helpGesturesContent: '• <b>Doppeltippen</b> in einer Checkliste zum schnellen Hinzufügen von Elementen.<br>• <b>Ziehen & Ablegen</b> von Aufgaben, um sie neu zu ordnen (kurz halten, dann ziehen).<br>• <b>Ziehen & Ablegen</b> von Projekten und Unterprojekten, um Ihr Dashboard zu organisieren.<br>• <b>Langer Druck</b> verhindert versehentliche Züge beim Scrollen.',
     
     // Time
     justNow: 'Gerade eben',
