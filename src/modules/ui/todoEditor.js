@@ -4,6 +4,7 @@ import { confirm } from './confirm.js';
 import { newAttachment, newTodo, Priority, nowIso } from '../data/models.js';
 import { maxOrderFor } from '../logic/sorting.js';
 import { compressImageBlob, createThumbnailBlob } from '../utils/image.js';
+import { t } from '../utils/i18n.js';
 
 const EDIT_COMPRESS_SPEC = { maxSize: 1280, quality: 0.8 };
 const THUMB_COMPRESS_SPEC = { maxSize: 320, quality: 0.6 };
@@ -11,11 +12,11 @@ const THUMB_COMPRESS_SPEC = { maxSize: 320, quality: 0.6 };
 function priorityOptions(select, value) {
   const opts = [Priority.URGENT, Priority.P0, Priority.P1, Priority.P2, Priority.P3];
   const labels = {
-    [Priority.URGENT]: 'Urgent!',
-    [Priority.P0]: 'Highest',
-    [Priority.P1]: 'High',
-    [Priority.P2]: 'Medium',
-    [Priority.P3]: 'Low'
+    [Priority.URGENT]: t('urgent'),
+    [Priority.P0]: t('highest'),
+    [Priority.P1]: t('high'),
+    [Priority.P2]: t('medium'),
+    [Priority.P3]: t('low')
   };
   for (const p of opts) {
     const o = el('option', { value: p }, labels[p] || p);
@@ -48,17 +49,33 @@ export async function openTodoEditor({
   // Track URLs for cleanup
   const objectUrls = [];
 
-  const titleInput = el('input', { class: 'input', required: 'required', value: todo.title, placeholder: 'Todo title', 'aria-label': 'Title' });
-  const notesInput = el('textarea', { class: 'textarea', placeholder: 'Notes', 'aria-label': 'Notes' }, todo.notes || '');
-  const prioritySelect = el('select', { class: 'select', 'aria-label': 'Priority' });
+  const titleInput = el('input', { class: 'input', required: 'required', value: todo.title, placeholder: t('taskTitle'), 'aria-label': t('title') });
+  const notesInput = el('textarea', { class: 'textarea', placeholder: t('taskNotes'), 'aria-label': t('notes') }, todo.notes || '');
+  const prioritySelect = el('select', { class: 'select', 'aria-label': t('priority') });
   priorityOptions(prioritySelect, todo.priority);
 
-  const dueInput = el('input', { class: 'input', type: 'date', value: formatDateInput(todo.dueDate), 'aria-label': 'Due date' });
-  const completedInput = el('input', { type: 'checkbox', checked: todo.completed ? 'checked' : null, 'aria-label': 'Completed' });
-  const protectedInput = el('input', { type: 'checkbox', checked: todo.protected ? 'checked' : null, 'aria-label': 'Protect task' });
+  const dueInput = el('input', { class: 'input', type: 'date', value: formatDateInput(todo.dueDate), 'aria-label': t('dueDate') });
+  const completedInput = el('input', { type: 'checkbox', checked: todo.completed ? 'checked' : null, 'aria-label': t('completed') });
+  const protectedInput = el('input', { type: 'checkbox', checked: todo.protected ? 'checked' : null, 'aria-label': t('protectTask') });
 
   // iOS: use file input (camera roll). We keep it simple and reliable.
-  const fileInput = el('input', { class: 'input', type: 'file', accept: 'image/*', multiple: 'multiple', 'aria-label': 'Attach images' });
+  const fileInput = el('input', { class: 'input', type: 'file', accept: 'image/*', multiple: 'multiple', 'aria-label': t('addImages'), style: { display: 'none' } });
+  const fileButton = el('button', { type: 'button', class: 'btn btn--primary', style: { padding: '0.75rem 1.5rem' } }, t('chooseFile'));
+  const fileStatusLabel = el('span', { style: { marginLeft: '1rem' } }, t('noFilesSelected'));
+  const fileInputWrapper = el('div', { style: { display: 'flex', alignItems: 'center', width: '100%' } }, fileButton, fileStatusLabel);
+  
+  fileButton.addEventListener('click', () => fileInput.click());
+
+  fileInput.addEventListener('change', () => {
+    const fileCount = fileInput.files?.length || 0;
+    if (fileCount === 0) {
+      fileStatusLabel.textContent = t('noFilesSelected');
+    } else if (fileCount === 1) {
+      fileStatusLabel.textContent = t('fileSelected', { n: 1 });
+    } else {
+      fileStatusLabel.textContent = t('filesSelected', { n: fileCount });
+    }
+  });
 
   const thumbGrid = el('div', { class: 'thumbGrid', 'aria-label': 'Image attachments' });
 
@@ -75,13 +92,13 @@ export async function openTodoEditor({
           el('button', {
             type: 'button',
             class: 'thumb__removeBtn',
-            'aria-label': 'Remove image',
-            title: 'Remove',
+            'aria-label': t('removeImage'),
+            title: t('removeImageHint'),
             onClick: async () => {
               const ok = await confirm(modalHost, {
-                title: 'Remove image?',
-                message: 'This will permanently remove the image from this todo.',
-                confirmLabel: 'Remove',
+                title: t('removeImage') + '?',
+                message: t('deleteConfirmMsg'),
+                confirmLabel: t('delete'),
                 danger: true
               });
               if (!ok) return;
@@ -100,6 +117,13 @@ export async function openTodoEditor({
   renderThumbs();
 
   fileInput.addEventListener('change', async () => {
+    // Update file status label
+    const fileCount = fileInput.files?.length || 0;
+    if (fileCount === 0) {
+      fileStatusLabel.textContent = t('noFilesSelected');
+    } else {
+      fileStatusLabel.textContent = fileCount === 1 ? '1 file' : `${fileCount} files`;
+    }
     const files = Array.from(fileInput.files || []);
     if (!files.length) return;
 
@@ -145,27 +169,27 @@ export async function openTodoEditor({
   });
 
   const content = el('div', { class: 'stack' },
-    el('label', { class: 'label' }, el('span', {}, 'Title *'), titleInput),
-    el('label', { class: 'label' }, el('span', {}, 'Notes'), notesInput),
+    el('label', { class: 'label' }, el('span', {}, t('titleRequired')), titleInput),
+    el('label', { class: 'label' }, el('span', {}, t('notes')), notesInput),
     el('div', { class: 'row row--split' },
-      el('label', { class: 'label' }, el('span', {}, 'Priority'), prioritySelect),
-      el('label', { class: 'label' }, el('span', {}, 'Due date'), dueInput)
+      el('label', { class: 'label' }, el('span', {}, t('priority')), prioritySelect),
+      el('label', { class: 'label' }, el('span', {}, t('dueDate')), dueInput)
     ),
     el('label', { class: 'label' },
-      el('span', {}, 'Completed'),
+      el('span', {}, t('completed')),
       completedInput
     ),
     el('label', { class: 'label' },
-      el('span', {}, 'Protect task'),
+      el('span', {}, t('protectTask')),
       protectedInput
     ),
     el('div', { class: 'small', style: { marginTop: '-0.5rem', marginBottom: '0.5rem', color: 'var(--text-muted)' } }, 
-      'Protected tasks cannot be deleted easily and stay in the completed list.'
+      t('protectedTasksInfo')
     ),
     el('div', { class: 'hr' }),
-    el('label', { class: 'label' }, el('span', {}, 'Add images'), fileInput),
+    el('label', { class: 'label' }, el('span', {}, t('addImages')), fileInputWrapper),
     thumbGrid,
-    el('div', { class: 'small' }, 'Images are stored locally in IndexedDB and will persist offline.')
+    el('div', { class: 'small' }, t('imagesStoredInfo'))
   );
 
   async function save() {
@@ -210,17 +234,17 @@ export async function openTodoEditor({
   async function deleteTodo() {
     if (todo.protected) {
       openModal(modalHost, {
-        title: 'Task Protected',
-        content: el('div', {}, 'This task is protected. Please uncheck "Protect task" in the editor to delete it.'),
-        actions: [{ label: 'OK', class: 'btn btn--primary', onClick: () => true }]
+        title: t('taskProtected'),
+        content: el('div', {}, t('taskProtectedMsg')),
+        actions: [{ label: t('ok'), class: 'btn btn--primary', onClick: () => true }]
       });
       return false;
     }
 
     const ok = await confirm(modalHost, {
-      title: 'Delete todo?',
-      message: 'This will permanently delete the todo and its images.',
-      confirmLabel: 'Delete',
+      title: t('deleteConfirmTitle'),
+      message: t('deleteConfirmMsg'),
+      confirmLabel: t('delete'),
       danger: true
     });
     if (!ok) return false;
@@ -231,16 +255,16 @@ export async function openTodoEditor({
   }
 
   const modal = openModal(modalHost, {
-    title: isEdit ? 'Edit Todo' : 'New Todo',
+    title: isEdit ? t('editTodo') : t('newTodo'),
     content,
     align: 'top',
     headerActions: [
-      { label: 'Save', class: 'btn btn--primary', onClick: save }
+      { label: t('save'), class: 'btn btn--primary', onClick: save }
     ],
     actions: [
-      isEdit ? { label: 'Delete', class: 'btn btn--danger', onClick: deleteTodo } : null,
-      { label: 'Cancel', class: 'btn btn--ghost', onClick: () => true },
-      { label: 'Save', class: 'btn btn--primary', onClick: save }
+      isEdit ? { label: t('delete'), class: 'btn btn--danger', onClick: deleteTodo } : null,
+      { label: t('cancel'), class: 'btn btn--ghost', onClick: () => true },
+      { label: t('save'), class: 'btn btn--primary', onClick: save }
     ].filter(Boolean),
     onClose: async () => {
       revokeAll(objectUrls);

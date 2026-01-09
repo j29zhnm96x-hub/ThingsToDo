@@ -154,28 +154,45 @@ export async function renderSettings(ctx) {
   }
 
   async function importData() {
-    const fileInput = el('input', { type: 'file', accept: 'application/json', class: 'input', 'aria-label': 'Import JSON file' });
+    const fileInput = el('input', { type: 'file', accept: 'application/json', 'aria-label': t('importJSON'), style: { display: 'none' } });
+    const fileButton = el('button', { type: 'button', class: 'btn btn--primary', style: { padding: '0.75rem 1.5rem' } }, t('chooseFile'));
+    const fileStatusLabel = el('span', { style: { marginLeft: '1rem' } }, t('noFilesSelected'));
+    const fileInputWrapper = el('div', { style: { display: 'flex', alignItems: 'center', width: '100%' } }, fileButton, fileStatusLabel);
+    
+    fileButton.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', () => {
+      const fileCount = fileInput.files?.length || 0;
+      if (fileCount === 0) {
+        fileStatusLabel.textContent = t('noFilesSelected');
+      } else if (fileCount === 1) {
+        fileStatusLabel.textContent = t('fileSelected', { n: 1 });
+      } else {
+        fileStatusLabel.textContent = t('filesSelected', { n: fileCount });
+      }
+    });
+
     const content = el('div', { class: 'stack' },
-      el('div', { class: 'small' }, 'Import will replace all current local data.'),
-      fileInput
+      el('div', { class: 'small' }, t('importWarning')),
+      fileInputWrapper
     );
 
     openModal(modalHost, {
-      title: 'Import JSON',
+      title: t('importJSON'),
       content,
       actions: [
-        { label: 'Cancel', class: 'btn btn--ghost', onClick: () => true },
+        { label: t('cancel'), class: 'btn btn--ghost', onClick: () => true },
         {
-          label: 'Import',
+          label: t('importData'),
           class: 'btn btn--primary',
           onClick: async () => {
             const f = (fileInput.files || [])[0];
             if (!f) return false;
 
             const ok = await confirm(modalHost, {
-              title: 'Confirm import',
-              message: 'This will wipe your current data and replace it with the imported file.',
-              confirmLabel: 'Import',
+              title: t('confirmImport'),
+              message: t('confirmImportMsg'),
+              confirmLabel: t('importData'),
               danger: true
             });
             if (!ok) return false;
@@ -186,9 +203,9 @@ export async function renderSettings(ctx) {
               parsed = JSON.parse(text);
             } catch {
               openModal(modalHost, {
-                title: 'Invalid JSON',
-                content: el('div', { class: 'small' }, 'Could not parse the file. Please choose a valid export JSON.'),
-                actions: [{ label: 'OK', class: 'btn btn--primary', onClick: () => true }]
+                title: t('invalidJSON'),
+                content: el('div', { class: 'small' }, t('invalidJSONMsg')),
+                actions: [{ label: t('ok'), class: 'btn btn--primary', onClick: () => true }]
               });
               return false;
             }

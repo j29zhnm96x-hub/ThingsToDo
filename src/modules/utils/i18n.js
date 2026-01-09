@@ -68,6 +68,36 @@ const translations = {
     tomorrow: 'Tomorrow',
     daysLeft: '{n} days left',
     
+    // Todo editor
+    editTodo: 'Edit Todo',
+    newTodo: 'New Todo',
+    title: 'Title',
+    titleRequired: 'Title *',
+    notes: 'Notes',
+    priority: 'Priority',
+    dueDate: 'Due date',
+    completed: 'Completed',
+    protectTask: 'Protect task',
+    protectedTasksInfo: 'Protected tasks cannot be deleted easily and stay in the completed list.',
+    addImages: 'Add images',
+    imagesStoredInfo: 'Images are stored locally in IndexedDB and will persist offline.',
+    removeImage: 'Remove image',
+    removeImageHint: 'Remove',
+    noFilesSelected: 'no file selected',
+    chooseFile: 'Choose File',
+    fileSelected: '{n} file selected',
+    filesSelected: '{n} files selected',
+    importJSON: 'Import JSON',
+    importWarning: 'Import will replace all current local data.',
+    confirmImport: 'Confirm import',
+    confirmImportMsg: 'This will wipe your current data and replace it with the imported file.',
+    invalidJSON: 'Invalid JSON',
+    invalidJSONMsg: 'Could not parse the file. Please choose a valid export JSON.',
+    taskProtected: 'Task Protected',
+    taskProtectedMsg: 'This task is protected. Please uncheck "Protect task" in the editor to delete it.',
+    deleteConfirmTitle: 'Delete todo?',
+    deleteConfirmMsg: 'This will permanently delete the todo and its images.',
+    
     // Menu options
     menu: 'Menu',
     moveToProject: 'Move to Project',
@@ -102,6 +132,13 @@ const translations = {
     clearDataWarning: 'This will delete all your tasks, projects, and settings. This cannot be undone.',
     exportData: 'Export Data',
     importData: 'Import Data',
+    
+    // Bin modal
+    binIsEmpty: 'Bin is empty',
+    deletedItemsInfo: 'Deleted items stay here for 24 hours.',
+    deletedLabel: 'Deleted',
+    restore: 'Restore',
+    recentlyDeleted: 'Recently Deleted',
     
     // Confirmations
     confirmDelete: 'Are you sure you want to delete this?',
@@ -204,6 +241,36 @@ const translations = {
     tomorrow: 'Sutra',
     daysLeft: 'još {n} dana',
     
+    // Todo editor
+    editTodo: 'Uredi zadatak',
+    newTodo: 'Novi zadatak',
+    title: 'Naziv',
+    titleRequired: 'Naziv *',
+    notes: 'Bilješke',
+    priority: 'Prioritet',
+    dueDate: 'Rok',
+    completed: 'Završeno',
+    protectTask: 'Zaštiti zadatak',
+    protectedTasksInfo: 'Zaštićeni zadaci se ne mogu jednostavno obrisati i ostaju na listi završenih.',
+    addImages: 'Dodaj slike',
+    imagesStoredInfo: 'Slike se čuvaju lokalno u IndexedDB-u i bit će dostupne i izvan mreže.',
+    removeImage: 'Ukloni sliku',
+    removeImageHint: 'Ukloni',
+    noFilesSelected: 'datoteka nije odabrana',
+    chooseFile: 'Odaberi datoteku',
+    fileSelected: '{n} datoteka odabrana',
+    filesSelected: '{n} datoteka odabrano',
+    importJSON: 'Uvezi JSON',
+    importWarning: 'Uvoz će zamijeniti sve vaše trenutne lokalne podatke.',
+    confirmImport: 'Potvrdi uvoz',
+    confirmImportMsg: 'Ovo će obrisati vaše trenutne podatke i zamijeniti ih uvoznom datotekom.',
+    invalidJSON: 'Nevaljani JSON',
+    invalidJSONMsg: 'Datoteka se nije mogla parsirati. Molimo odaberite valjanu izvezenu JSON datoteku.',
+    taskProtected: 'Zadatak je zaštićen',
+    taskProtectedMsg: 'Ovaj zadatak je zaštićen. Prvo otključajte "Zaštiti zadatak" u uređivaču da biste ga obrisali.',
+    deleteConfirmTitle: 'Obrisati zadatak?',
+    deleteConfirmMsg: 'Ovo će trajno obrisati zadatak i njegove slike.',
+    
     // Menu options
     menu: 'Izbornik',
     moveToProject: 'Premjesti u projekt',
@@ -238,6 +305,13 @@ const translations = {
     clearDataWarning: 'Ovo će obrisati sve zadatke, projekte i postavke. Ova radnja se ne može poništiti.',
     exportData: 'Izvezi podatke',
     importData: 'Uvezi podatke',
+    
+    // Bin modal
+    binIsEmpty: 'Koš je prazan',
+    deletedItemsInfo: 'Obrisane stavke ostaju ovdje 24 sata.',
+    deletedLabel: 'Obrisano',
+    restore: 'Vrati',
+    recentlyDeleted: 'Nedavno obrisano',
     
     // Confirmations
     confirmDelete: 'Jeste li sigurni da želite obrisati?',
@@ -340,6 +414,36 @@ const translations = {
     tomorrow: 'Domani',
     daysLeft: '{n} giorni rimasti',
     
+    // Todo editor
+    editTodo: 'Modifica attività',
+    newTodo: 'Nuova attività',
+    title: 'Titolo',
+    titleRequired: 'Titolo *',
+    notes: 'Note',
+    priority: 'Priorità',
+    dueDate: 'Scadenza',
+    completed: 'Completato',
+    protectTask: 'Proteggi attività',
+    protectedTasksInfo: 'Le attività protette non possono essere eliminate facilmente e rimangono nell\'elenco dei completati.',
+    addImages: 'Aggiungi immagini',
+    imagesStoredInfo: 'Le immagini vengono archiviate localmente in IndexedDB e verranno salvate offline.',
+    removeImage: 'Rimuovi immagine',
+    removeImageHint: 'Rimuovi',
+    noFilesSelected: 'nessun file selezionato',
+    chooseFile: 'Scegli file',
+    fileSelected: '{n} file selezionato',
+    filesSelected: '{n} file selezionati',
+    importJSON: 'Importa JSON',
+    importWarning: 'L\'importazione sostituirà tutti i dati locali attuali.',
+    confirmImport: 'Conferma importazione',
+    confirmImportMsg: 'Questo cancellerà i dati attuali e li sostituirà con il file importato.',
+    invalidJSON: 'JSON non valido',
+    invalidJSONMsg: 'Impossibile analizzare il file. Scegliere un JSON esportato valido.',
+    taskProtected: 'Attività protetta',
+    taskProtectedMsg: 'Questa attività è protetta. Deselezionare "Proteggi attività" nell\'editor per eliminarla.',
+    deleteConfirmTitle: 'Eliminare l\'attività?',
+    deleteConfirmMsg: 'Questo eliminerà permanentemente l\'attività e le sue immagini.',
+    
     // Menu options
     menu: 'Menu',
     moveToProject: 'Sposta nel progetto',
@@ -374,6 +478,13 @@ const translations = {
     clearDataWarning: 'Questo eliminerà tutte le attività, i progetti e le impostazioni. Non può essere annullato.',
     exportData: 'Esporta dati',
     importData: 'Importa dati',
+    
+    // Bin modal
+    binIsEmpty: 'Il cestino è vuoto',
+    deletedItemsInfo: 'Gli elementi eliminati rimangono qui per 24 ore.',
+    deletedLabel: 'Eliminato',
+    restore: 'Ripristina',
+    recentlyDeleted: 'Eliminati di recente',
     
     // Confirmations
     confirmDelete: 'Sei sicuro di voler eliminare?',
@@ -476,6 +587,36 @@ const translations = {
     tomorrow: 'Morgen',
     daysLeft: 'noch {n} Tage',
     
+    // Todo editor
+    editTodo: 'Aufgabe bearbeiten',
+    newTodo: 'Neue Aufgabe',
+    title: 'Titel',
+    titleRequired: 'Titel *',
+    notes: 'Notizen',
+    priority: 'Priorität',
+    dueDate: 'Fälligkeitsdatum',
+    completed: 'Erledigt',
+    protectTask: 'Aufgabe schützen',
+    protectedTasksInfo: 'Geschützte Aufgaben können nicht einfach gelöscht werden und bleiben in der Liste der abgeschlossenen Aufgaben.',
+    addImages: 'Bilder hinzufügen',
+    imagesStoredInfo: 'Bilder werden lokal in IndexedDB gespeichert und sind offline verfügbar.',
+    removeImage: 'Bild entfernen',
+    removeImageHint: 'Entfernen',
+    noFilesSelected: 'keine Datei ausgewählt',
+    chooseFile: 'Datei wählen',
+    fileSelected: '{n} Datei ausgewählt',
+    filesSelected: '{n} Dateien ausgewählt',
+    importJSON: 'JSON importieren',
+    importWarning: 'Der Import ersetzt alle aktuellen lokalen Daten.',
+    confirmImport: 'Importieren bestätigen',
+    confirmImportMsg: 'Dies löscht Ihre aktuellen Daten und ersetzt sie durch die importierte Datei.',
+    invalidJSON: 'Ungültiges JSON',
+    invalidJSONMsg: 'Die Datei konnte nicht analysiert werden. Bitte wählen Sie eine gültige exportierte JSON-Datei.',
+    taskProtected: 'Aufgabe geschützt',
+    taskProtectedMsg: 'Diese Aufgabe ist geschützt. Bitte deaktivieren Sie "Aufgabe schützen" im Editor, um sie zu löschen.',
+    deleteConfirmTitle: 'Aufgabe löschen?',
+    deleteConfirmMsg: 'Dies löscht die Aufgabe und ihre Bilder dauerhaft.',
+    
     // Menu options
     menu: 'Menü',
     moveToProject: 'Zu Projekt verschieben',
@@ -510,6 +651,13 @@ const translations = {
     clearDataWarning: 'Dies löscht alle Aufgaben, Projekte und Einstellungen. Dies kann nicht rückgängig gemacht werden.',
     exportData: 'Daten exportieren',
     importData: 'Daten importieren',
+    
+    // Bin modal
+    binIsEmpty: 'Papierkorb ist leer',
+    deletedItemsInfo: 'Gelöschte Elemente bleiben 24 Stunden hier.',
+    deletedLabel: 'Gelöscht',
+    restore: 'Wiederherstellen',
+    recentlyDeleted: 'Kürzlich gelöscht',
     
     // Confirmations
     confirmDelete: 'Möchten Sie das wirklich löschen?',

@@ -1,6 +1,7 @@
 import { el, emptyState } from './dom.js';
 import { openModal } from './modal.js';
 import { restoreFromBin } from '../logic/todoOps.js';
+import { t } from '../utils/i18n.js';
 
 export async function openBinModal(ctx, { onRestore } = {}) {
   try {
@@ -19,7 +20,7 @@ export async function openBinModal(ctx, { onRestore } = {}) {
     const list = el('div', { class: 'list' });
     
     if (items.length === 0) {
-      list.append(emptyState('Bin is empty', 'Deleted items stay here for 24 hours.'));
+      list.append(emptyState(t('binIsEmpty'), t('deletedItemsInfo')));
     }
 
     // We need a reference to modal for the closure, but it's created after.
@@ -31,7 +32,7 @@ export async function openBinModal(ctx, { onRestore } = {}) {
         el('div', { class: 'todo__row1' },
           el('div', { class: 'todo__titleArea' },
             el('div', { class: 'todo__title' }, item.title),
-            el('div', { class: 'todo__row2' }, 'Deleted ' + new Date(item.deletedAt).toLocaleTimeString())
+            el('div', { class: 'todo__row2' }, t('deletedLabel') + ' ' + new Date(item.deletedAt).toLocaleTimeString())
           ),
           el('button', { 
             class: 'btn btn--sm', 
@@ -42,17 +43,17 @@ export async function openBinModal(ctx, { onRestore } = {}) {
               // Re-open to show updated list (small delay to allow modal close animation if needed, though we are replacing it)
               setTimeout(() => openBinModal(ctx, { onRestore }), 50);
             }
-          }, 'Restore')
+          }, t('restore'))
         )
       );
       list.appendChild(row);
     }
 
     const modal = openModal(modalHost, {
-      title: 'Recently Deleted',
+      title: t('recentlyDeleted'),
       content: list,
       actions: [
-        { label: 'Close', class: 'btn btn--ghost', onClick: () => true }
+        { label: t('close'), class: 'btn btn--ghost', onClick: () => true }
       ]
     });
     
