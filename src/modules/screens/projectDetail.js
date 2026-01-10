@@ -246,10 +246,45 @@ export async function renderProjectDetail(ctx, projectId) {
           title: 'Delete item?',
           message: `Delete "${todo.title}"?`,
           confirmLabel: 'Delete',
-          danger: true
+          danger: true,
+          align: 'center'
         });
         if (!ok) return;
         await db.todos.delete(todo.id);
+        await renderProjectDetail(ctx, projectId);
+      },
+      onDeleteAllCompleted: async () => {
+        const completedTodos = todos.filter(t => t.completed);
+        const unprotected = completedTodos.filter(t => !t.protected);
+        const protectedCount = completedTodos.length - unprotected.length;
+        
+        if (unprotected.length === 0) {
+          if (protectedCount > 0) {
+            openModal(modalHost, {
+              title: 'All Protected',
+              content: el('div', {}, 'All completed items are protected and cannot be deleted.'),
+              actions: [{ label: 'OK', class: 'btn btn--primary', onClick: () => true }]
+            });
+          }
+          return;
+        }
+        
+        const message = protectedCount > 0
+          ? `Delete ${unprotected.length} completed items? (${protectedCount} protected items will be kept)`
+          : `Delete all ${unprotected.length} completed items?`;
+        
+        const ok = await confirm(modalHost, {
+          title: 'Delete completed?',
+          message,
+          confirmLabel: 'Delete All',
+          danger: true,
+          align: 'center'
+        });
+        if (!ok) return;
+        
+        for (const todo of unprotected) {
+          await db.todos.delete(todo.id);
+        }
         await renderProjectDetail(ctx, projectId);
       }
     });
@@ -258,20 +293,26 @@ export async function renderProjectDetail(ctx, projectId) {
     
     // Exit button in Focus Mode now uses the header toggle, no extra button needed on screen.
 
-    const container = el('div', { class: 'stack' }, 
+    // Inner stack for content layout
+    const contentStack = el('div', { class: 'stack' }, 
        subProjectsList, // Add sub-projects list at the top (if any)
        listEl, 
        hint
     );
 
+    // Outer container for double-tap detection area
+    const container = el('div', { 
+      style: 'min-height: calc(100vh - 44px - var(--safe-top) - 74px - var(--safe-bottom) - 28px);'
+    }, contentStack);
+
     main.append(container);
 
     const triggerAdd = () => quickAddChecklist({ modalHost, db, projectId, onCreated: () => renderProjectDetail(ctx, projectId) });
 
-    // Touch double-tap detection - attach to body for whole screen coverage.
+    // Touch double-tap detection - attach to container for full screen coverage within checklist area.
     let lastTap = 0;
     
-    document.body.addEventListener('touchend', (e) => {
+    container.addEventListener('touchend', (e) => {
       const now = Date.now();
       if (now - lastTap < 350) {
         e.preventDefault();
@@ -281,7 +322,7 @@ export async function renderProjectDetail(ctx, projectId) {
     }, { passive: false });
 
     // Mouse/trackpad double-click fallback.
-    document.body.addEventListener('dblclick', (e) => { e.preventDefault(); triggerAdd(); });
+    container.addEventListener('dblclick', (e) => { e.preventDefault(); triggerAdd(); });
 
     return;
   }
@@ -441,39 +482,29 @@ export function openProjectAddMenu(ctx, project) {
     });
 }
 
-function renderChecklist({ todos, onToggleCompleted, onDelete }) {
+function renderChecklist({ todos, onToggleCompleted, onDelete, onDeleteAllCompleted }) {
   const active = todos.filter(t => !t.completed);
   const done = todos.filter(t => t.completed);
 
+  // Load collapsed state from localStorage
+  const storageKey = 'checklist-completed-collapsed';
+  let isCollapsed = localStorage.getItem(storageKey) === 'true';
+
   const makeRow = (t, completed) => {
     let pressTimer = null;
-    let pressStartTime = 0;
-    const LONG_PRESS_DURATION = 1500; // 1.5 seconds
+    const LONG_PRESS_DURATION = 500; // 0.5 seconds
+
+    // Swipe tracking
+    let startX = 0;
+    let currentX = 0;
+    let swiping = false;
+    const SWIPE_THRESHOLD = 80;
 
     const textSpan = el('span', { class: 'checklist__text' }, t.title);
 
-    const handlePressStart = (e) => {
-      pressStartTime = Date.now();
-      pressTimer = setTimeout(() => {
-        // Long press detected
-        onDelete?.(t);
-      }, LONG_PRESS_DURATION);
-    };
-
-    const handlePressEnd = (e) => {
-      if (pressTimer) {
-        clearTimeout(pressTimer);
-        pressTimer = null;
-      }
-    };
-
-    textSpan.addEventListener('pointerdown', handlePressStart);
-    textSpan.addEventListener('pointerup', handlePressEnd);
-    textSpan.addEventListener('pointercancel', handlePressEnd);
-    textSpan.addEventListener('pointerleave', handlePressEnd);
-
-    return el('div', {
-      class: completed ? 'checklist__item checklist__item--done' : 'checklist__item'
+    const row = el('div', {
+      class: completed ? 'checklist__item checklist__item--done' : 'checklist__item',
+      style: 'position: relative; overflow: hidden;'
     },
       el('span', { 
         class: completed ? 'checklist__circle checklist__circle--done' : 'checklist__circle',
@@ -485,12 +516,147 @@ function renderChecklist({ todos, onToggleCompleted, onDelete }) {
       textSpan,
       t.protected ? el('span', { class: 'icon-protected', 'aria-label': 'Protected' }, '🔒') : null
     );
+
+    // Long press to delete
+    const handlePressStart = (e) => {
+      if (swiping) return;
+      pressTimer = setTimeout(() => {
+        hapticLight();
+        onDelete?.(t);
+      }, LONG_PRESS_DURATION);
+    };
+
+    const handlePressEnd = () => {
+      if (pressTimer) {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+      }
+    };
+
+    // Swipe left to delete
+    const handleTouchStart = (e) => {
+      startX = e.touches[0].clientX;
+      currentX = startX;
+      swiping = false;
+    };
+
+    const handleTouchMove = (e) => {
+      currentX = e.touches[0].clientX;
+      const diff = startX - currentX;
+      
+      if (diff > 20) {
+        swiping = true;
+        handlePressEnd(); // Cancel long press if swiping
+        const translateX = Math.min(diff, SWIPE_THRESHOLD + 20);
+        row.style.transform = `translateX(-${translateX}px)`;
+        row.style.transition = 'none';
+      }
+    };
+
+    const handleTouchEnd = () => {
+      const diff = startX - currentX;
+      
+      if (diff > SWIPE_THRESHOLD) {
+        // Swipe detected - delete
+        row.style.transition = 'transform 200ms ease';
+        row.style.transform = 'translateX(-100%)';
+        setTimeout(() => {
+          hapticLight();
+          onDelete?.(t);
+        }, 150);
+      } else {
+        // Reset position
+        row.style.transition = 'transform 200ms ease';
+        row.style.transform = 'translateX(0)';
+      }
+      swiping = false;
+    };
+
+    textSpan.addEventListener('pointerdown', handlePressStart);
+    textSpan.addEventListener('pointerup', handlePressEnd);
+    textSpan.addEventListener('pointercancel', handlePressEnd);
+    textSpan.addEventListener('pointerleave', handlePressEnd);
+
+    row.addEventListener('touchstart', handleTouchStart, { passive: true });
+    row.addEventListener('touchmove', handleTouchMove, { passive: true });
+    row.addEventListener('touchend', handleTouchEnd);
+
+    return row;
   };
 
   const container = el('div', { class: 'checklist' });
   active.forEach(t => container.appendChild(makeRow(t, false)));
-  if (done.length) container.appendChild(el('div', { class: 'todo-divider' }, el('span', { class: 'todo-divider__text' }, 'Completed')));
-  done.forEach(t => container.appendChild(makeRow(t, true)));
+  
+  if (done.length) {
+    // Create collapsible completed section
+    let pressTimer = null;
+    
+    const dividerBtn = el('button', { 
+      type: 'button',
+      class: 'todo-divider__text',
+      style: 'cursor: pointer;'
+    }, `Completed (${done.length})`);
+    
+    // Single tap to toggle collapse, long press (1 sec) to delete all
+    const handlePressStart = () => {
+      pressTimer = setTimeout(() => {
+        // Long press detected - delete all completed
+        hapticLight();
+        onDeleteAllCompleted?.();
+      }, 1000);
+    };
+
+    const handlePressEnd = () => {
+      if (pressTimer) {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+      }
+    };
+
+    dividerBtn.addEventListener('click', () => {
+      // Single click - toggle collapse
+      isCollapsed = !isCollapsed;
+      localStorage.setItem(storageKey, isCollapsed);
+      updateCompletedVisibility();
+    });
+
+    dividerBtn.addEventListener('pointerdown', handlePressStart);
+    dividerBtn.addEventListener('pointerup', handlePressEnd);
+    dividerBtn.addEventListener('pointercancel', handlePressEnd);
+    dividerBtn.addEventListener('pointerleave', handlePressEnd);
+
+    const divider = el('div', { class: 'todo-divider' }, dividerBtn);
+    container.appendChild(divider);
+
+    // Collapsed stack representation (thin lines)
+    const stack = el('div', { 
+      class: 'completedStack',
+      style: isCollapsed ? '' : 'display: none;'
+    });
+    const lineCount = Math.min(done.length, 15);
+    for (let i = 0; i < lineCount; i++) {
+      stack.appendChild(el('div', { class: 'completedStack__line' }));
+    }
+    container.appendChild(stack);
+
+    // Completed items
+    const completedItems = [];
+    done.forEach(t => {
+      const row = makeRow(t, true);
+      if (isCollapsed) row.style.display = 'none';
+      completedItems.push(row);
+      container.appendChild(row);
+    });
+
+    // Function to update visibility
+    const updateCompletedVisibility = () => {
+      stack.style.display = isCollapsed ? '' : 'none';
+      completedItems.forEach(item => {
+        item.style.display = isCollapsed ? 'none' : '';
+      });
+    };
+  }
+  
   return container;
 }
 

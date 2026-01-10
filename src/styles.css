@@ -828,17 +828,15 @@ body.dragging-reorder .app {
 .badge--p3 { color: var(--p3); }
 
 .iconBtn {
-  min-width: var(--tap);
-  min-height: var(--tap);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: rgba(17,28,51,0.6);
-  color: var(--text);
+  min-width: auto;
+  min-height: auto;
+  border: none;
+  background: none;
 }
-.iconBtn:focus-visible { outline: 2px solid #93c5fd; outline-offset: 2px; }
+
+.modal__header .iconBtn {
+  font-size: 24px;
+}
 
 .tabbar {
   position: fixed;
@@ -879,8 +877,9 @@ body.dragging-reorder .app {
   z-index: 20;
   animation: modalFadeIn 200ms ease;
 }
-.modalHost[aria-hidden="false"] { display: grid; align-items: end; }
+.modalHost[aria-hidden="false"] { display: grid; align-items: end; justify-items: center; }
 .modalHost[data-align="top"] { align-items: start; }
+.modalHost[data-align="center"] { align-items: center; }
 
 @keyframes modalFadeIn {
   from { opacity: 0; }
@@ -916,7 +915,7 @@ body.dragging-reorder .app {
 .modal::-webkit-scrollbar { display: none; }
 
 .modal__header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; }
-.modal__header .iconBtn { background: transparent; border: none; font-size: 24px; }
+.modal__header .iconBtn { background: transparent; border: none; font-size: 24px; min-width: auto; min-height: auto; }
 .modal__title { font-weight: 750; font-size: 16px; }
 
 .thumbGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
