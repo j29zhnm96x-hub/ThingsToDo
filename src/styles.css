@@ -828,15 +828,17 @@ body.dragging-reorder .app {
 .badge--p3 { color: var(--p3); }
 
 .iconBtn {
-  min-width: auto;
-  min-height: auto;
-  border: none;
-  background: none;
+  min-width: var(--tap);
+  min-height: var(--tap);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(17,28,51,0.6);
+  color: var(--text);
 }
-
-.modal__header .iconBtn {
-  font-size: 24px;
-}
+.iconBtn:focus-visible { outline: 2px solid #93c5fd; outline-offset: 2px; }
 
 .tabbar {
   position: fixed;
@@ -915,7 +917,7 @@ body.dragging-reorder .app {
 .modal::-webkit-scrollbar { display: none; }
 
 .modal__header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; }
-.modal__header .iconBtn { background: transparent; border: none; font-size: 24px; min-width: auto; min-height: auto; }
+.modal__header .iconBtn { background: transparent; border: none; font-size: 24px; min-width: auto; min-height: auto; border-radius: 0; }
 .modal__title { font-weight: 750; font-size: 16px; }
 
 .thumbGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
