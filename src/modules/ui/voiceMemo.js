@@ -66,29 +66,37 @@ export function openRecordingModal({ modalHost, db, projectId = null, onSaved })
   let analyser = null;
   let animationFrame = null;
   
-  // UI elements
-  const timerDisplay = el('div', { class: 'voiceRecorder__timer' }, '0:00');
-  const waveformCanvas = el('canvas', { class: 'voiceRecorder__waveform', width: 280, height: 60 });
-  const statusText = el('div', { class: 'voiceRecorder__status' }, t('tapToRecord'));
+  // UI elements with inline styles for reliability
+  const timerDisplay = el('div', { 
+    style: 'font-size: 3rem; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); text-align: center;' 
+  }, '0:00');
+  
+  const waveformCanvas = el('canvas', { 
+    width: 280, 
+    height: 60,
+    style: 'width: 100%; height: 60px; border-radius: 8px; background: var(--surface3);'
+  });
+  
+  const statusText = el('div', { 
+    style: 'font-size: 0.875rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; text-align: center;' 
+  }, t('tapToRecord'));
   
   const recordBtn = el('button', { 
-    class: 'voiceRecorder__btn voiceRecorder__btn--record',
     type: 'button',
-    'aria-label': t('record')
+    'aria-label': t('record'),
+    style: 'width: 72px; height: 72px; border-radius: 50%; border: none; background: #ef4444; color: white; font-size: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);'
   }, '●');
   
   const pauseBtn = el('button', { 
-    class: 'voiceRecorder__btn voiceRecorder__btn--pause',
     type: 'button',
     'aria-label': t('pause'),
-    style: 'display: none;'
+    style: 'display: none; width: 56px; height: 56px; border-radius: 50%; border: none; background: var(--accent); color: white; font-size: 20px; cursor: pointer; align-items: center; justify-content: center;'
   }, '❚❚');
   
   const stopBtn = el('button', { 
-    class: 'voiceRecorder__btn voiceRecorder__btn--stop',
     type: 'button',
     'aria-label': t('stop'),
-    style: 'display: none;'
+    style: 'display: none; width: 56px; height: 56px; border-radius: 50%; border: none; background: var(--surface3); color: var(--text); font-size: 20px; cursor: pointer; align-items: center; justify-content: center;'
   }, '■');
 
   // Waveform visualization
@@ -218,13 +226,13 @@ export function openRecordingModal({ modalHost, db, projectId = null, onSaved })
       
       timerInterval = setInterval(updateTimer, 100);
       
-      // Update UI
+      // Update UI - use flex display for buttons
       recordBtn.style.display = 'none';
       recordBtn.disabled = false;
-      pauseBtn.style.display = '';
-      stopBtn.style.display = '';
+      pauseBtn.style.display = 'flex';
+      stopBtn.style.display = 'flex';
       statusText.textContent = t('recording');
-      statusText.classList.add('voiceRecorder__status--recording');
+      statusText.style.color = '#ef4444';
       
       drawWaveform();
       hapticLight();
@@ -263,12 +271,14 @@ export function openRecordingModal({ modalHost, db, projectId = null, onSaved })
       startTime = Date.now() - (elapsed * 1000);
       pauseBtn.textContent = '❚❚';
       statusText.textContent = t('recording');
+      statusText.style.color = '#ef4444';
       drawWaveform();
     } else {
       mediaRecorder.pause();
       isPaused = true;
       pauseBtn.textContent = '▶';
       statusText.textContent = t('paused');
+      statusText.style.color = 'var(--muted)';
       if (animationFrame) cancelAnimationFrame(animationFrame);
     }
     hapticLight();
@@ -389,11 +399,13 @@ export function openRecordingModal({ modalHost, db, projectId = null, onSaved })
     titleInput.select();
   });
 
-  const content = el('div', { class: 'voiceRecorder' },
+  const content = el('div', { 
+    style: 'display: flex; flex-direction: column; align-items: center; padding: 24px 16px; gap: 20px;'
+  },
     waveformCanvas,
     timerDisplay,
     statusText,
-    el('div', { class: 'voiceRecorder__controls' },
+    el('div', { style: 'display: flex; gap: 16px; margin-top: 8px;' },
       recordBtn,
       pauseBtn,
       stopBtn
@@ -421,21 +433,29 @@ export function openPlaybackModal({ modalHost, db, memo, onChange }) {
   let isPlaying = false;
   let animationFrame = null;
   
-  const progressBar = el('div', { class: 'voicePlayer__progressBar' });
-  const progressFill = el('div', { class: 'voicePlayer__progressFill' });
+  const progressBar = el('div', { 
+    style: 'flex: 1; height: 8px; background: var(--surface3); border-radius: 4px; cursor: pointer; overflow: hidden;'
+  });
+  const progressFill = el('div', { 
+    style: 'height: 100%; width: 0; background: var(--accent); border-radius: 4px; transition: width 0.1s linear;'
+  });
   progressBar.appendChild(progressFill);
   
-  const currentTime = el('span', { class: 'voicePlayer__time' }, '0:00');
-  const totalTime = el('span', { class: 'voicePlayer__time' }, formatDuration(memo.duration));
+  const currentTime = el('span', { 
+    style: 'font-size: 0.875rem; font-variant-numeric: tabular-nums; color: var(--muted); min-width: 40px;'
+  }, '0:00');
+  const totalTime = el('span', { 
+    style: 'font-size: 0.875rem; font-variant-numeric: tabular-nums; color: var(--muted); min-width: 40px; text-align: right;'
+  }, formatDuration(memo.duration));
   
   const playBtn = el('button', { 
-    class: 'voicePlayer__btn voicePlayer__btn--play',
-    type: 'button'
+    type: 'button',
+    style: 'width: 64px; height: 64px; border-radius: 50%; border: none; background: var(--accent); color: white; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center;'
   }, '▶');
   
   const stopBtn = el('button', { 
-    class: 'voicePlayer__btn',
-    type: 'button'
+    type: 'button',
+    style: 'width: 56px; height: 56px; border-radius: 50%; border: none; background: var(--surface3); color: var(--text); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;'
   }, '■');
 
   function updateProgress() {
@@ -510,15 +530,15 @@ export function openPlaybackModal({ modalHost, db, memo, onChange }) {
     URL.revokeObjectURL(audioUrl);
   }
 
-  const content = el('div', { class: 'voicePlayer' },
-    el('div', { class: 'voicePlayer__title' }, memo.title),
-    el('div', { class: 'voicePlayer__meta' }, formatTime(memo.createdAt)),
-    el('div', { class: 'voicePlayer__progressWrap' },
+  const content = el('div', { style: 'display: flex; flex-direction: column; align-items: center; padding: 16px 8px; gap: 16px;' },
+    el('div', { style: 'font-size: 1.125rem; font-weight: 600; color: var(--text); text-align: center;' }, memo.title),
+    el('div', { style: 'font-size: 0.8125rem; color: var(--muted);' }, formatTime(memo.createdAt)),
+    el('div', { style: 'width: 100%; display: flex; align-items: center; gap: 12px; padding: 0 8px;' },
       currentTime,
       progressBar,
       totalTime
     ),
-    el('div', { class: 'voicePlayer__controls' },
+    el('div', { style: 'display: flex; gap: 16px; margin-top: 8px;' },
       playBtn,
       stopBtn
     )
@@ -566,25 +586,27 @@ export function openPlaybackModal({ modalHost, db, memo, onChange }) {
 
 export function renderVoiceMemoCard({ memo, onTap, onMenu }) {
   const card = el('div', { 
-    class: 'voiceMemoCard',
+    style: 'display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--surface); border-radius: var(--radius, 16px); box-shadow: var(--card-shadow); cursor: pointer;',
     onClick: () => {
       hapticLight();
       onTap?.(memo);
     }
   },
-    el('div', { class: 'voiceMemoCard__icon' }, '🎤'),
-    el('div', { class: 'voiceMemoCard__content' },
-      el('div', { class: 'voiceMemoCard__title' }, memo.title),
-      el('div', { class: 'voiceMemoCard__meta' },
+    el('div', { 
+      style: 'font-size: 1.5rem; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: var(--surface3); border-radius: 50%; flex-shrink: 0;'
+    }, '🎤'),
+    el('div', { style: 'flex: 1; min-width: 0;' },
+      el('div', { style: 'font-size: 1rem; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;' }, memo.title),
+      el('div', { style: 'display: flex; align-items: center; gap: 6px; font-size: 0.8125rem; color: var(--muted); margin-top: 2px;' },
         el('span', {}, formatDuration(memo.duration)),
-        el('span', { class: 'voiceMemoCard__dot' }, '•'),
+        el('span', { style: 'font-size: 0.625rem;' }, '•'),
         el('span', {}, formatTime(memo.createdAt))
       )
     ),
-    memo.showInInbox && memo.projectId ? el('span', { class: 'voiceMemoCard__link', 'aria-label': t('linkedToInbox') }, '🔗') : null,
+    memo.showInInbox && memo.projectId ? el('span', { style: 'font-size: 1rem; flex-shrink: 0;' }, '🔗') : null,
     el('button', { 
-      class: 'voiceMemoCard__menuBtn',
       type: 'button',
+      style: 'width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; color: var(--muted); font-size: 1.25rem; border-radius: 50%; cursor: pointer; flex-shrink: 0;',
       'aria-label': t('menu'),
       onClick: (e) => {
         e.stopPropagation();
@@ -766,7 +788,7 @@ function openMoveModal({ modalHost, db, memo, projects, onMoved }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function renderVoiceMemoList({ memos, modalHost, db, projects, onChange }) {
-  const container = el('div', { class: 'voiceMemoList' });
+  const container = el('div', { style: 'display: flex; flex-direction: column; gap: 12px;' });
 
   for (const memo of memos) {
     const card = renderVoiceMemoCard({

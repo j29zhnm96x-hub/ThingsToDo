@@ -183,8 +183,8 @@ export async function renderInbox(ctx) {
 
   // Voice memos section
   const voiceMemosList = voiceMemos.length
-    ? el('div', { class: 'voiceMemoSection' },
-        el('div', { class: 'voiceMemoSection__title' }, t('voiceMemos')),
+    ? el('div', { style: 'margin-top: 16px;' },
+        el('div', { style: 'font-size: 0.8125rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; padding: 0 4px;' }, t('voiceMemos')),
         renderVoiceMemoList({
           memos: voiceMemos,
           modalHost,
