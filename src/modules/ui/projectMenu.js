@@ -2,6 +2,8 @@ import { el } from './dom.js';
 import { openModal } from './modal.js';
 import { confirm } from './confirm.js';
 import { compressAttachmentsForArchive } from '../logic/attachments.js';
+import { showToast } from './toast.js';
+import { t } from '../utils/i18n.js';
 
 async function deleteProjectRecursive(db, projectId) {
   const allProjects = await db.projects.list();
@@ -129,13 +131,24 @@ export function openProjectMenu(modalHost, { db, project, onChange }) {
   const deleteBtn = el('button', { class: 'btn btn--danger', type: 'button' }, 'Delete');
 
   editBtn.addEventListener('click', () => openEditProject(modalHost, { db, project, onChange }));
+  
+  let modalRef = null;
   linkBtn.addEventListener('click', async () => {
+    const wasLinked = project.showInInbox;
     await db.projects.put({ ...project, showInInbox: !project.showInInbox });
     onChange?.();
+    
+    // Close the modal
+    if (modalRef) modalRef.close();
+    
+    // Show success toast
+    const message = wasLinked ? t('projectUnlinkedFromInbox') : t('projectLinkedToInbox');
+    showToast(message);
   });
+  
   deleteBtn.addEventListener('click', () => openDeleteProject(modalHost, { db, project, onChange }));
 
-  openModal(modalHost, {
+  modalRef = openModal(modalHost, {
     title: project.name,
     content: el('div', { class: 'stack' },
       el('div', { class: 'small' }, 'Project actions'),

@@ -12,6 +12,8 @@ import { openCreateProject } from './projects.js';
 import { openProjectMenu } from '../ui/projectMenu.js';
 import { renderProjectCard } from '../ui/projectCard.js';
 import { Priority } from '../data/models.js';
+import { showToast } from '../ui/toast.js';
+import { t } from '../utils/i18n.js';
 
 import { compressAttachmentsForArchive } from '../logic/attachments.js';
 async function buildProjectsById(db) {
@@ -355,8 +357,13 @@ export async function renderProjectDetail(ctx, projectId) {
     },
     onLinkToggle: async (todo) => {
         // Toggle inbox link
+        const wasLinked = todo.showInInbox;
         await db.todos.put({ ...todo, showInInbox: !todo.showInInbox });
         await renderProjectDetail(ctx, projectId);
+        
+        // Show success toast
+        const message = wasLinked ? t('taskUnlinkedFromInbox') : t('taskLinkedToInbox');
+        showToast(message);
     },
     onArchive: async (todo) => {
       if (todo.protected) {
@@ -388,12 +395,13 @@ export async function renderProjectDetail(ctx, projectId) {
       actions: [
         { label: 'Edit', class: 'btn', onClick: () => (ctx.openTodoEditor({ mode: 'edit', todoId: todo.id, projectId: todo.projectId, db }), true) },
         { label: todo.showInInbox ? 'Unlink from Inbox' : 'Link to Inbox', class: 'btn', onClick: async () => {
-             // If onLinkToggle is passed from todoList, use it. Otherwise (if strict) fallback or do nothing.
-             // In this context, we know we are in projectDetail, so we could also just define the logic here inline or call the outer onLinkToggle.
-             // But using the passed one is cleaner if we rely on todoList to pass everything.
-             // Actually, onLinkToggle is defined in the same scope (renderProjectDetail), so we can just use it directly!
-             // We don't strictly *need* to pick it from the argument, but for consistency with others, let's assume we use the outer one.
-             await onLinkToggle(todo);
+             const wasLinked = todo.showInInbox;
+             await db.todos.put({ ...todo, showInInbox: !todo.showInInbox });
+             await renderProjectDetail(ctx, projectId);
+             
+             // Show success toast (modal will close automatically via return true)
+             const message = wasLinked ? t('taskUnlinkedFromInbox') : t('taskLinkedToInbox');
+             showToast(message);
              return true;
         } },
         { label: 'Move', class: 'btn', onClick: async () => {
