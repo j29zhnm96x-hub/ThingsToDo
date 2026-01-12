@@ -65,3 +65,18 @@ export function newAttachment({ todoId, blob, name, type, thumb = null }) {
     createdAt: nowIso()
   };
 }
+
+export function newVoiceMemo({ title, projectId, blob, duration }) {
+  const t = nowIso();
+  return {
+    id: uuid(),
+    title: title?.trim() || 'Voice Memo',
+    projectId: projectId ?? null,
+    blob,
+    duration: duration || 0, // in seconds
+    showInInbox: false,
+    order: 0,
+    createdAt: t,
+    updatedAt: t
+  };
+}

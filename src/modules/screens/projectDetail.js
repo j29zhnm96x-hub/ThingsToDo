@@ -14,6 +14,7 @@ import { renderProjectCard } from '../ui/projectCard.js';
 import { Priority } from '../data/models.js';
 import { showToast } from '../ui/toast.js';
 import { t } from '../utils/i18n.js';
+import { renderVoiceMemoList, openRecordingModal } from '../ui/voiceMemo.js';
 
 import { compressAttachmentsForArchive } from '../logic/attachments.js';
 async function buildProjectsById(db) {
@@ -58,6 +59,9 @@ export async function renderProjectDetail(ctx, projectId) {
       const active = total - completed;
       subProjectStats.set(p.id, { total, completed, active });
   }
+
+  // Voice memos for this project
+  const voiceMemos = await db.voiceMemos.listByProject(projectId);
 
   // Render Sub-projects section
   let subProjectsList = null;
@@ -226,7 +230,8 @@ export async function renderProjectDetail(ctx, projectId) {
 
   if ((project.type ?? 'default') === 'checklist') {
     const listEl = renderChecklist({ 
-      todos, 
+      todos,
+      modalHost,
       onToggleCompleted: async (todo, checked) => {
         await db.todos.put({
           ...todo,
@@ -235,13 +240,36 @@ export async function renderProjectDetail(ctx, projectId) {
         });
         await renderProjectDetail(ctx, projectId);
       },
-      onDelete: async (todo) => {
+      onTap: (todo) => {
+        // Show full text modal
+        openModal(modalHost, {
+          title: 'Item Details',
+          content: el('div', { style: 'word-wrap: break-word; white-space: pre-wrap;' }, todo.title),
+          actions: [
+            { label: t('edit'), class: 'btn', onClick: () => { 
+              // Use setTimeout to let the modal close first before opening the edit modal
+              setTimeout(() => openEditChecklistItem({ modalHost, db, todo, onSaved: () => renderProjectDetail(ctx, projectId) }), 50);
+              return true; 
+            } },
+            { label: t('close'), class: 'btn btn--primary', onClick: () => true }
+          ]
+        });
+      },
+      onEdit: (todo) => {
+        openEditChecklistItem({ modalHost, db, todo, onSaved: () => renderProjectDetail(ctx, projectId) });
+      },
+      onDelete: async (todo, rowElement) => {
         if (todo.protected) {
           openModal(modalHost, {
             title: 'Task Protected',
             content: el('div', {}, 'This task is protected. Please uncheck "Protect task" in the editor to delete it.'),
             actions: [{ label: 'OK', class: 'btn btn--primary', onClick: () => true }]
           });
+          // Reset row position if it was swiped
+          if (rowElement) {
+            rowElement.style.transition = 'transform 200ms ease';
+            rowElement.style.transform = 'translateX(0)';
+          }
           return;
         }
         const ok = await confirm(modalHost, {
@@ -251,7 +279,14 @@ export async function renderProjectDetail(ctx, projectId) {
           danger: true,
           align: 'center'
         });
-        if (!ok) return;
+        if (!ok) {
+          // Reset row position if cancelled
+          if (rowElement) {
+            rowElement.style.transition = 'transform 200ms ease';
+            rowElement.style.transform = 'translateX(0)';
+          }
+          return;
+        }
         await db.todos.delete(todo.id);
         await renderProjectDetail(ctx, projectId);
       },
@@ -446,8 +481,23 @@ export async function renderProjectDetail(ctx, projectId) {
     }
   });
 
+  // Voice memos section
+  const voiceMemosList = voiceMemos.length
+    ? el('div', { class: 'voiceMemoSection' },
+        el('div', { class: 'voiceMemoSection__title' }, t('voiceMemos')),
+        renderVoiceMemoList({
+          memos: voiceMemos,
+          modalHost,
+          db,
+          projects,
+          onChange: () => renderProjectDetail(ctx, projectId)
+        })
+      )
+    : null;
+
   main.append(el('div', { class: 'stack' }, 
       subProjectsList, // Add sub-projects list at the top
+      voiceMemosList,
       todos.length ? list : el('div', { class: 'card small' }, 'No todos in this project yet. Tap + to add one.')
   ));
 }
@@ -458,7 +508,7 @@ export function openProjectAddMenu(ctx, project) {
     
     // Bottom sheet style
     openModal(modalHost, {
-        title: 'Add to Project',
+        title: t('addToProject') || 'Add to Project',
         align: 'bottom',
         content: el('div', { class: 'stack' }, 
             el('button', { 
@@ -468,7 +518,7 @@ export function openProjectAddMenu(ctx, project) {
                    ctx.openTodoEditor({ mode: 'create', projectId: project.id });
                    return true; // close modal
                 }
-            }, '📄 New Task'),
+            }, '📄 ' + t('newTask')),
              el('button', { 
                 class: 'btn', 
                 style: { justifyContent: 'flex-start', padding: '16px' }, 
@@ -482,23 +532,36 @@ export function openProjectAddMenu(ctx, project) {
                    });
                    return true; // close modal
                 }
-            }, '📁 New Sub-Project')
+            }, '📁 ' + t('newSubProject')),
+            el('button', { 
+                class: 'btn', 
+                style: { justifyContent: 'flex-start', padding: '16px' }, 
+                onClick: () => {
+                   openRecordingModal({
+                     modalHost,
+                     db,
+                     projectId: project.id,
+                     onSaved: () => renderProjectDetail(ctx, project.id)
+                   });
+                   return true; // close modal
+                }
+            }, '🎤 ' + t('voiceMemo'))
         ),
         actions: [
-            { label: 'Cancel', class: 'btn btn--ghost', onClick: () => true }
+            { label: t('cancel'), class: 'btn btn--ghost', onClick: () => true }
         ]
     });
 }
 
-function renderChecklist({ todos, onToggleCompleted, onDelete, onDeleteAllCompleted }) {
-  const active = todos.filter(t => !t.completed);
-  const done = todos.filter(t => t.completed);
+function renderChecklist({ todos, modalHost, onToggleCompleted, onDelete, onDeleteAllCompleted, onTap, onEdit }) {
+  const active = todos.filter(todo => !todo.completed);
+  const done = todos.filter(todo => todo.completed);
 
   // Load collapsed state from localStorage
   const storageKey = 'checklist-completed-collapsed';
   let isCollapsed = localStorage.getItem(storageKey) === 'true';
 
-  const makeRow = (t, completed) => {
+  const makeRow = (todo, completed) => {
     let pressTimer = null;
     const LONG_PRESS_DURATION = 500; // 0.5 seconds
 
@@ -508,7 +571,10 @@ function renderChecklist({ todos, onToggleCompleted, onDelete, onDeleteAllComple
     let swiping = false;
     const SWIPE_THRESHOLD = 80;
 
-    const textSpan = el('span', { class: 'checklist__text' }, t.title);
+    const textSpan = el('span', { 
+      class: 'checklist__text',
+      style: 'cursor: pointer;'
+    }, todo.title);
 
     const row = el('div', {
       class: completed ? 'checklist__item checklist__item--done' : 'checklist__item',
@@ -518,27 +584,71 @@ function renderChecklist({ todos, onToggleCompleted, onDelete, onDeleteAllComple
         class: completed ? 'checklist__circle checklist__circle--done' : 'checklist__circle',
         onClick: (e) => {
           e.stopPropagation();
-          onToggleCompleted?.(t, !completed);
+          onToggleCompleted?.(todo, !completed);
         }
       }, completed ? '✓' : ''),
       textSpan,
-      t.protected ? el('span', { class: 'icon-protected', 'aria-label': 'Protected' }, '🔒') : null
+      todo.protected ? el('span', { class: 'icon-protected', 'aria-label': 'Protected' }, '🔒') : null
     );
 
-    // Long press to delete
-    const handlePressStart = (e) => {
-      if (swiping) return;
-      pressTimer = setTimeout(() => {
-        hapticLight();
-        onDelete?.(t);
-      }, LONG_PRESS_DURATION);
-    };
-
-    const handlePressEnd = () => {
+    // Long press to show actions menu
+    let longPressTriggered = false;
+    let pressStartTime = 0;
+    let pressStartPos = { x: 0, y: 0 };
+    
+    const cancelPressTimer = () => {
       if (pressTimer) {
         clearTimeout(pressTimer);
         pressTimer = null;
       }
+    };
+    
+    const handlePressStart = (e) => {
+      if (swiping) return;
+      longPressTriggered = false;
+      pressStartTime = Date.now();
+      pressStartPos = { x: e.clientX, y: e.clientY };
+      
+      pressTimer = setTimeout(() => {
+        longPressTriggered = true;
+        hapticLight();
+        // Show actions modal with Edit and Delete
+        openModal(modalHost, {
+          title: todo.title,
+          content: el('div', { class: 'small' }, 'Choose an action'),
+          actions: [
+            { label: t('edit'), class: 'btn', onClick: () => { 
+              // Use setTimeout to let the modal close first before opening the edit modal
+              setTimeout(() => onEdit?.(todo), 50);
+              return true; 
+            } },
+            { label: t('delete'), class: 'btn btn--danger', onClick: () => { onDelete?.(todo, row); return true; } },
+            { label: t('cancel'), class: 'btn btn--ghost', onClick: () => true }
+          ]
+        });
+      }, LONG_PRESS_DURATION);
+    };
+
+    const handlePressEnd = (e) => {
+      const pressDuration = Date.now() - pressStartTime;
+      const moveDistance = e ? Math.hypot(e.clientX - pressStartPos.x, e.clientY - pressStartPos.y) : 999;
+      
+      cancelPressTimer();
+      
+      // If it was a quick tap (less than 300ms) and no movement, trigger tap
+      if (pressDuration < 300 && moveDistance < 10 && !swiping && !longPressTriggered) {
+        setTimeout(() => {
+          if (!longPressTriggered) {
+            hapticLight();
+            onTap?.(todo);
+          }
+        }, 0);
+      }
+      
+      // Reset longPressTriggered after a short delay
+      setTimeout(() => {
+        longPressTriggered = false;
+      }, 100);
     };
 
     // Swipe left to delete
@@ -554,7 +664,7 @@ function renderChecklist({ todos, onToggleCompleted, onDelete, onDeleteAllComple
       
       if (diff > 20) {
         swiping = true;
-        handlePressEnd(); // Cancel long press if swiping
+        cancelPressTimer(); // Cancel long press if swiping
         const translateX = Math.min(diff, SWIPE_THRESHOLD + 20);
         row.style.transform = `translateX(-${translateX}px)`;
         row.style.transition = 'none';
@@ -570,7 +680,7 @@ function renderChecklist({ todos, onToggleCompleted, onDelete, onDeleteAllComple
         row.style.transform = 'translateX(-100%)';
         setTimeout(() => {
           hapticLight();
-          onDelete?.(t);
+          onDelete?.(todo, row);
         }, 150);
       } else {
         // Reset position
@@ -582,8 +692,11 @@ function renderChecklist({ todos, onToggleCompleted, onDelete, onDeleteAllComple
 
     textSpan.addEventListener('pointerdown', handlePressStart);
     textSpan.addEventListener('pointerup', handlePressEnd);
-    textSpan.addEventListener('pointercancel', handlePressEnd);
-    textSpan.addEventListener('pointerleave', handlePressEnd);
+    textSpan.addEventListener('pointercancel', () => {
+      cancelPressTimer();
+      longPressTriggered = false;
+    });
+    textSpan.addEventListener('pointerleave', cancelPressTimer);
 
     row.addEventListener('touchstart', handleTouchStart, { passive: true });
     row.addEventListener('touchmove', handleTouchMove, { passive: true });
@@ -593,7 +706,7 @@ function renderChecklist({ todos, onToggleCompleted, onDelete, onDeleteAllComple
   };
 
   const container = el('div', { class: 'checklist' });
-  active.forEach(t => container.appendChild(makeRow(t, false)));
+  active.forEach(todo => container.appendChild(makeRow(todo, false)));
   
   if (done.length) {
     // Create collapsible completed section
@@ -649,8 +762,8 @@ function renderChecklist({ todos, onToggleCompleted, onDelete, onDeleteAllComple
 
     // Completed items
     const completedItems = [];
-    done.forEach(t => {
-      const row = makeRow(t, true);
+    done.forEach(todo => {
+      const row = makeRow(todo, true);
       if (isCollapsed) row.style.display = 'none';
       completedItems.push(row);
       container.appendChild(row);
@@ -695,6 +808,41 @@ function quickAddChecklist({ modalHost, db, projectId, onCreated }) {
         label: 'Add',
         class: 'btn btn--primary',
         onClick: addItem
+      }
+    ]
+  });
+
+  // Focus immediately (synchronously) to trigger mobile keyboard during the user gesture.
+  try { input.focus(); input.select?.(); } catch (e) { /* ignore */ }
+}
+
+function openEditChecklistItem({ modalHost, db, todo, onSaved }) {
+  const input = el('input', { class: 'input', value: todo.title, 'aria-label': 'Item name' });
+
+  const saveItem = async () => {
+    const title = input.value.trim();
+    if (!title) {
+      input.focus();
+      return false;
+    }
+    await db.todos.put({ ...todo, title });
+    onSaved?.();
+    return true;
+  };
+
+  openModal(modalHost, {
+    title: 'Edit item',
+    content: input,
+    align: 'top',
+    headerActions: [
+      { label: 'Save', class: 'btn btn--primary', onClick: saveItem }
+    ],
+    actions: [
+      { label: 'Cancel', class: 'btn btn--ghost', onClick: () => true },
+      {
+        label: 'Save',
+        class: 'btn btn--primary',
+        onClick: saveItem
       }
     ]
   });

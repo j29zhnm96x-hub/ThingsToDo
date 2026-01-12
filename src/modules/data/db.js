@@ -2,7 +2,7 @@ import { openDb, storeApi, txDone, reqDone } from './idb.js';
 import { nowIso } from './models.js';
 
 const DB_NAME = 'thingstodo-db';
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 
 // IndexedDB indexes cannot use `null` keys reliably across browsers.
 // We store Inbox as a stable string sentinel and normalize at the API boundary.
@@ -49,6 +49,12 @@ function upgrade(db, tx) {
   // bin: by id (for soft deleted items)
   if (!db.objectStoreNames.contains('bin')) {
     db.createObjectStore('bin', { keyPath: 'id' });
+  }
+
+  // voiceMemos: by id, indexed by projectId
+  if (!db.objectStoreNames.contains('voiceMemos')) {
+    const s = db.createObjectStore('voiceMemos', { keyPath: 'id' });
+    s.createIndex('by_project', 'projectId', { unique: false });
   }
 
   // Migration (v1 -> v2): replace null projectId with sentinel so it indexes.
@@ -227,6 +233,40 @@ export const db = {
     }
   },
 
+  voiceMemos: {
+    async get(id) {
+      const dbi = await getDb();
+      return storeApi(dbi, 'voiceMemos').get(id);
+    },
+    async put(memo) {
+      const dbi = await getDb();
+      memo.updatedAt = nowIso();
+      return storeApi(dbi, 'voiceMemos').put(memo);
+    },
+    async delete(id) {
+      const dbi = await getDb();
+      return storeApi(dbi, 'voiceMemos').delete(id);
+    },
+    async list() {
+      const dbi = await getDb();
+      const items = await storeApi(dbi, 'voiceMemos').list();
+      return items.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+    },
+    async listByProject(projectIdOrNull) {
+      const dbi = await getDb();
+      const items = await storeApi(dbi, 'voiceMemos').list();
+      if (projectIdOrNull === null) {
+        return items.filter(m => m.projectId === null).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+      }
+      return items.filter(m => m.projectId === projectIdOrNull).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+    },
+    async listForInbox() {
+      const dbi = await getDb();
+      const items = await storeApi(dbi, 'voiceMemos').list();
+      return items.filter(m => m.projectId === null || m.showInInbox).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+    }
+  },
+
   async wipeAll() {
     const dbi = await getDb();
     await Promise.all([
@@ -234,7 +274,8 @@ export const db = {
       storeApi(dbi, 'projects').clear(),
       storeApi(dbi, 'attachments').clear(),
       storeApi(dbi, 'settings').clear(),
-      storeApi(dbi, 'bin').clear()
+      storeApi(dbi, 'bin').clear(),
+      storeApi(dbi, 'voiceMemos').clear()
     ]);
   }
 };

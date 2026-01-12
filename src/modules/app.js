@@ -12,6 +12,8 @@ import { applyTheme } from './ui/theme.js';
 import { autoArchiveCompleted, autoEmptyBin } from './logic/todoOps.js';
 import { hapticLight } from './ui/haptic.js';
 import { t } from './utils/i18n.js';
+import { openModal } from './ui/modal.js';
+import { openRecordingModal } from './ui/voiceMemo.js';
 
 export function initApp(root) {
   const main = document.getElementById('main');
@@ -88,7 +90,10 @@ export function initApp(root) {
       if (route.name === 'inbox') {
         topbarTitle.textContent = t('inbox');
         topbarActions.append(
-          el('button', { class: 'topbar__addBtn', type: 'button', 'aria-label': t('addTask'), onClick: () => { hapticLight(); ctx.openTodoEditor({ mode: 'create', projectId: null }); } }, '+')
+          el('button', { class: 'topbar__addBtn', type: 'button', 'aria-label': t('addTask'), onClick: () => { 
+            hapticLight(); 
+            openInboxAddMenu(ctx, modalHost);
+          } }, '+')
         );
         await renderInbox(ctx);
       } else if (route.name === 'projects') {
@@ -162,5 +167,38 @@ export function initApp(root) {
       // After render, move focus to main for accessibility.
       requestAnimationFrame(() => main.focus());
     }
+  });
+}
+// Inbox add menu (task or voice memo)
+function openInboxAddMenu(ctx, modalHost) {
+  openModal(modalHost, {
+    title: t('addToInbox') || 'Add to Inbox',
+    align: 'bottom',
+    content: el('div', { class: 'stack' }, 
+      el('button', { 
+        class: 'btn btn--primary',
+        style: { justifyContent: 'flex-start', padding: '16px' }, 
+        onClick: () => {
+          ctx.openTodoEditor({ mode: 'create', projectId: null });
+          return true;
+        }
+      }, '📄 ' + t('newTask')),
+      el('button', { 
+        class: 'btn', 
+        style: { justifyContent: 'flex-start', padding: '16px' }, 
+        onClick: () => {
+          openRecordingModal({
+            modalHost,
+            db,
+            projectId: null,
+            onSaved: () => router.refresh()
+          });
+          return true;
+        }
+      }, '🎤 ' + t('voiceMemo'))
+    ),
+    actions: [
+      { label: t('cancel'), class: 'btn btn--ghost', onClick: () => true }
+    ]
   });
 }

@@ -1414,3 +1414,279 @@ body.focus-mode .focus-toggle-btn {
   z-index: 5000;
 }
 
+/* ───────────────────────────────────────────────────────────────────────────
+   VOICE RECORDER
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.voiceRecorder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px;
+  gap: 16px;
+}
+
+.voiceRecorder__waveform {
+  width: 100%;
+  height: 60px;
+  border-radius: 8px;
+  background: var(--field);
+}
+
+.voiceRecorder__timer {
+  font-size: 2.5rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.voiceRecorder__status {
+  font-size: 0.875rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.voiceRecorder__status--recording {
+  color: var(--danger);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.voiceRecorder__controls {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.voiceRecorder__btn {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.voiceRecorder__btn:active {
+  transform: scale(0.92);
+}
+
+.voiceRecorder__btn--record {
+  background: var(--danger);
+  color: #fff;
+  font-size: 32px;
+  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
+}
+
+.voiceRecorder__btn--pause {
+  background: var(--accent);
+  color: #fff;
+}
+
+.voiceRecorder__btn--stop {
+  background: var(--surface3);
+  color: var(--text);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   VOICE PLAYER
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.voicePlayer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 8px;
+  gap: 12px;
+}
+
+.voicePlayer__title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+}
+
+.voicePlayer__meta {
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.voicePlayer__progressWrap {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 8px;
+}
+
+.voicePlayer__time {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  min-width: 36px;
+}
+
+.voicePlayer__progressBar {
+  flex: 1;
+  height: 6px;
+  background: var(--surface3);
+  border-radius: 3px;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.voicePlayer__progressFill {
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 0.1s linear;
+}
+
+.voicePlayer__controls {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.voicePlayer__btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface3);
+  color: var(--text);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.voicePlayer__btn:active {
+  transform: scale(0.92);
+}
+
+.voicePlayer__btn--play {
+  background: var(--accent);
+  color: #fff;
+  width: 64px;
+  height: 64px;
+  font-size: 24px;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   VOICE MEMO CARD
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.voiceMemoList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.voiceMemoCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--card-shadow);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.voiceMemoCard:active {
+  transform: scale(0.98);
+}
+
+.voiceMemoCard__icon {
+  font-size: 1.5rem;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface3);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.voiceMemoCard__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.voiceMemoCard__title {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.voiceMemoCard__meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.voiceMemoCard__dot {
+  font-size: 0.625rem;
+}
+
+.voiceMemoCard__link {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.voiceMemoCard__menuBtn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 1.25rem;
+  border-radius: 50%;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+}
+
+.voiceMemoCard__menuBtn:active {
+  background: var(--surface3);
+}
+
+/* Voice memo section heading */
+.voiceMemoSection {
+  margin-top: 24px;
+}
+
+.voiceMemoSection__title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+  padding: 0 4px;
+}

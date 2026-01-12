@@ -11,6 +11,7 @@ import { openProjectMenu } from '../ui/projectMenu.js';
 import { hapticLight } from '../ui/haptic.js';
 import { Priority } from '../data/models.js';
 import { t } from '../utils/i18n.js';
+import { renderVoiceMemoList, openPlaybackModal, openVoiceMemoMenu } from '../ui/voiceMemo.js';
 
 async function buildProjectsById(db) {
   const projects = await db.projects.list();
@@ -37,6 +38,9 @@ export async function renderInbox(ctx) {
     const active = total - completed;
     linkedProjectStats.set(p.id, { total, completed, active });
   }
+
+  // Voice memos in inbox
+  const voiceMemos = await db.voiceMemos.listForInbox();
 
   const list = renderTodoList({
     todos,
@@ -177,9 +181,23 @@ export async function renderInbox(ctx) {
       )
     : null;
 
-  if (todos.length === 0 && linkedProjects.length === 0) {
+  // Voice memos section
+  const voiceMemosList = voiceMemos.length
+    ? el('div', { class: 'voiceMemoSection' },
+        el('div', { class: 'voiceMemoSection__title' }, t('voiceMemos')),
+        renderVoiceMemoList({
+          memos: voiceMemos,
+          modalHost,
+          db,
+          projects,
+          onChange: () => renderInbox(ctx)
+        })
+      )
+    : null;
+
+  if (todos.length === 0 && linkedProjects.length === 0 && voiceMemos.length === 0) {
     main.append(emptyState(t('noTasks'), t('noTasksHint')));
   } else {
-    main.append(el('div', { class: 'stack' }, linkedProjectsList, todos.length ? list : null));
+    main.append(el('div', { class: 'stack' }, linkedProjectsList, voiceMemosList, todos.length ? list : null));
   }
 }
