@@ -506,6 +506,11 @@ export function openPlaybackModal({ modalHost, db, memo, onChange }) {
     style: 'width: 56px; height: 56px; flex-shrink: 0; border-radius: 50%; border: none; background: var(--surface3); color: var(--text); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;'
   }, '❚❚');
 
+  const shareBtn = el('button', {
+    type: 'button',
+    style: 'width: 56px; height: 56px; flex-shrink: 0; border-radius: 50%; border: none; background: var(--surface3); color: var(--text); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;'
+  }, '↗');
+
   function updateProgress() {
     if (!audio) return;
     const progress = (audio.currentTime / audio.duration) * 100 || 0;
@@ -554,11 +559,125 @@ export function openPlaybackModal({ modalHost, db, memo, onChange }) {
 
   stopBtn.addEventListener('click', stop);
 
+  pauseBtn.addEventListener('click', () => {
+    if (audio && isPlaying) {
+      audio.pause();
+      isPlaying = false;
+      playBtn.textContent = '▶';
+    }
+  });
+
+  shareBtn.addEventListener('click', async () => {
+    try {
+      // Check if Web Share API is supported
+      if (navigator.share && navigator.canShare) {
+        // Get file extension from mime type
+        const mimeType = memo.blob.type || 'audio/webm';
+        const extension = mimeType.includes('mp4') ? 'mp4' : 
+                          mimeType.includes('mpeg') ? 'mp3' : 
+                          mimeType.includes('ogg') ? 'ogg' : 'webm';
+        
+        // Create a file object
+        const fileName = `${memo.title.replace(/[^a-z0-9]/gi, '_')}.${extension}`;
+        const file = new File([memo.blob], fileName, { type: memo.blob.type });
+        
+        // Check if we can share this file
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: memo.title,
+            text: t('voiceMemo')
+          });
+          hapticLight();
+        } else {
+          // Fallback: download
+          const url = URL.createObjectURL(memo.blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = fileName;
+          a.click();
+          URL.revokeObjectURL(url);
+          hapticLight();
+        }
+      } else {
+        // Fallback for browsers without Web Share API: download
+        const mimeType = memo.blob.type || 'audio/webm';
+        const extension = mimeType.includes('mp4') ? 'mp4' : 
+                          mimeType.includes('mpeg') ? 'mp3' : 
+                          mimeType.includes('ogg') ? 'ogg' : 'webm';
+        const fileName = `${memo.title.replace(/[^a-z0-9]/gi, '_')}.${extension}`;
+        const url = URL.createObjectURL(memo.blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        URL.revokeObjectURL(url);
+        hapticLight();
+      }
+    } catch (err) {
+      // User cancelled or error occurred
+      console.log('Share cancelled or error:', err);
+    }
+  });
+
   // Speed control
   speedSelect.addEventListener('change', () => {
     currentSpeed = parseFloat(speedSelect.value);
     audio.playbackRate = currentSpeed;
     hapticLight();
+  });
+
+  shareBtn.addEventListener('click', async () => {
+    try {
+      // Check if Web Share API is supported
+      if (navigator.share && navigator.canShare) {
+        // Get file extension from mime type
+        const mimeType = memo.blob.type || 'audio/webm';
+        const extension = mimeType.includes('mp4') ? 'mp4' : 
+                          mimeType.includes('mpeg') ? 'mp3' : 
+                          mimeType.includes('ogg') ? 'ogg' : 'webm';
+        
+        // Create a file object
+        const fileName = `${memo.title.replace(/[^a-z0-9]/gi, '_')}.${extension}`;
+        const file = new File([memo.blob], fileName, { type: memo.blob.type });
+        
+        // Check if we can share this file
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: memo.title,
+            text: t('voiceMemo')
+          });
+          hapticLight();
+        } else {
+          // Fallback: download
+          const url = URL.createObjectURL(memo.blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = fileName;
+          a.click();
+          URL.revokeObjectURL(url);
+          hapticLight();
+        }
+      } else {
+        // Fallback for browsers without Web Share API: download
+        const mimeType = memo.blob.type || 'audio/webm';
+        const extension = mimeType.includes('mp4') ? 'mp4' : 
+                          mimeType.includes('mpeg') ? 'mp3' : 
+                          mimeType.includes('ogg') ? 'ogg' : 'webm';
+        const fileName = `${memo.title.replace(/[^a-z0-9]/gi, '_')}.${extension}`;
+        const url = URL.createObjectURL(memo.blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        URL.revokeObjectURL(url);
+        hapticLight();
+      }
+    } catch (err) {
+      // User cancelled or error occurred
+      console.log('Share cancelled or error:', err);
+    }
   });
 
   audio.addEventListener('ended', () => {
@@ -597,7 +716,8 @@ export function openPlaybackModal({ modalHost, db, memo, onChange }) {
       speedSelect,
       playBtn,
       pauseBtn,
-      stopBtn
+      stopBtn,
+      shareBtn
     )
   );
 
