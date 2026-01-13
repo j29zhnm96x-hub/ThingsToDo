@@ -481,7 +481,7 @@ export function openPlaybackModal({ modalHost, db, memo, onChange }) {
   // Speed control dropdown
   const speedSelect = el('select', {
     class: 'select',
-    style: 'padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-size: 0.875rem; cursor: pointer; min-width: 80px;'
+    style: 'padding: 4px 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-size: 0.75rem; cursor: pointer;'
   },
     el('option', { value: '0.5' }, '0.5×'),
     el('option', { value: '0.75' }, '0.75×'),
