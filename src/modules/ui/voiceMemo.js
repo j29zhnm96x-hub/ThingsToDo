@@ -493,12 +493,12 @@ export function openPlaybackModal({ modalHost, db, memo, onChange }) {
   
   const playBtn = el('button', { 
     type: 'button',
-    style: 'width: 64px; height: 64px; border-radius: 50%; border: none; background: var(--accent); color: white; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center;'
+    style: 'width: 64px; height: 64px; flex-shrink: 0; border-radius: 50%; border: none; background: var(--accent); color: white; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center;'
   }, '▶');
   
   const stopBtn = el('button', { 
     type: 'button',
-    style: 'width: 56px; height: 56px; border-radius: 50%; border: none; background: var(--surface3); color: var(--text); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;'
+    style: 'width: 56px; height: 56px; flex-shrink: 0; border-radius: 50%; border: none; background: var(--surface3); color: var(--text); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;'
   }, '■');
 
   function updateProgress() {
