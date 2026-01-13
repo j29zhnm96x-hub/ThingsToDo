@@ -540,6 +540,14 @@ export function openPlaybackModal({ modalHost, db, memo, onChange }) {
     hapticLight();
   }
 
+  playBtn.addEventListener('click', () => {
+    if (isPlaying) {
+      pause();
+    } else {
+      play();
+    }
+  });
+
   stopBtn.addEventListener('click', stop);
 
   shareBtn.addEventListener('click', async () => {
