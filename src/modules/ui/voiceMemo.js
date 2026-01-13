@@ -629,47 +629,47 @@ export function openPlaybackModal({ modalHost, db, memo, onChange }) {
 
   shareBtn.addEventListener('click', async () => {
     try {
-      // Check if Web Share API is supported
       if (navigator.share) {
-        // Determine mime type and extension
-        let mimeType = memo.blob.type || 'audio/webm';
-        let extension = 'webm';
-        
-        // Map mime type to extension
-        if (mimeType.includes('mp4') || mimeType.includes('m4a')) {
-          extension = 'm4a';
-          mimeType = 'audio/mp4';
-        } else if (mimeType.includes('mpeg') || mimeType.includes('mp3')) {
-          extension = 'mp3';
+        // Pick an iOS-friendly mime/extension; default to m4a for better app support
+        let mimeType = memo.blob.type || 'audio/mp4';
+        let extension = 'm4a';
+        if (mimeType.includes('mpeg') || mimeType.includes('mp3')) {
           mimeType = 'audio/mpeg';
+          extension = 'mp3';
         } else if (mimeType.includes('ogg')) {
-          extension = 'ogg';
           mimeType = 'audio/ogg';
+          extension = 'ogg';
         } else if (mimeType.includes('webm')) {
-          extension = 'webm';
           mimeType = 'audio/webm';
+          extension = 'webm';
         }
-        
-        // Create a file object with explicit mime type
+
+        // Re-wrap the blob with a compatible mime type to help share targets accept it
+        const buffer = await memo.blob.arrayBuffer();
+        const compatibleBlob = new Blob([buffer], { type: mimeType });
         const fileName = `${memo.title.replace(/[^a-z0-9]/gi, '_')}_${Date.now()}.${extension}`;
-        const file = new File([memo.blob], fileName, { 
+        const file = new File([compatibleBlob], fileName, {
           type: mimeType,
           lastModified: new Date(memo.createdAt).getTime()
         });
-        
-        // Try to share the file
-        await navigator.share({
-          files: [file],
-          title: memo.title
-        });
+
+        // Prefer canShare when available for stricter validation
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: memo.title });
+          hapticLight();
+          return;
+        }
+
+        // Fallback: attempt share without canShare guard
+        await navigator.share({ files: [file], title: memo.title });
         hapticLight();
       } else {
         // Fallback for browsers without Web Share API: download
-        const mimeType = memo.blob.type || 'audio/webm';
-        const extension = mimeType.includes('mp4') ? 'm4a' : 
-                          mimeType.includes('mpeg') ? 'mp3' : 
-                          mimeType.includes('ogg') ? 'ogg' : 'webm';
-        const fileName = `${memo.title.replace(/[^a-z0-9]/gi, '_')}.${extension}`;
+        const fallbackMime = memo.blob.type || 'audio/mp4';
+        const fallbackExt = fallbackMime.includes('mpeg') ? 'mp3' :
+                            fallbackMime.includes('ogg') ? 'ogg' :
+                            fallbackMime.includes('webm') ? 'webm' : 'm4a';
+        const fileName = `${memo.title.replace(/[^a-z0-9]/gi, '_')}.${fallbackExt}`;
         const url = URL.createObjectURL(memo.blob);
         const a = document.createElement('a');
         a.href = url;
@@ -679,7 +679,7 @@ export function openPlaybackModal({ modalHost, db, memo, onChange }) {
         hapticLight();
       }
     } catch (err) {
-      // User cancelled or error occurred (this is normal if user cancels)
+      // User cancelled or error occurred (normal on cancel)
       if (err.name !== 'AbortError') {
         console.log('Share error:', err);
       }
