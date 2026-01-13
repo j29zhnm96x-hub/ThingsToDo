@@ -27,6 +27,7 @@ export async function renderSettings(ctx) {
   const isLight = settings.theme === 'light';
   const compressImages = settings.compressImages !== false; // Default to true
   const compressArchivedImages = settings.compressArchivedImages !== false; // Default to true
+  const voiceQuality = settings.voiceQuality || 'low'; // Default to low
 
   const themeToggle = el('input', {
     type: 'checkbox',
@@ -60,6 +61,18 @@ export async function renderSettings(ctx) {
     await db.settings.put({ ...await db.settings.get(), compressArchivedImages: compressArchiveToggle.checked });
   });
 
+  // Voice quality selector
+  const voiceQualitySelect = el('select', {
+    class: 'select',
+    'aria-label': t('voiceRecordingQuality') || 'Voice recording quality',
+    onChange: async (e) => {
+      await db.settings.put({ ...await db.settings.get(), voiceQuality: e.target.value });
+    }
+  },
+    el('option', { value: 'low', selected: voiceQuality === 'low' ? 'selected' : null }, t('lowQuality') || 'Low quality (smaller files)'),
+    el('option', { value: 'high', selected: voiceQuality === 'high' ? 'selected' : null }, t('highQuality') || 'High quality')
+  );
+
   // Language selector
   const currentLang = getLang();
   const langSelect = el('select', {
@@ -86,6 +99,13 @@ export async function renderSettings(ctx) {
     el('div', { class: 'card stack' },
       el('div', { style: { fontWeight: '700' } }, t('language')),
       langSelect
+    ),
+    el('div', { class: 'card stack' },
+      el('div', { style: { fontWeight: '700' } }, t('voiceMemos')),
+      el('label', { class: 'label' },
+        el('span', {}, t('voiceRecordingQuality') || 'Recording quality'),
+        voiceQualitySelect
+      )
     ),
     el('div', { class: 'card stack' },
       el('div', { style: { fontWeight: '700' } }, t('theme')),

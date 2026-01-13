@@ -55,7 +55,12 @@ function formatTime(isoString) {
 // RECORDING MODAL
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function openRecordingModal({ modalHost, db, projectId = null, onSaved }) {
+export async function openRecordingModal({ modalHost, db, projectId = null, onSaved }) {
+  // Get recording quality from settings
+  const settings = await db.settings.get();
+  const voiceQuality = settings?.voiceQuality || 'low';
+  const bitrate = voiceQuality === 'high' ? 192000 : 96000; // 192kbps high, 96kbps low
+  
   let mediaRecorder = null;
   let audioChunks = [];
   let stream = null;
@@ -183,7 +188,7 @@ export function openRecordingModal({ modalHost, db, projectId = null, onSaved })
       try {
         mediaRecorder = new MediaRecorder(stream, { 
           mimeType,
-          audioBitsPerSecond: 128000
+          audioBitsPerSecond: bitrate
         });
       } catch (e) {
         // Fallback without options for older browsers
@@ -473,11 +478,18 @@ export function openPlaybackModal({ modalHost, db, memo, onChange }) {
     style: 'font-size: 0.875rem; font-variant-numeric: tabular-nums; color: var(--muted); min-width: 40px; text-align: right;'
   }, formatDuration(memo.duration));
   
-  // Speed control
-  const speedBtn = el('button', {
-    type: 'button',
-    style: 'padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-size: 0.875rem; cursor: pointer; font-weight: 500;'
-  }, '1.0×');
+  // Speed control dropdown
+  const speedSelect = el('select', {
+    class: 'select',
+    style: 'padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-size: 0.875rem; cursor: pointer; min-width: 80px;'
+  },
+    el('option', { value: '0.5' }, '0.5×'),
+    el('option', { value: '0.75' }, '0.75×'),
+    el('option', { value: '1.0', selected: true }, '1.0×'),
+    el('option', { value: '1.25' }, '1.25×'),
+    el('option', { value: '1.5' }, '1.5×'),
+    el('option', { value: '2.0' }, '2.0×')
+  );
   
   const playBtn = el('button', { 
     type: 'button',
@@ -538,13 +550,9 @@ export function openPlaybackModal({ modalHost, db, memo, onChange }) {
   stopBtn.addEventListener('click', stop);
 
   // Speed control
-  const speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
-  speedBtn.addEventListener('click', () => {
-    const currentIndex = speeds.indexOf(currentSpeed);
-    const nextIndex = (currentIndex + 1) % speeds.length;
-    currentSpeed = speeds[nextIndex];
+  speedSelect.addEventListener('change', () => {
+    currentSpeed = parseFloat(speedSelect.value);
     audio.playbackRate = currentSpeed;
-    speedBtn.textContent = `${currentSpeed}×`;
     hapticLight();
   });
 
@@ -581,7 +589,7 @@ export function openPlaybackModal({ modalHost, db, memo, onChange }) {
       totalTime
     ),
     el('div', { style: 'display: flex; gap: 12px; align-items: center; margin-top: 8px;' },
-      speedBtn,
+      speedSelect,
       playBtn,
       stopBtn
     )
