@@ -93,12 +93,6 @@ export async function openRecordingModal({ modalHost, db, projectId = null, onSa
     style: 'width: 72px; height: 72px; border-radius: 50%; border: none; background: #ef4444; color: white; font-size: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);'
   }, '●');
   
-  const pauseBtn = el('button', {
-    type: 'button',
-    'aria-label': t('pause'),
-    style: 'display: none; width: 56px; height: 56px; border-radius: 50%; border: none; background: var(--accent); color: white; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;'
-  }, '❚❚');
-  
   const stopBtn = el('button', { 
     type: 'button',
     'aria-label': t('stop'),
@@ -232,10 +226,9 @@ export async function openRecordingModal({ modalHost, db, projectId = null, onSa
       
       timerInterval = setInterval(updateTimer, 100);
       
-      // Update UI - use flex display for buttons
-      recordBtn.style.display = 'none';
+      // Update UI
       recordBtn.disabled = false;
-      pauseBtn.style.display = 'flex';
+      recordBtn.textContent = '❚❚'; // becomes pause
       stopBtn.style.display = 'flex';
       statusText.textContent = t('recording');
       statusText.style.color = '#ef4444';
@@ -268,21 +261,20 @@ export async function openRecordingModal({ modalHost, db, projectId = null, onSa
     }
   }
 
-  function pauseRecording() {
+  function togglePauseRecording() {
     if (!mediaRecorder || !isRecording) return;
-    
     if (isPaused) {
       mediaRecorder.resume();
       isPaused = false;
       startTime = Date.now() - (elapsed * 1000);
-      pauseBtn.textContent = '❚❚';
+      recordBtn.textContent = '❚❚';
       statusText.textContent = t('recording');
       statusText.style.color = '#ef4444';
       drawWaveform();
     } else {
       mediaRecorder.pause();
       isPaused = true;
-      pauseBtn.textContent = '▶';
+      recordBtn.textContent = '▶';
       statusText.textContent = t('paused');
       statusText.style.color = 'var(--muted)';
       if (animationFrame) cancelAnimationFrame(animationFrame);
@@ -331,8 +323,13 @@ export async function openRecordingModal({ modalHost, db, projectId = null, onSa
   }
 
   // Event handlers
-  recordBtn.addEventListener('click', startRecording);
-  pauseBtn.addEventListener('click', pauseRecording);
+  recordBtn.addEventListener('click', () => {
+    if (!isRecording) {
+      startRecording();
+    } else {
+      togglePauseRecording();
+    }
+  });
   
   stopBtn.addEventListener('click', async () => {
     const result = await stopRecording();
@@ -436,7 +433,6 @@ export async function openRecordingModal({ modalHost, db, projectId = null, onSa
     statusText,
     el('div', { style: 'display: flex; gap: 16px; margin-top: 8px;' },
       recordBtn,
-      pauseBtn,
       stopBtn
     )
   );
@@ -501,11 +497,6 @@ export function openPlaybackModal({ modalHost, db, memo, onChange }) {
     style: 'width: 56px; height: 56px; flex-shrink: 0; border-radius: 50%; border: none; background: var(--surface3); color: var(--text); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;'
   }, '■');
 
-  const pauseBtn = el('button', {
-    type: 'button',
-    style: 'width: 56px; height: 56px; flex-shrink: 0; border-radius: 50%; border: none; background: var(--surface3); color: var(--text); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;'
-  }, '❚❚');
-
   const shareBtn = el('button', {
     type: 'button',
     style: 'width: 56px; height: 56px; flex-shrink: 0; border-radius: 50%; border: none; background: var(--surface3); color: var(--text); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;'
@@ -549,23 +540,7 @@ export function openPlaybackModal({ modalHost, db, memo, onChange }) {
     hapticLight();
   }
 
-  playBtn.addEventListener('click', () => {
-    if (isPlaying) {
-      pause();
-    } else {
-      play();
-    }
-  });
-
   stopBtn.addEventListener('click', stop);
-
-  pauseBtn.addEventListener('click', () => {
-    if (audio && isPlaying) {
-      audio.pause();
-      isPlaying = false;
-      playBtn.textContent = '▶';
-    }
-  });
 
   shareBtn.addEventListener('click', async () => {
     try {
@@ -662,7 +637,6 @@ export function openPlaybackModal({ modalHost, db, memo, onChange }) {
     el('div', { style: 'display: flex; gap: 12px; align-items: center; margin-top: 8px;' },
       speedSelect,
       playBtn,
-      pauseBtn,
       stopBtn,
       shareBtn
     )
