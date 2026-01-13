@@ -3,6 +3,7 @@ import { openModal } from './modal.js';
 import { confirm } from './confirm.js';
 import { hapticLight } from './haptic.js';
 import { showToast } from './toast.js';
+import { pickProject } from './pickProject.js';
 import { newVoiceMemo } from '../data/models.js';
 import { t } from '../utils/i18n.js';
 
@@ -735,52 +736,21 @@ function openRenameModal({ modalHost, db, memo, onSaved }) {
 // MOVE MODAL
 // ─────────────────────────────────────────────────────────────────────────────
 
-function openMoveModal({ modalHost, db, memo, projects, onMoved }) {
-  let selected = memo.projectId;
-
-  const options = [
-    { id: null, name: t('inbox') },
-    ...projects.map(p => ({ id: p.id, name: p.name }))
-  ];
-
-  const list = el('div', { class: 'list', style: 'max-height: 300px; overflow-y: auto;' });
-
-  function render() {
-    clear(list);
-    for (const opt of options) {
-      const isSelected = opt.id === selected;
-      const row = el('button', {
-        type: 'button',
-        class: isSelected ? 'pickProject__item pickProject__item--selected' : 'pickProject__item',
-        onClick: () => {
-          selected = opt.id;
-          render();
-        }
-      }, opt.name);
-      list.appendChild(row);
-    }
-  }
-
-  render();
-
-  openModal(modalHost, {
+async function openMoveModal({ modalHost, db, memo, projects, onMoved }) {
+  const dest = await pickProject(modalHost, {
     title: t('moveToProject'),
-    content: list,
-    actions: [
-      { label: t('cancel'), class: 'btn btn--ghost', onClick: () => true },
-      { 
-        label: t('move'), 
-        class: 'btn btn--primary', 
-        onClick: async () => {
-          if (selected === memo.projectId) return true;
-          await db.voiceMemos.put({ ...memo, projectId: selected, showInInbox: false });
-          showToast(t('voiceMemoMoved'));
-          onMoved?.();
-          return true;
-        }
-      }
-    ]
+    projects,
+    includeInbox: true,
+    initial: memo.projectId ?? null,
+    confirmLabel: t('move')
   });
+  
+  if (dest === undefined) return; // User cancelled
+  if (dest === memo.projectId) return; // Same destination
+  
+  await db.voiceMemos.put({ ...memo, projectId: dest, showInInbox: false });
+  showToast(t('voiceMemoMoved'));
+  onMoved?.();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
