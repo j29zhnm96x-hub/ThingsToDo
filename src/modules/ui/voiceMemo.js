@@ -13,92 +13,16 @@ import { t } from '../utils/i18n.js';
 
 function getSupportedMimeType() {
   const types = [
-    'audio/mp4',
-    'audio/mpeg',
-    'audio/ogg;codecs=opus',
     'audio/webm;codecs=opus',
-    'audio/webm'
+    'audio/webm',
+    'audio/ogg;codecs=opus', 
+    'audio/mp4',
+    'audio/mpeg'
   ];
   for (const type of types) {
     if (MediaRecorder.isTypeSupported(type)) return type;
   }
-  return 'audio/mp4'; // fallback to m4a/mp4 by default
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// AUDIO CONVERSION - Convert any audio blob to WAV for iOS compatibility
-// ─────────────────────────────────────────────────────────────────────────────
-
-async function convertToWav(blob) {
-  const AudioContext = window.AudioContext || window.webkitAudioContext;
-  const audioContext = new AudioContext();
-  
-  // Decode the audio blob to raw PCM
-  const arrayBuffer = await blob.arrayBuffer();
-  const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-  
-  // Convert AudioBuffer to WAV
-  const wavBuffer = audioBufferToWav(audioBuffer);
-  
-  await audioContext.close();
-  
-  return new Blob([wavBuffer], { type: 'audio/wav' });
-}
-
-function audioBufferToWav(audioBuffer) {
-  const numChannels = audioBuffer.numberOfChannels;
-  const sampleRate = audioBuffer.sampleRate;
-  const format = 1; // PCM
-  const bitDepth = 16;
-  
-  // Interleave channels
-  let interleaved;
-  if (numChannels === 2) {
-    const left = audioBuffer.getChannelData(0);
-    const right = audioBuffer.getChannelData(1);
-    interleaved = new Float32Array(left.length + right.length);
-    for (let i = 0, j = 0; i < left.length; i++, j += 2) {
-      interleaved[j] = left[i];
-      interleaved[j + 1] = right[i];
-    }
-  } else {
-    interleaved = audioBuffer.getChannelData(0);
-  }
-  
-  // Convert to 16-bit PCM
-  const dataLength = interleaved.length * 2; // 16-bit = 2 bytes per sample
-  const buffer = new ArrayBuffer(44 + dataLength);
-  const view = new DataView(buffer);
-  
-  // WAV header
-  writeString(view, 0, 'RIFF');
-  view.setUint32(4, 36 + dataLength, true);
-  writeString(view, 8, 'WAVE');
-  writeString(view, 12, 'fmt ');
-  view.setUint32(16, 16, true); // fmt chunk size
-  view.setUint16(20, format, true);
-  view.setUint16(22, numChannels, true);
-  view.setUint32(24, sampleRate, true);
-  view.setUint32(28, sampleRate * numChannels * bitDepth / 8, true); // byte rate
-  view.setUint16(32, numChannels * bitDepth / 8, true); // block align
-  view.setUint16(34, bitDepth, true);
-  writeString(view, 36, 'data');
-  view.setUint32(40, dataLength, true);
-  
-  // Write PCM samples
-  let offset = 44;
-  for (let i = 0; i < interleaved.length; i++, offset += 2) {
-    const sample = Math.max(-1, Math.min(1, interleaved[i]));
-    view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
-  }
-  
-  return buffer;
-}
-
-function writeString(view, offset, string) {
-  for (let i = 0; i < string.length; i++) {
-    view.setUint8(offset + i, string.charCodeAt(i));
-  }
+  return 'audio/webm'; // fallback
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -135,7 +59,7 @@ export async function openRecordingModal({ modalHost, db, projectId = null, onSa
   // Get recording quality from settings
   const settings = await db.settings.get();
   const voiceQuality = settings?.voiceQuality || 'low';
-  const bitrate = voiceQuality === 'high' ? 192000 : 128000; // target mp3 bitrates
+  const bitrate = voiceQuality === 'high' ? 192000 : 96000; // 192kbps high, 96kbps low
   
   let mediaRecorder = null;
   let audioChunks = [];
@@ -258,11 +182,7 @@ export async function openRecordingModal({ modalHost, db, projectId = null, onSa
       });
       
       // Permission granted! Now set up recording
-      const mimeType = MediaRecorder.isTypeSupported('audio/mp4')
-        ? 'audio/mp4'
-        : MediaRecorder.isTypeSupported('audio/mpeg')
-          ? 'audio/mpeg'
-          : getSupportedMimeType();
+      const mimeType = getSupportedMimeType();
       
       // Create MediaRecorder with fallback options for iOS
       try {
@@ -705,45 +625,6 @@ export function openPlaybackModal({ modalHost, db, memo, onChange }) {
     currentSpeed = parseFloat(speedSelect.value);
     audio.playbackRate = currentSpeed;
     hapticLight();
-  });
-
-  shareBtn.addEventListener('click', async () => {
-    try {
-      // Convert audio to WAV for maximum iOS app compatibility
-      // WebM is not widely supported by iOS apps, but WAV works everywhere
-      const wavBlob = await convertToWav(memo.blob);
-      const fileName = `${memo.title.replace(/[^a-z0-9]/gi, '_')}_${Date.now()}.wav`;
-      const file = new File([wavBlob], fileName, {
-        type: 'audio/wav',
-        lastModified: new Date(memo.createdAt).getTime()
-      });
-
-      if (navigator.share) {
-        // Try sharing with canShare check first
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({ files: [file], title: memo.title });
-          hapticLight();
-          return;
-        }
-        // Fallback: attempt share without canShare guard
-        await navigator.share({ files: [file], title: memo.title });
-        hapticLight();
-      } else {
-        // Fallback for browsers without Web Share API: download
-        const url = URL.createObjectURL(wavBlob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        a.click();
-        URL.revokeObjectURL(url);
-        hapticLight();
-      }
-    } catch (err) {
-      // User cancelled or error occurred (normal on cancel)
-      if (err.name !== 'AbortError') {
-        console.log('Share error:', err);
-      }
-    }
   });
 
   audio.addEventListener('ended', () => {

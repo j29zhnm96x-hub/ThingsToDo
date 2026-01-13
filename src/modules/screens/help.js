@@ -73,6 +73,7 @@ export function renderHelp(ctx) {
     section('🔥', t('helpPriorities'), t('helpPrioritiesContent'), '#f97316'),
     section('✅', t('helpCompletion'), t('helpCompletionContent'), '#22c55e'),
     section('👆', t('helpGestures'), t('helpGesturesContent'), '#ec4899'),
+    section('🎙️', t('helpVoiceMemos'), t('helpVoiceMemosContent'), '#14b8a6'),
 
     el('div', { style: 'height: 40px;' }) // Spacer
   );

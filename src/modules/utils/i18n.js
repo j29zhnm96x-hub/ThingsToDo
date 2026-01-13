@@ -174,6 +174,8 @@ const translations = {
     helpCompletionContent: 'Completed tasks move to the bottom stack. After <b>24 hours</b>, they are auto-archived by date.<br><br><b>Bin:</b> Deleted items stay in the Bin for 24 hours before vanishing forever.',
     helpGestures: 'Gestures & Shortcuts',
     helpGesturesContent: '• <b>Double-tap</b> in a Checklist to quick-add items.<br>• <b>Drag & Drop</b> tasks to reorder them (hold briefly, then drag).<br>• <b>Drag & Drop</b> projects and sub-projects to arrange your dashboard.<br>• <b>Long press</b> prevents accidental drags while scrolling.',
+    helpVoiceMemos: 'Voice Memos',
+    helpVoiceMemosContent: 'Record voice memos to capture quick notes or ideas.<br><br><b>Sharing:</b> To share a voice memo with other apps, use the share button and select <b>"Save to Files"</b>. From the Files app, you can then share the recording to any app.',
     
     // Time
     justNow: 'Just now',
@@ -409,6 +411,8 @@ const translations = {
     helpCompletionContent: 'Završeni zadaci se prebacuju na donji stog. Nakon <b>24 sata</b>, automatski se arhiviraju po datumu.<br><br><b>Koš:</b> Obrisane stavke ostaju u košu 24 sata prije nego što zauvijek nestanu.',
     helpGestures: 'Geste & prečaci',
     helpGesturesContent: '• <b>Dvostruki dodir</b> u Popisu za brzo dodavanje stavki.<br>• <b>Povlačenje & ispuštanje</b> zadataka da ih preuredite (kratko držite, zatim povucite).<br>• <b>Povlačenje & ispuštanje</b> projekata i podprojekta da uredite nadzornu ploču.<br>• <b>Dugi pritisak</b> sprječava slučajno povlačenje tijekom klizanja.',
+    helpVoiceMemos: 'Glasovne poruke',
+    helpVoiceMemosContent: 'Snimajte glasovne poruke za brze bilješke ili ideje.<br><br><b>Dijeljenje:</b> Za dijeljenje glasovne poruke s drugim aplikacijama, koristite gumb za dijeljenje i odaberite <b>"Spremi u Datoteke"</b>. Iz aplikacije Datoteke možete zatim dijeliti snimku s bilo kojom aplikacijom.',
     
     // Time
     justNow: 'Upravo sada',
@@ -644,6 +648,8 @@ const translations = {
     helpCompletionContent: 'Le attività completate si spostano nella pila inferiore. Dopo <b>24 ore</b>, vengono archiviate automaticamente per data.<br><br><b>Cestino:</b> Gli elementi eliminati rimangono nel Cestino per 24 ore prima di scomparire per sempre.',
     helpGestures: 'Gesti & scorciatoie',
     helpGesturesContent: '• <b>Doppio tocco</b> in un Elenco di controllo per aggiungere rapidamente elementi.<br>• <b>Trascina & rilascia</b> attività per riordinarle (tieni premuto brevemente, quindi trascina).<br>• <b>Trascina & rilascia</b> progetti e sottoprogetti per organizzare il tuo dashboard.<br>• <b>Pressione lunga</b> impedisce trascinamenti accidentali durante lo scorrimento.',
+    helpVoiceMemos: 'Memo vocali',
+    helpVoiceMemosContent: 'Registra memo vocali per catturare note o idee veloci.<br><br><b>Condivisione:</b> Per condividere un memo vocale con altre app, usa il pulsante di condivisione e seleziona <b>"Salva su File"</b>. Dall\'app File puoi poi condividere la registrazione con qualsiasi app.',
     
     // Time
     justNow: 'Proprio ora',
@@ -879,6 +885,8 @@ const translations = {
     helpCompletionContent: 'Abgeschlossene Aufgaben werden in den unteren Stapel verschoben. Nach <b>24 Stunden</b> werden sie automatisch nach Datum archiviert.<br><br><b>Papierkorb:</b> Gelöschte Elemente bleiben 24 Stunden im Papierkorb, bevor sie für immer verschwinden.',
     helpGestures: 'Gesten & Verknüpfungen',
     helpGesturesContent: '• <b>Doppeltippen</b> in einer Checkliste zum schnellen Hinzufügen von Elementen.<br>• <b>Ziehen & Ablegen</b> von Aufgaben, um sie neu zu ordnen (kurz halten, dann ziehen).<br>• <b>Ziehen & Ablegen</b> von Projekten und Unterprojekten, um Ihr Dashboard zu organisieren.<br>• <b>Langer Druck</b> verhindert versehentliche Züge beim Scrollen.',
+    helpVoiceMemos: 'Sprachnotizen',
+    helpVoiceMemosContent: 'Nehmen Sie Sprachnotizen auf, um schnelle Notizen oder Ideen festzuhalten.<br><br><b>Teilen:</b> Um eine Sprachnotiz mit anderen Apps zu teilen, verwenden Sie die Teilen-Schaltfläche und wählen Sie <b>"In Dateien sichern"</b>. Von der Dateien-App aus können Sie die Aufnahme dann mit jeder App teilen.',
     
     // Time
     justNow: 'Gerade eben',
