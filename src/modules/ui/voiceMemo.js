@@ -354,11 +354,19 @@ export function openRecordingModal({ modalHost, db, projectId = null, onSaved })
       title: t('saveVoiceMemo'),
       content: saveContent,
       align: 'top',
+      preventBackdropClose: true,
       actions: [
         { 
           label: t('discard'), 
           class: 'btn btn--ghost', 
-          onClick: () => {
+          onClick: async () => {
+            const ok = await confirm(modalHost, {
+              title: t('discardRecording') || t('discard'),
+              message: t('discardRecordingConfirm') || 'Are you sure you want to discard this recording?',
+              confirmLabel: t('discard'),
+              danger: true
+            });
+            if (!ok) return false;
             URL.revokeObjectURL(audioUrl);
             return true;
           }
@@ -366,7 +374,14 @@ export function openRecordingModal({ modalHost, db, projectId = null, onSaved })
         { 
           label: t('reRecord'), 
           class: 'btn', 
-          onClick: () => {
+          onClick: async () => {
+            const ok = await confirm(modalHost, {
+              title: t('reRecord'),
+              message: t('reRecordConfirm'),
+              confirmLabel: t('reRecord'),
+              danger: true
+            });
+            if (!ok) return false;
             URL.revokeObjectURL(audioUrl);
             // Re-open recording modal
             setTimeout(() => openRecordingModal({ modalHost, db, projectId, onSaved }), 50);
@@ -391,8 +406,16 @@ export function openRecordingModal({ modalHost, db, projectId = null, onSaved })
           }
         }
       ],
-      onClose: () => {
+      onClose: async () => {
+        const ok = await confirm(modalHost, {
+          title: t('discardRecording') || t('discard'),
+          message: t('discardRecordingConfirm') || 'Are you sure you want to discard this recording? This cannot be undone.',
+          confirmLabel: t('discard'),
+          danger: true
+        });
+        if (!ok) return false;
         URL.revokeObjectURL(audioUrl);
+        return true;
       }
     });
     

@@ -3,7 +3,7 @@ import { hapticLight } from './haptic.js';
 
 // Simple bottom-sheet modal with focus management.
 
-export function openModal(modalHost, { title, content, actions = [], headerActions = [], onClose, align = 'bottom' }) {
+export function openModal(modalHost, { title, content, actions = [], headerActions = [], onClose, align = 'bottom', preventBackdropClose = false }) {
   const previouslyFocused = document.activeElement;
 
   clear(modalHost);
@@ -30,7 +30,10 @@ export function openModal(modalHost, { title, content, actions = [], headerActio
         type: 'button',
         class: 'iconBtn',
         'aria-label': 'Close',
-        onClick: () => { hapticLight(); close(); }
+        onClick: async () => { 
+          hapticLight(); 
+          await tryClose();
+        }
       }, '×')
     )
   );
@@ -55,10 +58,18 @@ export function openModal(modalHost, { title, content, actions = [], headerActio
   const focusables = () => Array.from(modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'))
     .filter((n) => !n.hasAttribute('disabled'));
 
-  function onKeyDown(e) {
+  async function tryClose() {
+    if (onClose) {
+      const shouldClose = await onClose();
+      if (shouldClose === false) return;
+    }
+    close();
+  }
+
+  async function onKeyDown(e) {
     if (e.key === 'Escape') {
       e.preventDefault();
-      close();
+      await tryClose();
       return;
     }
     if (e.key === 'Tab') {
@@ -81,16 +92,18 @@ export function openModal(modalHost, { title, content, actions = [], headerActio
     modalHost.setAttribute('aria-hidden', 'true');
     clear(modalHost);
     modalHost.removeEventListener('keydown', onKeyDown);
-    onClose?.();
+    // Don't call onClose here - it's called in tryClose()
     if (previouslyFocused && previouslyFocused.focus) previouslyFocused.focus();
   }
 
   modalHost.addEventListener('keydown', onKeyDown);
 
-  // Click outside closes
-  modalHost.addEventListener('click', (e) => {
-    if (e.target === modalHost) close();
-  }, { once: true });
+  // Click outside closes (unless prevented)
+  if (!preventBackdropClose) {
+    modalHost.addEventListener('click', (e) => {
+      if (e.target === modalHost) close();
+    }, { once: true });
+  }
 
   // Initial focus (synchronous to support mobile keyboard triggering)
   const f = focusables();
