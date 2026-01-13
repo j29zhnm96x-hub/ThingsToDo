@@ -13,8 +13,8 @@ import { t } from '../utils/i18n.js';
 
 function getSupportedMimeType() {
   const types = [
-    'audio/mpeg',
     'audio/mp4',
+    'audio/mpeg',
     'audio/ogg;codecs=opus',
     'audio/webm;codecs=opus',
     'audio/webm'
@@ -22,7 +22,7 @@ function getSupportedMimeType() {
   for (const type of types) {
     if (MediaRecorder.isTypeSupported(type)) return type;
   }
-  return 'audio/mpeg'; // fallback to mp3 by default
+  return 'audio/mp4'; // fallback to m4a/mp4 by default
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -182,9 +182,11 @@ export async function openRecordingModal({ modalHost, db, projectId = null, onSa
       });
       
       // Permission granted! Now set up recording
-      const mimeType = MediaRecorder.isTypeSupported('audio/mpeg')
-        ? 'audio/mpeg'
-        : getSupportedMimeType();
+      const mimeType = MediaRecorder.isTypeSupported('audio/mp4')
+        ? 'audio/mp4'
+        : MediaRecorder.isTypeSupported('audio/mpeg')
+          ? 'audio/mpeg'
+          : getSupportedMimeType();
       
       // Create MediaRecorder with fallback options for iOS
       try {
@@ -632,16 +634,13 @@ export function openPlaybackModal({ modalHost, db, memo, onChange }) {
   shareBtn.addEventListener('click', async () => {
     try {
       if (navigator.share) {
-        // Default to mp3 for maximum app compatibility on iOS
-        let mimeType = 'audio/mpeg';
-        let extension = 'mp3';
-        if (memo.blob.type) {
-          const t = memo.blob.type;
-          if (t.includes('ogg')) { mimeType = 'audio/ogg'; extension = 'ogg'; }
-          else if (t.includes('webm')) { mimeType = 'audio/webm'; extension = 'webm'; }
-          else if (t.includes('mp4') || t.includes('m4a')) { mimeType = 'audio/mp4'; extension = 'm4a'; }
-          else if (t.includes('mpeg') || t.includes('mp3')) { mimeType = 'audio/mpeg'; extension = 'mp3'; }
-        }
+        // Prefer the actual blob type; favor mp4/m4a for iOS, then mp3
+        let mimeType = memo.blob.type || 'audio/mp4';
+        let extension = 'm4a';
+        if (mimeType.includes('mpeg') || mimeType.includes('mp3')) { mimeType = 'audio/mpeg'; extension = 'mp3'; }
+        else if (mimeType.includes('ogg')) { mimeType = 'audio/ogg'; extension = 'ogg'; }
+        else if (mimeType.includes('webm')) { mimeType = 'audio/webm'; extension = 'webm'; }
+        else if (mimeType.includes('mp4') || mimeType.includes('m4a')) { mimeType = 'audio/mp4'; extension = 'm4a'; }
 
         // Re-wrap the blob with a compatible mime type to help share targets accept it
         const buffer = await memo.blob.arrayBuffer();
@@ -664,10 +663,10 @@ export function openPlaybackModal({ modalHost, db, memo, onChange }) {
         hapticLight();
       } else {
         // Fallback for browsers without Web Share API: download
-        const fallbackMime = memo.blob.type || 'audio/mpeg';
+        const fallbackMime = memo.blob.type || 'audio/mp4';
         const fallbackExt = fallbackMime.includes('ogg') ? 'ogg' :
                 fallbackMime.includes('webm') ? 'webm' :
-                fallbackMime.includes('mp4') ? 'm4a' : 'mp3';
+                fallbackMime.includes('mpeg') || fallbackMime.includes('mp3') ? 'mp3' : 'm4a';
         const fileName = `${memo.title.replace(/[^a-z0-9]/gi, '_')}.${fallbackExt}`;
         const url = URL.createObjectURL(memo.blob);
         const a = document.createElement('a');
