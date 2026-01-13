@@ -93,10 +93,10 @@ export async function openRecordingModal({ modalHost, db, projectId = null, onSa
     style: 'width: 72px; height: 72px; border-radius: 50%; border: none; background: #ef4444; color: white; font-size: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);'
   }, '●');
   
-  const pauseBtn = el('button', { 
+  const pauseBtn = el('button', {
     type: 'button',
     'aria-label': t('pause'),
-    style: 'display: none; width: 56px; height: 56px; border-radius: 50%; border: none; background: var(--accent); color: white; font-size: 20px; cursor: pointer; align-items: center; justify-content: center;'
+    style: 'display: none; width: 56px; height: 56px; border-radius: 50%; border: none; background: var(--accent); color: white; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;'
   }, '❚❚');
   
   const stopBtn = el('button', { 
@@ -501,6 +501,11 @@ export function openPlaybackModal({ modalHost, db, memo, onChange }) {
     style: 'width: 56px; height: 56px; flex-shrink: 0; border-radius: 50%; border: none; background: var(--surface3); color: var(--text); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;'
   }, '■');
 
+  const pauseBtn = el('button', {
+    type: 'button',
+    style: 'width: 56px; height: 56px; flex-shrink: 0; border-radius: 50%; border: none; background: var(--surface3); color: var(--text); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;'
+  }, '❚❚');
+
   function updateProgress() {
     if (!audio) return;
     const progress = (audio.currentTime / audio.duration) * 100 || 0;
@@ -591,6 +596,7 @@ export function openPlaybackModal({ modalHost, db, memo, onChange }) {
     el('div', { style: 'display: flex; gap: 12px; align-items: center; margin-top: 8px;' },
       speedSelect,
       playBtn,
+      pauseBtn,
       stopBtn
     )
   );
