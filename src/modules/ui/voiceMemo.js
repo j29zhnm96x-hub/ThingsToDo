@@ -26,6 +26,82 @@ function getSupportedMimeType() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// AUDIO CONVERSION - Convert any audio blob to WAV for iOS compatibility
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function convertToWav(blob) {
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  const audioContext = new AudioContext();
+  
+  // Decode the audio blob to raw PCM
+  const arrayBuffer = await blob.arrayBuffer();
+  const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+  
+  // Convert AudioBuffer to WAV
+  const wavBuffer = audioBufferToWav(audioBuffer);
+  
+  await audioContext.close();
+  
+  return new Blob([wavBuffer], { type: 'audio/wav' });
+}
+
+function audioBufferToWav(audioBuffer) {
+  const numChannels = audioBuffer.numberOfChannels;
+  const sampleRate = audioBuffer.sampleRate;
+  const format = 1; // PCM
+  const bitDepth = 16;
+  
+  // Interleave channels
+  let interleaved;
+  if (numChannels === 2) {
+    const left = audioBuffer.getChannelData(0);
+    const right = audioBuffer.getChannelData(1);
+    interleaved = new Float32Array(left.length + right.length);
+    for (let i = 0, j = 0; i < left.length; i++, j += 2) {
+      interleaved[j] = left[i];
+      interleaved[j + 1] = right[i];
+    }
+  } else {
+    interleaved = audioBuffer.getChannelData(0);
+  }
+  
+  // Convert to 16-bit PCM
+  const dataLength = interleaved.length * 2; // 16-bit = 2 bytes per sample
+  const buffer = new ArrayBuffer(44 + dataLength);
+  const view = new DataView(buffer);
+  
+  // WAV header
+  writeString(view, 0, 'RIFF');
+  view.setUint32(4, 36 + dataLength, true);
+  writeString(view, 8, 'WAVE');
+  writeString(view, 12, 'fmt ');
+  view.setUint32(16, 16, true); // fmt chunk size
+  view.setUint16(20, format, true);
+  view.setUint16(22, numChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * numChannels * bitDepth / 8, true); // byte rate
+  view.setUint16(32, numChannels * bitDepth / 8, true); // block align
+  view.setUint16(34, bitDepth, true);
+  writeString(view, 36, 'data');
+  view.setUint32(40, dataLength, true);
+  
+  // Write PCM samples
+  let offset = 44;
+  for (let i = 0; i < interleaved.length; i++, offset += 2) {
+    const sample = Math.max(-1, Math.min(1, interleaved[i]));
+    view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+  }
+  
+  return buffer;
+}
+
+function writeString(view, offset, string) {
+  for (let i = 0; i < string.length; i++) {
+    view.setUint8(offset + i, string.charCodeAt(i));
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // FORMAT HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -633,42 +709,28 @@ export function openPlaybackModal({ modalHost, db, memo, onChange }) {
 
   shareBtn.addEventListener('click', async () => {
     try {
+      // Convert audio to WAV for maximum iOS app compatibility
+      // WebM is not widely supported by iOS apps, but WAV works everywhere
+      const wavBlob = await convertToWav(memo.blob);
+      const fileName = `${memo.title.replace(/[^a-z0-9]/gi, '_')}_${Date.now()}.wav`;
+      const file = new File([wavBlob], fileName, {
+        type: 'audio/wav',
+        lastModified: new Date(memo.createdAt).getTime()
+      });
+
       if (navigator.share) {
-        // Prefer the actual blob type; favor mp4/m4a for iOS, then mp3
-        let mimeType = memo.blob.type || 'audio/mp4';
-        let extension = 'm4a';
-        if (mimeType.includes('mpeg') || mimeType.includes('mp3')) { mimeType = 'audio/mpeg'; extension = 'mp3'; }
-        else if (mimeType.includes('ogg')) { mimeType = 'audio/ogg'; extension = 'ogg'; }
-        else if (mimeType.includes('webm')) { mimeType = 'audio/webm'; extension = 'webm'; }
-        else if (mimeType.includes('mp4') || mimeType.includes('m4a')) { mimeType = 'audio/mp4'; extension = 'm4a'; }
-
-        // Re-wrap the blob with a compatible mime type to help share targets accept it
-        const buffer = await memo.blob.arrayBuffer();
-        const compatibleBlob = new Blob([buffer], { type: mimeType });
-        const fileName = `${memo.title.replace(/[^a-z0-9]/gi, '_')}_${Date.now()}.${extension}`;
-        const file = new File([compatibleBlob], fileName, {
-          type: mimeType,
-          lastModified: new Date(memo.createdAt).getTime()
-        });
-
-        // Prefer canShare when available for stricter validation
+        // Try sharing with canShare check first
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({ files: [file], title: memo.title });
           hapticLight();
           return;
         }
-
         // Fallback: attempt share without canShare guard
         await navigator.share({ files: [file], title: memo.title });
         hapticLight();
       } else {
         // Fallback for browsers without Web Share API: download
-        const fallbackMime = memo.blob.type || 'audio/mp4';
-        const fallbackExt = fallbackMime.includes('ogg') ? 'ogg' :
-                fallbackMime.includes('webm') ? 'webm' :
-                fallbackMime.includes('mpeg') || fallbackMime.includes('mp3') ? 'mp3' : 'm4a';
-        const fileName = `${memo.title.replace(/[^a-z0-9]/gi, '_')}.${fallbackExt}`;
-        const url = URL.createObjectURL(memo.blob);
+        const url = URL.createObjectURL(wavBlob);
         const a = document.createElement('a');
         a.href = url;
         a.download = fileName;
