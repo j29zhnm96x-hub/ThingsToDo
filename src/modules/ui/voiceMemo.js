@@ -433,6 +433,7 @@ export function openPlaybackModal({ modalHost, db, memo, onChange }) {
   let audio = new Audio(audioUrl);
   let isPlaying = false;
   let animationFrame = null;
+  let currentSpeed = 1.0;
   
   const progressBar = el('div', { 
     style: 'flex: 1; height: 8px; background: var(--surface3); border-radius: 4px; cursor: pointer; overflow: hidden;'
@@ -448,6 +449,12 @@ export function openPlaybackModal({ modalHost, db, memo, onChange }) {
   const totalTime = el('span', { 
     style: 'font-size: 0.875rem; font-variant-numeric: tabular-nums; color: var(--muted); min-width: 40px; text-align: right;'
   }, formatDuration(memo.duration));
+  
+  // Speed control
+  const speedBtn = el('button', {
+    type: 'button',
+    style: 'padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-size: 0.875rem; cursor: pointer; font-weight: 500;'
+  }, '1.0×');
   
   const playBtn = el('button', { 
     type: 'button',
@@ -507,6 +514,17 @@ export function openPlaybackModal({ modalHost, db, memo, onChange }) {
 
   stopBtn.addEventListener('click', stop);
 
+  // Speed control
+  const speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+  speedBtn.addEventListener('click', () => {
+    const currentIndex = speeds.indexOf(currentSpeed);
+    const nextIndex = (currentIndex + 1) % speeds.length;
+    currentSpeed = speeds[nextIndex];
+    audio.playbackRate = currentSpeed;
+    speedBtn.textContent = `${currentSpeed}×`;
+    hapticLight();
+  });
+
   audio.addEventListener('ended', () => {
     isPlaying = false;
     playBtn.textContent = '▶';
@@ -539,7 +557,8 @@ export function openPlaybackModal({ modalHost, db, memo, onChange }) {
       progressBar,
       totalTime
     ),
-    el('div', { style: 'display: flex; gap: 16px; margin-top: 8px;' },
+    el('div', { style: 'display: flex; gap: 12px; align-items: center; margin-top: 8px;' },
+      speedBtn,
       playBtn,
       stopBtn
     )
