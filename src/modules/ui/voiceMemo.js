@@ -99,7 +99,10 @@ export async function openRecordingModal({ modalHost, db, projectId = null, onSa
     style: 'display: none; width: 56px; height: 56px; border-radius: 50%; border: none; background: var(--surface3); color: var(--text); font-size: 20px; cursor: pointer; align-items: center; justify-content: center;'
   }, '■');
 
-  // Waveform visualization
+  // Waveform visualization - beautiful modern style with motion blur
+  let waveformHistory = [];
+  const historyLength = 8; // Number of trail frames for motion blur
+  
   function drawWaveform() {
     if (!analyser) return;
     
@@ -108,35 +111,135 @@ export async function openRecordingModal({ modalHost, db, projectId = null, onSa
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
     
+    // Smooth the data for slower, more fluid animation
+    let smoothedData = new Float32Array(bufferLength);
+    const smoothingFactor = 0.15;
+    
     const draw = () => {
       if (!isRecording || isPaused) return;
       animationFrame = requestAnimationFrame(draw);
       
       analyser.getByteTimeDomainData(dataArray);
       
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = '#6366f1';
-      ctx.beginPath();
-      
-      const sliceWidth = canvas.width / bufferLength;
-      let x = 0;
-      
+      // Apply smoothing for slower, more fluid movement
       for (let i = 0; i < bufferLength; i++) {
-        const v = dataArray[i] / 128.0;
-        const y = canvas.height / 2 - (v * canvas.height) / 2;
+        const target = (dataArray[i] - 128) / 128.0;
+        smoothedData[i] = smoothedData[i] + (target - smoothedData[i]) * smoothingFactor;
+      }
+      
+      // Store current wave for motion blur trail
+      const currentWave = Array.from(smoothedData);
+      waveformHistory.unshift(currentWave);
+      if (waveformHistory.length > historyLength) {
+        waveformHistory.pop();
+      }
+      
+      // Clear with slight fade for additional blur effect
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.3)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      const centerY = canvas.height / 2;
+      const sensitivity = 2.5; // Higher = more dramatic waves
+      
+      // Create gradient for the main wave
+      const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+      gradient.addColorStop(0, '#06b6d4');    // Cyan
+      gradient.addColorStop(0.3, '#8b5cf6');  // Purple
+      gradient.addColorStop(0.6, '#ec4899');  // Pink
+      gradient.addColorStop(1, '#06b6d4');    // Cyan
+      
+      // Draw motion blur trails (older frames = more transparent)
+      for (let h = waveformHistory.length - 1; h >= 0; h--) {
+        const historyData = waveformHistory[h];
+        const alpha = (1 - h / historyLength) * 0.3;
+        const blur = h * 2;
+        
+        ctx.save();
+        ctx.filter = `blur(${blur}px)`;
+        ctx.globalAlpha = alpha;
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = 3 + (historyLength - h);
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
+        ctx.beginPath();
+        const step = Math.floor(bufferLength / 80); // Sample fewer points for smoother curve
+        
+        for (let i = 0; i < bufferLength; i += step) {
+          const x = (i / bufferLength) * canvas.width;
+          const y = centerY - historyData[i] * canvas.height * sensitivity * 0.5;
+          
+          if (i === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            // Use quadratic curves for smooth waves
+            const prevI = Math.max(0, i - step);
+            const prevX = (prevI / bufferLength) * canvas.width;
+            const prevY = centerY - historyData[prevI] * canvas.height * sensitivity * 0.5;
+            const cpX = (prevX + x) / 2;
+            const cpY = (prevY + y) / 2;
+            ctx.quadraticCurveTo(prevX, prevY, cpX, cpY);
+          }
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
+      
+      // Draw main crisp wave on top
+      ctx.save();
+      ctx.shadowColor = '#8b5cf6';
+      ctx.shadowBlur = 15;
+      ctx.strokeStyle = gradient;
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      
+      ctx.beginPath();
+      const step = Math.floor(bufferLength / 80);
+      
+      for (let i = 0; i < bufferLength; i += step) {
+        const x = (i / bufferLength) * canvas.width;
+        const y = centerY - smoothedData[i] * canvas.height * sensitivity * 0.5;
         
         if (i === 0) {
           ctx.moveTo(x, y);
         } else {
-          ctx.lineTo(x, y);
+          const prevI = Math.max(0, i - step);
+          const prevX = (prevI / bufferLength) * canvas.width;
+          const prevY = centerY - smoothedData[prevI] * canvas.height * sensitivity * 0.5;
+          const cpX = (prevX + x) / 2;
+          const cpY = (prevY + y) / 2;
+          ctx.quadraticCurveTo(prevX, prevY, cpX, cpY);
         }
-        x += sliceWidth;
       }
-      
       ctx.stroke();
+      
+      // Draw subtle glow line below for reflection effect
+      ctx.globalAlpha = 0.2;
+      ctx.shadowBlur = 25;
+      ctx.beginPath();
+      for (let i = 0; i < bufferLength; i += step) {
+        const x = (i / bufferLength) * canvas.width;
+        const y = centerY + smoothedData[i] * canvas.height * sensitivity * 0.25;
+        
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          const prevI = Math.max(0, i - step);
+          const prevX = (prevI / bufferLength) * canvas.width;
+          const prevY = centerY + smoothedData[prevI] * canvas.height * sensitivity * 0.25;
+          const cpX = (prevX + x) / 2;
+          const cpY = (prevY + y) / 2;
+          ctx.quadraticCurveTo(prevX, prevY, cpX, cpY);
+        }
+      }
+      ctx.stroke();
+      ctx.restore();
     };
+    
+    // Reset history when starting new recording
+    waveformHistory = [];
+    smoothedData = new Float32Array(bufferLength);
     
     draw();
   }
