@@ -237,6 +237,13 @@ export async function renderProjectDetail(ctx, projectId) {
       const defaultPage = newChecklistPage({ projectId, name: '' });
       await db.checklistPages.put(defaultPage);
       pages = [defaultPage];
+      
+      // Assign all existing todos to the default page
+      for (const todo of todos) {
+        if (!todo.pageId) {
+          await db.todos.put({ ...todo, pageId: defaultPage.id });
+        }
+      }
     }
     
     // Get current page from localStorage or default to first
@@ -269,27 +276,41 @@ export async function renderProjectDetail(ctx, projectId) {
           'data-page-id': page.id
         }, page.name || t('untitled'));
         
-        // Single tap to switch page
-        pill.addEventListener('click', () => {
-          hapticLight();
-          localStorage.setItem(storagePageKey, page.id);
-          renderProjectDetail(ctx, projectId);
-        });
-        
-        // Double-tap to open rename/delete modal
         let lastTap = 0;
+        let tapTimeout = null;
+        
+        // Handle touch events (mobile)
         pill.addEventListener('touchend', (e) => {
           const now = Date.now();
           if (now - lastTap < 350) {
+            // Double-tap detected
             e.preventDefault();
             e.stopPropagation();
+            clearTimeout(tapTimeout);
             hapticLight();
             openPageMenu(page);
+            lastTap = 0; // Reset
+          } else {
+            // Single tap - wait to see if double-tap follows
+            lastTap = now;
+            tapTimeout = setTimeout(() => {
+              hapticLight();
+              localStorage.setItem(storagePageKey, page.id);
+              renderProjectDetail(ctx, projectId);
+            }, 350);
           }
-          lastTap = now;
         }, { passive: false });
         
-        // Double-click for desktop
+        // Handle mouse events (desktop)
+        pill.addEventListener('click', (e) => {
+          if (e.detail === 1) {
+            // Single click
+            hapticLight();
+            localStorage.setItem(storagePageKey, page.id);
+            renderProjectDetail(ctx, projectId);
+          }
+        });
+        
         pill.addEventListener('dblclick', (e) => {
           e.preventDefault();
           e.stopPropagation();
