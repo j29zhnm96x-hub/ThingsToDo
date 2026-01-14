@@ -73,79 +73,80 @@ export async function renderProjectDetail(ctx, projectId) {
       subProjects.forEach(p => {
           const stats = subProjectStats.get(p.id);
 
-          const card = renderProjectCard({
-            project: p,
-            stats,
-            onOpen: () => {
-              if (ignoreSubProjectClick) return;
-              hapticLight();
-              location.hash = `#project/${p.id}`;
+          const makeRow = (todo, completed) => {
+            let startX = 0;
+            let currentX = 0;
+            let swiping = false;
+            const SWIPE_THRESHOLD = 80;
+
+            const textSpan = el('span', { 
+              class: 'checklist__text',
+              style: 'cursor: pointer;'
+            }, todo.title);
+
+            const row = el('div', {
+              class: completed ? 'checklist__item checklist__item--done' : 'checklist__item',
+              style: 'position: relative; overflow: hidden;',
+              'data-todo-id': todo.id
             },
-            onMenu: () => {
+              el('span', { 
+                class: completed ? 'checklist__circle checklist__circle--done' : 'checklist__circle',
+                onClick: (e) => {
+                  e.stopPropagation();
+                  onToggleCompleted?.(todo, !completed);
+                }
+              }, completed ? '✓' : ''),
+              textSpan,
+              todo.protected ? el('span', { class: 'icon-protected', 'aria-label': 'Protected' }, '🔒') : null
+            );
+
+            // Simple tap to open item
+            textSpan.addEventListener('click', () => {
               hapticLight();
-              openProjectMenu(modalHost, { db, project: p, onChange: () => renderProjectDetail(ctx, projectId) });
-            }
-          });
+              onTap?.(todo);
+            });
 
-          subProjectsList.appendChild(card);
-      });
+            const handleTouchStart = (e) => {
+              startX = e.touches[0].clientX;
+              currentX = startX;
+              swiping = false;
+            };
 
-      // Enable drag reordering for sub-projects (sibling order)
-      let pointerId = null;
-      let dragged = null;
-      let placeholder = null;
-      let started = false;
-      let startY = 0;
-      let offsetY = 0;
-      let rect = null;
-      let prevTouchAction = '';
-      let downTime = 0;
-      let scrollBaseline = 0;
-      const threshold = 6;
-      const appEl = typeof document !== 'undefined' ? document.getElementById('app') : null;
+            const handleTouchMove = (e) => {
+              currentX = e.touches[0].clientX;
+              const diff = startX - currentX;
+      
+              if (diff > 20) {
+                swiping = true;
+                const translateX = Math.min(diff, SWIPE_THRESHOLD + 20);
+                row.style.transform = `translateX(-${translateX}px)`;
+                row.style.transition = 'none';
+              }
+            };
 
-      const isInteractive = (node) => !!node.closest('button, input, a, select, textarea') || !!node.closest('.projectCard__menuBtn');
-      const cardFromEvent = (e) => e.target.closest('.projectCard');
+            const handleTouchEnd = () => {
+              const diff = startX - currentX;
+      
+              if (diff > SWIPE_THRESHOLD) {
+                row.style.transition = 'transform 200ms ease';
+                row.style.transform = 'translateX(-100%)';
+                setTimeout(() => {
+                  hapticLight();
+                  onDelete?.(todo, row);
+                }, 150);
+              } else {
+                row.style.transition = 'transform 200ms ease';
+                row.style.transform = 'translateX(0)';
+              }
+              swiping = false;
+            };
 
-      function cleanup() {
-        if (dragged) {
-          dragged.classList.remove('todo--dragging');
-          dragged.style.width = '';
-          dragged.style.left = '';
-          dragged.style.top = '';
-        }
-        if (placeholder) placeholder.remove();
-        document.body.classList.remove('dragging-reorder');
-        subProjectsList.style.touchAction = prevTouchAction;
-        pointerId = null;
-        dragged = null;
-        placeholder = null;
-        started = false;
-        rect = null;
-      }
+            row.addEventListener('touchstart', handleTouchStart, { passive: false });
+            row.addEventListener('touchmove', handleTouchMove, { passive: false });
+            row.addEventListener('touchend', handleTouchEnd, { passive: false });
 
-      subProjectsList.addEventListener('pointerdown', (e) => {
-        if (pointerId != null) return;
-        const card = cardFromEvent(e);
-        if (!card) return;
-        if (isInteractive(e.target)) return;
-
-        pointerId = e.pointerId;
-        dragged = card;
-        startY = e.clientY;
-        rect = dragged.getBoundingClientRect();
-        offsetY = e.clientY - rect.top;
-        downTime = Date.now();
-        scrollBaseline = appEl ? appEl.scrollTop : (document.scrollingElement?.scrollTop || 0);
-        ignoreSubProjectClick = false;
-      });
-
-      subProjectsList.addEventListener('pointermove', (e) => {
-        if (pointerId == null || e.pointerId !== pointerId || !dragged) return;
-
-        const dy = e.clientY - startY;
-        if (!started && Math.abs(dy) < threshold) return;
-
+            return row;
+          };
         if (!started) {
           const currentScroll = appEl ? appEl.scrollTop : (document.scrollingElement?.scrollTop || 0);
           if (currentScroll !== scrollBaseline) return;
@@ -395,64 +396,9 @@ export async function renderProjectDetail(ctx, projectId) {
 
     const hint = el('div', { class: 'checklist__hint' }, t('doubleTapToAdd'));
     
-    // Page menu for rename/delete (long press on pill)
-    const openPageMenu = (page) => {
-      const isOnlyPage = pages.length === 1;
-      openModal(modalHost, {
-        title: page.name || t('untitled'),
-        content: el('div', { class: 'small' }, t('pageActions')),
-        actions: [
-          { label: t('rename'), class: 'btn', onClick: () => {
-            setTimeout(() => openRenamePageModal({ modalHost, db, page, onSaved: () => renderProjectDetail(ctx, projectId) }), 50);
-            return true;
-          }},
-          !isOnlyPage ? { label: t('delete'), class: 'btn btn--danger', onClick: async () => {
-            const pageItemCount = pageTodos.length;
-            const ok = await confirm(modalHost, {
-              title: t('deletePage'),
-              message: pageItemCount > 0 
-                ? `${t('deletePageConfirm')} ${pageItemCount} ${t('itemsWillBeDeleted')}`
-                : t('deletePageConfirmEmpty'),
-              confirmLabel: t('delete'),
-              danger: true
-            });
-            if (!ok) return true;
-            
-            // Delete all todos in this page
-            for (const todo of pageTodos) {
-              await db.todos.delete(todo.id);
-            }
-            await db.checklistPages.delete(page.id);
-            localStorage.removeItem(storagePageKey);
-            await renderProjectDetail(ctx, projectId);
-            return true;
-          }} : null,
-          { label: t('cancel'), class: 'btn btn--ghost', onClick: () => true }
-        ].filter(Boolean)
-      });
-    };
+    // Long-press actions on pills disabled per request
 
-    // Long press detection for pills
-    if (pillBar) {
-      let pressTimer = null;
-      pillBar.addEventListener('pointerdown', (e) => {
-        const pill = e.target.closest('.checklist-pill');
-        if (!pill) return;
-        const pageId = pill.dataset.pageId;
-        const page = pages.find(p => p.id === pageId);
-        if (!page) return;
-        
-        pressTimer = setTimeout(() => {
-          hapticLight();
-          openPageMenu(page);
-        }, 600);
-      });
-      pillBar.addEventListener('pointerup', () => { if (pressTimer) clearTimeout(pressTimer); });
-      pillBar.addEventListener('pointercancel', () => { if (pressTimer) clearTimeout(pressTimer); });
-      pillBar.addEventListener('pointerleave', () => { if (pressTimer) clearTimeout(pressTimer); });
-    }
-
-    // Content layout
+    // Content layout with draggable wrapper
     const contentStack = el('div', { class: 'stack' }, 
        subProjectsList,
        pillBar,
@@ -460,12 +406,29 @@ export async function renderProjectDetail(ctx, projectId) {
        hint
     );
 
+    const draggableWrapper = el('div', {
+      class: 'checklist-draggable-wrapper',
+      style: 'touch-action: pan-y; will-change: transform;'
+    }, contentStack);
+
     const container = el('div', { 
       class: 'checklist-container',
-      style: 'min-height: calc(100vh - 44px - var(--safe-top) - 74px - var(--safe-bottom) - 28px); position: relative; overflow: hidden;'
-    }, contentStack, addPageBtn);
+      style: 'height: calc(100vh - 44px - var(--safe-top) - 74px - var(--safe-bottom) - 28px); position: relative; overflow-x: hidden; overflow-y: hidden;'
+    }, draggableWrapper, addPageBtn);
 
     main.append(container);
+
+    // Track whether vertical scrolling is actually needed and toggle touch-action
+    let canScroll = false;
+    const updateScrollNeeded = () => {
+      canScroll = container.scrollHeight > container.clientHeight;
+      container.style.overflowY = canScroll ? 'auto' : 'hidden';
+      // allow or disallow native vertical panning depending on need
+      draggableWrapper.style.touchAction = canScroll ? 'pan-y' : 'none';
+    };
+    requestAnimationFrame(updateScrollNeeded);
+    // also update on window resize in case layout changes
+    window.addEventListener('resize', updateScrollNeeded);
 
     // Swipe gesture for page navigation with smooth dragging
     if (pages.length >= 2) {
@@ -474,44 +437,56 @@ export async function renderProjectDetail(ctx, projectId) {
       let swiping = false;
       let isDragging = false;
       
-      container.addEventListener('touchstart', (e) => {
+      draggableWrapper.addEventListener('touchstart', (e) => {
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
         swiping = false;
         isDragging = false;
-        contentStack.style.transition = 'none';
-      }, { passive: true });
+        draggableWrapper.style.transition = 'none';
+        // If content doesn't need vertical scrolling, prevent native pan from starting
+        if (!canScroll) e.preventDefault();
+      }, { passive: false });
       
-      container.addEventListener('touchmove', (e) => {
+      draggableWrapper.addEventListener('touchmove', (e) => {
         const dx = e.touches[0].clientX - touchStartX;
         const dy = e.touches[0].clientY - touchStartY;
-        
+
+        // If content doesn't need scrolling, prevent any native scroll
+        if (!canScroll) {
+          e.preventDefault();
+        }
+
         // Only consider horizontal swipes
-        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 30) {
-          swiping = true;
-          isDragging = true;
-          
+        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 20) {
+          if (!swiping) {
+            swiping = true;
+            isDragging = true;
+          }
+
+          // Prevent vertical scroll when swiping horizontally
+          e.preventDefault();
+
           // Apply transform to follow finger
           const currentIndex = pages.findIndex(p => p.id === currentPageId);
           const canGoLeft = currentIndex > 0;
           const canGoRight = currentIndex < pages.length - 1;
-          
+
           // Apply resistance at boundaries
           let translateX = dx;
           if ((dx > 0 && !canGoLeft) || (dx < 0 && !canGoRight)) {
             translateX = dx * 0.3; // Resistance effect
           }
-          
-          contentStack.style.transform = `translateX(${translateX}px)`;
+
+          draggableWrapper.style.transform = `translateX(${translateX}px)`;
         }
-      }, { passive: true });
+      }, { passive: false });
       
-      container.addEventListener('touchend', (e) => {
+      draggableWrapper.addEventListener('touchend', (e) => {
         if (!swiping) return;
         
         // Re-enable transition for snap effect
-        contentStack.style.transition = 'transform 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-        contentStack.style.transform = 'translateX(0)';
+        draggableWrapper.style.transition = 'transform 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+        draggableWrapper.style.transform = 'translateX(0)';
         
         const dx = e.changedTouches[0].clientX - touchStartX;
         const threshold = 80;
@@ -766,10 +741,15 @@ function renderChecklist({ todos, modalHost, onToggleCompleted, onDelete, onDele
     let swiping = false;
     const SWIPE_THRESHOLD = 80;
 
-    const textSpan = el('span', { 
-      class: 'checklist__text',
-      style: 'cursor: pointer;'
-    }, todo.title);
+      const textSpan = el('span', { 
+        class: 'checklist__text',
+        style: 'cursor: pointer;'
+      }, todo.title);
+        
+      textSpan.addEventListener('click', () => {
+        hapticLight();
+        onTap?.(todo);
+      });
 
     const row = el('div', {
       class: completed ? 'checklist__item checklist__item--done' : 'checklist__item',
@@ -885,17 +865,9 @@ function renderChecklist({ todos, modalHost, onToggleCompleted, onDelete, onDele
       swiping = false;
     };
 
-    textSpan.addEventListener('pointerdown', handlePressStart);
-    textSpan.addEventListener('pointerup', handlePressEnd);
-    textSpan.addEventListener('pointercancel', () => {
-      cancelPressTimer();
-      longPressTriggered = false;
-    });
-    textSpan.addEventListener('pointerleave', cancelPressTimer);
-
-    row.addEventListener('touchstart', handleTouchStart, { passive: true });
-    row.addEventListener('touchmove', handleTouchMove, { passive: true });
-    row.addEventListener('touchend', handleTouchEnd);
+    row.addEventListener('touchstart', handleTouchStart, { passive: false });
+    row.addEventListener('touchmove', handleTouchMove, { passive: false });
+    row.addEventListener('touchend', handleTouchEnd, { passive: false });
 
     return row;
   };
@@ -1106,9 +1078,6 @@ function renderChecklistWithDrag({ todos, modalHost, db, projectId, currentPageI
   let isCollapsed = localStorage.getItem(storageKey) === 'true';
 
   const makeRow = (todo, completed) => {
-    let pressTimer = null;
-    const LONG_PRESS_DURATION = 500;
-
     let startX = 0;
     let currentX = 0;
     let swiping = false;
@@ -1135,60 +1104,10 @@ function renderChecklistWithDrag({ todos, modalHost, db, projectId, currentPageI
       todo.protected ? el('span', { class: 'icon-protected', 'aria-label': 'Protected' }, '🔒') : null
     );
 
-    let longPressTriggered = false;
-    let pressStartTime = 0;
-    let pressStartPos = { x: 0, y: 0 };
-    
-    const cancelPressTimer = () => {
-      if (pressTimer) {
-        clearTimeout(pressTimer);
-        pressTimer = null;
-      }
-    };
-    
-    const handlePressStart = (e) => {
-      if (swiping) return;
-      longPressTriggered = false;
-      pressStartTime = Date.now();
-      pressStartPos = { x: e.clientX, y: e.clientY };
-      
-      pressTimer = setTimeout(() => {
-        longPressTriggered = true;
-        hapticLight();
-        openModal(modalHost, {
-          title: todo.title,
-          content: el('div', { class: 'small' }, t('chooseAction')),
-          actions: [
-            { label: t('edit'), class: 'btn', onClick: () => { 
-              setTimeout(() => onEdit?.(todo), 50);
-              return true; 
-            } },
-            { label: t('delete'), class: 'btn btn--danger', onClick: () => { onDelete?.(todo, row); return true; } },
-            { label: t('cancel'), class: 'btn btn--ghost', onClick: () => true }
-          ]
-        });
-      }, LONG_PRESS_DURATION);
-    };
-
-    const handlePressEnd = (e) => {
-      const pressDuration = Date.now() - pressStartTime;
-      const moveDistance = e ? Math.hypot(e.clientX - pressStartPos.x, e.clientY - pressStartPos.y) : 999;
-      
-      cancelPressTimer();
-      
-      if (pressDuration < 300 && moveDistance < 10 && !swiping && !longPressTriggered) {
-        setTimeout(() => {
-          if (!longPressTriggered) {
-            hapticLight();
-            onTap?.(todo);
-          }
-        }, 0);
-      }
-      
-      setTimeout(() => {
-        longPressTriggered = false;
-      }, 100);
-    };
+    textSpan.addEventListener('click', () => {
+      hapticLight();
+      onTap?.(todo);
+    });
 
     const handleTouchStart = (e) => {
       startX = e.touches[0].clientX;
@@ -1202,7 +1121,6 @@ function renderChecklistWithDrag({ todos, modalHost, db, projectId, currentPageI
       
       if (diff > 20) {
         swiping = true;
-        cancelPressTimer();
         const translateX = Math.min(diff, SWIPE_THRESHOLD + 20);
         row.style.transform = `translateX(-${translateX}px)`;
         row.style.transition = 'none';
@@ -1226,17 +1144,9 @@ function renderChecklistWithDrag({ todos, modalHost, db, projectId, currentPageI
       swiping = false;
     };
 
-    textSpan.addEventListener('pointerdown', handlePressStart);
-    textSpan.addEventListener('pointerup', handlePressEnd);
-    textSpan.addEventListener('pointercancel', () => {
-      cancelPressTimer();
-      longPressTriggered = false;
-    });
-    textSpan.addEventListener('pointerleave', cancelPressTimer);
-
-    row.addEventListener('touchstart', handleTouchStart, { passive: true });
-    row.addEventListener('touchmove', handleTouchMove, { passive: true });
-    row.addEventListener('touchend', handleTouchEnd);
+    row.addEventListener('touchstart', handleTouchStart, { passive: false });
+    row.addEventListener('touchmove', handleTouchMove, { passive: false });
+    row.addEventListener('touchend', handleTouchEnd, { passive: false });
 
     return row;
   };

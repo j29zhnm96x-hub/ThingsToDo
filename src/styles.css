@@ -528,8 +528,8 @@ html[data-theme='light'] .checklist-pill--active {
 
 /* Add Page Button (floating) */
 .checklist-addPage-btn {
-  position: absolute;
-  bottom: 55px;
+  position: fixed;
+  bottom: calc(55px + 74px);
   right: 16px;
   width: 48px;
   height: 48px;
