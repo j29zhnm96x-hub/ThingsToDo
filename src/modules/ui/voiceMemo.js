@@ -125,7 +125,7 @@ export async function openRecordingModal({ modalHost, db, projectId = null, onSa
       
       for (let i = 0; i < bufferLength; i++) {
         const v = dataArray[i] / 128.0;
-        const y = (v * canvas.height) / 2;
+        const y = canvas.height / 2 - (v * canvas.height) / 2.5;
         
         if (i === 0) {
           ctx.moveTo(x, y);
@@ -204,7 +204,7 @@ export async function openRecordingModal({ modalHost, db, projectId = null, onSa
           }
           const source = audioContext.createMediaStreamSource(stream);
           analyser = audioContext.createAnalyser();
-          analyser.fftSize = 256;
+          analyser.fftSize = 512;
           source.connect(analyser);
         }
       } catch (e) {
