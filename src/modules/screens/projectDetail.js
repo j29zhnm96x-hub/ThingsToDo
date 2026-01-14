@@ -17,6 +17,10 @@ import { t } from '../utils/i18n.js';
 import { renderVoiceMemoList, openRecordingModal } from '../ui/voiceMemo.js';
 
 import { compressAttachmentsForArchive } from '../logic/attachments.js';
+
+// Track pill tap times globally to persist across re-renders
+const pillTapTimes = new Map();
+
 async function buildProjectsById(db) {
   const projects = await db.projects.list();
   const map = new Map(projects.map((p) => [p.id, p]));
@@ -282,7 +286,6 @@ export async function renderProjectDetail(ctx, projectId) {
         let touchStartX = 0;
         let touchStartY = 0;
         let touchStartTime = 0;
-        let lastTapTime = 0;
         let hasMoved = false;
         
         // Track touch start position
@@ -313,17 +316,20 @@ export async function renderProjectDetail(ctx, projectId) {
           // Ignore if touch was too long (probably scrolling attempt)
           if (timeSinceTouchStart > 500) return;
           
+          // Get last tap time from global map
+          const lastTapTime = pillTapTimes.get(page.id) || 0;
+          
           // Check for double-tap
           if (now - lastTapTime < 300 && lastTapTime > 0) {
             // Double-tap detected - open menu (don't switch page)
             e.preventDefault();
             e.stopPropagation();
-            lastTapTime = 0; // Reset to prevent triple-tap
+            pillTapTimes.set(page.id, 0); // Reset to prevent triple-tap
             hapticLight();
             openPageMenu(page);
           } else {
             // Single tap - switch page immediately
-            lastTapTime = now;
+            pillTapTimes.set(page.id, now);
             hapticLight();
             localStorage.setItem(storagePageKey, page.id);
             renderProjectDetail(ctx, projectId);
