@@ -306,7 +306,7 @@ html[data-theme='dark'] .topbar__addBtn {
 .todo {
   display: grid;
   gap: 0;
-  padding: 6px 10px;
+  padding: 0px 10px;
   border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--surface);
@@ -326,7 +326,7 @@ html[data-theme='dark'] .topbar__addBtn {
 .projectCard {
   display: grid;
   gap: 0;
-  padding: 8px 12px;
+  padding: 2px 12px;
   border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--surface);
