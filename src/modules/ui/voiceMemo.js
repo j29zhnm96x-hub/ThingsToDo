@@ -101,6 +101,7 @@ export async function openRecordingModal({ modalHost, db, projectId = null, onSa
 
   // Waveform visualization - beautiful modern style with motion blur
   let waveformHistory = [];
+  let smoothedData = null;
   const historyLength = 8; // Number of trail frames for motion blur
   
   function drawWaveform() {
@@ -111,9 +112,11 @@ export async function openRecordingModal({ modalHost, db, projectId = null, onSa
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
     
-    // Smooth the data for slower, more fluid animation
-    let smoothedData = new Float32Array(bufferLength);
-    const smoothingFactor = 0.15;
+    // Initialize smoothing buffer
+    if (!smoothedData) {
+      smoothedData = new Float32Array(bufferLength);
+    }
+    const smoothingFactor = 0.3; // Increased for more responsive movement
     
     const draw = () => {
       if (!isRecording || isPaused) return;
@@ -121,7 +124,7 @@ export async function openRecordingModal({ modalHost, db, projectId = null, onSa
       
       analyser.getByteTimeDomainData(dataArray);
       
-      // Apply smoothing for slower, more fluid movement
+      // Apply smoothing for fluid movement
       for (let i = 0; i < bufferLength; i++) {
         const target = (dataArray[i] - 128) / 128.0;
         smoothedData[i] = smoothedData[i] + (target - smoothedData[i]) * smoothingFactor;
@@ -239,7 +242,7 @@ export async function openRecordingModal({ modalHost, db, projectId = null, onSa
     
     // Reset history when starting new recording
     waveformHistory = [];
-    smoothedData = new Float32Array(bufferLength);
+    smoothedData = null;
     
     draw();
   }
