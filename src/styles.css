@@ -529,7 +529,7 @@ html[data-theme='light'] .checklist-pill--active {
 /* Add Page Button (floating) */
 .checklist-addPage-btn {
   position: absolute;
-  bottom: 24px;
+  bottom: 55px;
   right: 16px;
   width: 48px;
   height: 48px;
@@ -546,7 +546,7 @@ html[data-theme='light'] .checklist-pill--active {
   box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
   transition: transform 200ms ease, box-shadow 200ms ease;
   -webkit-tap-highlight-color: transparent;
-  z-index: 10;
+  z-index: 100;
 }
 
 .checklist-addPage-btn:hover {
@@ -1156,7 +1156,7 @@ html[data-theme='light'] .modal {
   justify-content: center;
   box-shadow: 0 2px 6px rgba(0,0,0,0.25);
 }
-.thumb__removeBtn:active { transform: scale(0.94); opacity: 0.9; }
+.thumb__removeBtn:active { transform: scale(0.94); }
 
 .small { font-size: 14px; color: var(--muted); }
 .hr { height: 1px; background: var(--border); margin: 12px 0; }

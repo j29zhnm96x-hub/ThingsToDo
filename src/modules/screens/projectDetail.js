@@ -462,34 +462,57 @@ export async function renderProjectDetail(ctx, projectId) {
 
     const container = el('div', { 
       class: 'checklist-container',
-      style: 'min-height: calc(100vh - 44px - var(--safe-top) - 74px - var(--safe-bottom) - 28px); position: relative;'
+      style: 'min-height: calc(100vh - 44px - var(--safe-top) - 74px - var(--safe-bottom) - 28px); position: relative; overflow: hidden;'
     }, contentStack, addPageBtn);
 
     main.append(container);
 
-    // Swipe gesture for page navigation
+    // Swipe gesture for page navigation with smooth dragging
     if (pages.length >= 2) {
       let touchStartX = 0;
       let touchStartY = 0;
       let swiping = false;
+      let isDragging = false;
       
       container.addEventListener('touchstart', (e) => {
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
         swiping = false;
+        isDragging = false;
+        contentStack.style.transition = 'none';
       }, { passive: true });
       
       container.addEventListener('touchmove', (e) => {
         const dx = e.touches[0].clientX - touchStartX;
         const dy = e.touches[0].clientY - touchStartY;
+        
         // Only consider horizontal swipes
         if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 30) {
           swiping = true;
+          isDragging = true;
+          
+          // Apply transform to follow finger
+          const currentIndex = pages.findIndex(p => p.id === currentPageId);
+          const canGoLeft = currentIndex > 0;
+          const canGoRight = currentIndex < pages.length - 1;
+          
+          // Apply resistance at boundaries
+          let translateX = dx;
+          if ((dx > 0 && !canGoLeft) || (dx < 0 && !canGoRight)) {
+            translateX = dx * 0.3; // Resistance effect
+          }
+          
+          contentStack.style.transform = `translateX(${translateX}px)`;
         }
       }, { passive: true });
       
       container.addEventListener('touchend', (e) => {
         if (!swiping) return;
+        
+        // Re-enable transition for snap effect
+        contentStack.style.transition = 'transform 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+        contentStack.style.transform = 'translateX(0)';
+        
         const dx = e.changedTouches[0].clientX - touchStartX;
         const threshold = 80;
         
