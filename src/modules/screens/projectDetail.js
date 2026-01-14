@@ -281,6 +281,7 @@ export async function renderProjectDetail(ctx, projectId) {
         let touchStartTime = 0;
         let lastTapTime = 0;
         let hasMoved = false;
+        let singleTapTimer = null;
         
         // Track touch start position
         pill.addEventListener('touchstart', (e) => {
@@ -311,35 +312,46 @@ export async function renderProjectDetail(ctx, projectId) {
           if (timeSinceTouchStart > 500) return;
           
           // Check for double-tap
-          if (now - lastTapTime < 350) {
+          if (now - lastTapTime < 350 && lastTapTime > 0) {
             // Double-tap detected - open menu
             e.preventDefault();
             e.stopPropagation();
+            clearTimeout(singleTapTimer);
+            singleTapTimer = null;
+            lastTapTime = 0; // Reset to prevent triple-tap
             hapticLight();
             openPageMenu(page);
-            lastTapTime = 0; // Reset to prevent triple-tap
           } else {
-            // Single tap - switch page
+            // Possible single tap - wait to see if double-tap follows
             lastTapTime = now;
-            hapticLight();
-            localStorage.setItem(storagePageKey, page.id);
-            renderProjectDetail(ctx, projectId);
+            clearTimeout(singleTapTimer);
+            singleTapTimer = setTimeout(() => {
+              // Confirmed single tap - switch page
+              hapticLight();
+              localStorage.setItem(storagePageKey, page.id);
+              renderProjectDetail(ctx, projectId);
+            }, 350);
           }
         }, { passive: false });
         
-        // Handle mouse events (desktop) - simple click and double-click
+        // Handle mouse events (desktop)
+        let clickTimer = null;
         pill.addEventListener('click', (e) => {
-          // Only handle single click (detail === 1)
           if (e.detail === 1) {
-            hapticLight();
-            localStorage.setItem(storagePageKey, page.id);
-            renderProjectDetail(ctx, projectId);
+            // Wait to see if double-click follows
+            clearTimeout(clickTimer);
+            clickTimer = setTimeout(() => {
+              hapticLight();
+              localStorage.setItem(storagePageKey, page.id);
+              renderProjectDetail(ctx, projectId);
+            }, 250);
           }
         });
         
         pill.addEventListener('dblclick', (e) => {
           e.preventDefault();
           e.stopPropagation();
+          clearTimeout(clickTimer);
           hapticLight();
           openPageMenu(page);
         });
