@@ -486,6 +486,94 @@ html[data-theme='light'] .checklist__item {
   touch-action: manipulation;
 }
 
+/* Checklist Pages - Pill Bar */
+.checklist-pills {
+  display: flex;
+  gap: 8px;
+  padding: 8px 4px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.checklist-pills::-webkit-scrollbar {
+  display: none;
+}
+
+.checklist-pill {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 200ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.checklist-pill--active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+html[data-theme='light'] .checklist-pill--active {
+  background: #6366f1;
+  border-color: #6366f1;
+}
+
+/* Add Page Button (floating) */
+.checklist-addPage-btn {
+  position: absolute;
+  bottom: 24px;
+  right: 16px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  color: white;
+  font-size: 24px;
+  font-weight: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+  -webkit-tap-highlight-color: transparent;
+  z-index: 10;
+}
+
+.checklist-addPage-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+}
+
+.checklist-addPage-btn:active {
+  transform: scale(0.95);
+}
+
+html[data-theme='light'] .checklist-addPage-btn {
+  background: #6366f1;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+}
+
+/* Checklist Container */
+.checklist-container {
+  position: relative;
+}
+
+/* Checklist Active Container */
+.checklist__active {
+  display: grid;
+  gap: 8px;
+}
+
 /* Back button in topbar */
 .topbar__backBtn {
   min-width: 36px;

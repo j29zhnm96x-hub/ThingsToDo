@@ -2,7 +2,7 @@ import { openDb, storeApi, txDone, reqDone } from './idb.js';
 import { nowIso } from './models.js';
 
 const DB_NAME = 'thingstodo-db';
-const DB_VERSION = 6;
+const DB_VERSION = 7;
 
 // IndexedDB indexes cannot use `null` keys reliably across browsers.
 // We store Inbox as a stable string sentinel and normalize at the API boundary.
@@ -54,6 +54,12 @@ function upgrade(db, tx) {
   // voiceMemos: by id, indexed by projectId
   if (!db.objectStoreNames.contains('voiceMemos')) {
     const s = db.createObjectStore('voiceMemos', { keyPath: 'id' });
+    s.createIndex('by_project', 'projectId', { unique: false });
+  }
+
+  // checklistPages: by id, indexed by projectId
+  if (!db.objectStoreNames.contains('checklistPages')) {
+    const s = db.createObjectStore('checklistPages', { keyPath: 'id' });
     s.createIndex('by_project', 'projectId', { unique: false });
   }
 
@@ -267,6 +273,27 @@ export const db = {
     }
   },
 
+  checklistPages: {
+    async get(id) {
+      const dbi = await getDb();
+      return storeApi(dbi, 'checklistPages').get(id);
+    },
+    async put(page) {
+      const dbi = await getDb();
+      page.updatedAt = nowIso();
+      return storeApi(dbi, 'checklistPages').put(page);
+    },
+    async delete(id) {
+      const dbi = await getDb();
+      return storeApi(dbi, 'checklistPages').delete(id);
+    },
+    async listByProject(projectId) {
+      const dbi = await getDb();
+      const items = await storeApi(dbi, 'checklistPages').list();
+      return items.filter(p => p.projectId === projectId).sort((a, b) => a.order - b.order);
+    }
+  },
+
   async wipeAll() {
     const dbi = await getDb();
     await Promise.all([
@@ -275,7 +302,8 @@ export const db = {
       storeApi(dbi, 'attachments').clear(),
       storeApi(dbi, 'settings').clear(),
       storeApi(dbi, 'bin').clear(),
-      storeApi(dbi, 'voiceMemos').clear()
+      storeApi(dbi, 'voiceMemos').clear(),
+      storeApi(dbi, 'checklistPages').clear()
     ]);
   }
 };

@@ -33,7 +33,7 @@ export function newProject({ name, type = 'default', parentId = null }) {
   };
 }
 
-export function newTodo({ title, projectId }) {
+export function newTodo({ title, projectId, pageId = null }) {
   const t = nowIso();
   return {
     id: uuid(),
@@ -44,6 +44,7 @@ export function newTodo({ title, projectId }) {
     completed: false,
     completedAt: null,
     projectId: projectId ?? null,
+    pageId: pageId ?? null, // For checklist pages
     archived: false,
     archivedAt: null,
     archivedFromProjectId: null,
@@ -80,3 +81,17 @@ export function newVoiceMemo({ title, projectId, blob, duration }) {
     updatedAt: t
   };
 }
+
+export function newChecklistPage({ projectId, name = '' }) {
+  const t = nowIso();
+  return {
+    id: uuid(),
+    projectId,
+    name: name?.trim() || '',
+    order: 0,
+    createdAt: t,
+    updatedAt: t
+  };
+}
+
+export { uuid as generateId };
