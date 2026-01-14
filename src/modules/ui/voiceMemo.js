@@ -692,7 +692,7 @@ export function openPlaybackModal({ modalHost, db, memo, onChange }) {
 
 export function renderVoiceMemoCard({ memo, onTap, onMenu }) {
   const card = el('div', { 
-    style: 'display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--surface); border-radius: var(--radius, 16px); box-shadow: var(--card-shadow); border: 1px solid; border-color: var(--theme-dark) ? #00d4ff : #d1d5db; cursor: pointer;',
+    style: 'display: flex; align-items: center; gap: 12px; padding: 8px 16px; background: var(--surface); border-radius: var(--radius, 16px); box-shadow: var(--card-shadow); border: 1px solid; border-color: var(--theme-dark) ? #00d4ff : #d1d5db; cursor: pointer;',
     onClick: () => {
       hapticLight();
       onTap?.(memo);
