@@ -80,7 +80,7 @@ export async function openRecordingModal({ modalHost, db, projectId = null, onSa
   const waveformCanvas = el('canvas', { 
     width: 280, 
     height: 60,
-    style: 'width: 100%; height: 60px; border-radius: 8px; background: var(--surface3);'
+    style: 'width: 100%; height: 60px; border-radius: 8px;'
   });
   
   const statusText = el('div', { 
