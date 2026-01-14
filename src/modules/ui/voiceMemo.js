@@ -101,8 +101,7 @@ export async function openRecordingModal({ modalHost, db, projectId = null, onSa
 
   // Waveform visualization - beautiful modern style with motion blur
   let waveformHistory = [];
-  let smoothedData = null;
-  const historyLength = 8; // Number of trail frames for motion blur
+  const historyLength = 6; // Number of trail frames for motion blur
   
   function drawWaveform() {
     if (!analyser) return;
@@ -112,11 +111,8 @@ export async function openRecordingModal({ modalHost, db, projectId = null, onSa
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
     
-    // Initialize smoothing buffer
-    if (!smoothedData) {
-      smoothedData = new Float32Array(bufferLength);
-    }
-    const smoothingFactor = 0.3; // Increased for more responsive movement
+    // Reset history
+    waveformHistory = [];
     
     const draw = () => {
       if (!isRecording || isPaused) return;
@@ -124,25 +120,24 @@ export async function openRecordingModal({ modalHost, db, projectId = null, onSa
       
       analyser.getByteTimeDomainData(dataArray);
       
-      // Apply smoothing for fluid movement
+      // Convert to normalized values
+      const currentWave = [];
       for (let i = 0; i < bufferLength; i++) {
-        const target = (dataArray[i] - 128) / 128.0;
-        smoothedData[i] = smoothedData[i] + (target - smoothedData[i]) * smoothingFactor;
+        currentWave[i] = (dataArray[i] - 128) / 128.0;
       }
       
       // Store current wave for motion blur trail
-      const currentWave = Array.from(smoothedData);
       waveformHistory.unshift(currentWave);
       if (waveformHistory.length > historyLength) {
         waveformHistory.pop();
       }
       
       // Clear with slight fade for additional blur effect
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.3)';
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.35)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
       const centerY = canvas.height / 2;
-      const sensitivity = 5.0; // Higher = more dramatic waves
+      const sensitivity = 4.5; // Higher = more dramatic waves
       
       // Create gradient for the main wave
       const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
@@ -154,34 +149,28 @@ export async function openRecordingModal({ modalHost, db, projectId = null, onSa
       // Draw motion blur trails (older frames = more transparent)
       for (let h = waveformHistory.length - 1; h >= 0; h--) {
         const historyData = waveformHistory[h];
-        const alpha = (1 - h / historyLength) * 0.3;
-        const blur = h * 2;
+        const alpha = (1 - h / historyLength) * 0.4;
+        const blur = h * 1.5;
         
         ctx.save();
         ctx.filter = `blur(${blur}px)`;
         ctx.globalAlpha = alpha;
         ctx.strokeStyle = gradient;
-        ctx.lineWidth = 3 + (historyLength - h);
+        ctx.lineWidth = 3 + (historyLength - h) * 0.5;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         
         ctx.beginPath();
-        const step = Math.floor(bufferLength / 80); // Sample fewer points for smoother curve
+        const step = Math.floor(bufferLength / 60); // Sample points for smoother curve
         
         for (let i = 0; i < bufferLength; i += step) {
           const x = (i / bufferLength) * canvas.width;
-          const y = centerY - historyData[i] * canvas.height * sensitivity * 0.5;
+          const y = centerY - historyData[i] * canvas.height * sensitivity * 0.45;
           
           if (i === 0) {
             ctx.moveTo(x, y);
           } else {
-            // Use quadratic curves for smooth waves
-            const prevI = Math.max(0, i - step);
-            const prevX = (prevI / bufferLength) * canvas.width;
-            const prevY = centerY - historyData[prevI] * canvas.height * sensitivity * 0.5;
-            const cpX = (prevX + x) / 2;
-            const cpY = (prevY + y) / 2;
-            ctx.quadraticCurveTo(prevX, prevY, cpX, cpY);
+            ctx.lineTo(x, y);
           }
         }
         ctx.stroke();
@@ -191,58 +180,45 @@ export async function openRecordingModal({ modalHost, db, projectId = null, onSa
       // Draw main crisp wave on top
       ctx.save();
       ctx.shadowColor = '#8b5cf6';
-      ctx.shadowBlur = 15;
+      ctx.shadowBlur = 20;
       ctx.strokeStyle = gradient;
       ctx.lineWidth = 3;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       
       ctx.beginPath();
-      const step = Math.floor(bufferLength / 80);
+      const step = Math.floor(bufferLength / 60);
+      const mainWave = waveformHistory[0] || currentWave;
       
       for (let i = 0; i < bufferLength; i += step) {
         const x = (i / bufferLength) * canvas.width;
-        const y = centerY - smoothedData[i] * canvas.height * sensitivity * 0.5;
+        const y = centerY - mainWave[i] * canvas.height * sensitivity * 0.45;
         
         if (i === 0) {
           ctx.moveTo(x, y);
         } else {
-          const prevI = Math.max(0, i - step);
-          const prevX = (prevI / bufferLength) * canvas.width;
-          const prevY = centerY - smoothedData[prevI] * canvas.height * sensitivity * 0.5;
-          const cpX = (prevX + x) / 2;
-          const cpY = (prevY + y) / 2;
-          ctx.quadraticCurveTo(prevX, prevY, cpX, cpY);
+          ctx.lineTo(x, y);
         }
       }
       ctx.stroke();
       
-      // Draw subtle glow line below for reflection effect
-      ctx.globalAlpha = 0.2;
-      ctx.shadowBlur = 25;
+      // Draw subtle reflection glow below
+      ctx.globalAlpha = 0.25;
+      ctx.shadowBlur = 30;
       ctx.beginPath();
       for (let i = 0; i < bufferLength; i += step) {
         const x = (i / bufferLength) * canvas.width;
-        const y = centerY + smoothedData[i] * canvas.height * sensitivity * 0.25;
+        const y = centerY + mainWave[i] * canvas.height * sensitivity * 0.2;
         
         if (i === 0) {
           ctx.moveTo(x, y);
         } else {
-          const prevI = Math.max(0, i - step);
-          const prevX = (prevI / bufferLength) * canvas.width;
-          const prevY = centerY + smoothedData[prevI] * canvas.height * sensitivity * 0.25;
-          const cpX = (prevX + x) / 2;
-          const cpY = (prevY + y) / 2;
-          ctx.quadraticCurveTo(prevX, prevY, cpX, cpY);
+          ctx.lineTo(x, y);
         }
       }
       ctx.stroke();
       ctx.restore();
     };
-    
-    // Reset history when starting new recording
-    waveformHistory = [];
-    smoothedData = null;
     
     draw();
   }
