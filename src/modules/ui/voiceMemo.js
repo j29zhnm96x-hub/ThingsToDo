@@ -114,9 +114,6 @@ export async function openRecordingModal({ modalHost, db, projectId = null, onSa
       
       analyser.getByteTimeDomainData(dataArray);
       
-      ctx.fillStyle = 'rgba(30, 30, 46, 0.3)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
       ctx.lineWidth = 2;
       ctx.strokeStyle = '#6366f1';
       ctx.beginPath();
