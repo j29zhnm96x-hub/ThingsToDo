@@ -1064,7 +1064,7 @@ html[data-theme='light'] .tabbar__tab[aria-current="page"] {
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  z-index: 20;
+  z-index: 200;
   animation: modalFadeIn 200ms ease;
 }
 
