@@ -288,9 +288,8 @@ export const db = {
       return storeApi(dbi, 'checklistPages').delete(id);
     },
     async listByProject(projectId) {
-      const dbi = await getDb();
-      const items = await storeApi(dbi, 'checklistPages').list();
-      return items.filter(p => p.projectId === projectId).sort((a, b) => a.order - b.order);
+      const items = await listByIndex('checklistPages', 'by_project', projectId);
+      return items.sort((a, b) => (a.order || 0) - (b.order || 0));
     }
   },
 

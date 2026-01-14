@@ -44,7 +44,7 @@ export function newTodo({ title, projectId, pageId = null }) {
     completed: false,
     completedAt: null,
     projectId: projectId ?? null,
-    pageId: pageId ?? null, // For checklist pages
+    pageId: pageId ?? null,
     archived: false,
     archivedAt: null,
     archivedFromProjectId: null,
@@ -87,8 +87,8 @@ export function newChecklistPage({ projectId, name = '' }) {
   return {
     id: uuid(),
     projectId,
-    name: name?.trim() || '',
-    order: 0,
+    name: name.trim(),
+    order: Date.now(),
     createdAt: t,
     updatedAt: t
   };

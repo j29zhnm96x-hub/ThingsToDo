@@ -486,15 +486,14 @@ html[data-theme='light'] .checklist__item {
   touch-action: manipulation;
 }
 
-/* Checklist Pages - Pill Bar */
+/* Checklist Pills (page tabs) */
 .checklist-pills {
   display: flex;
   gap: 8px;
-  padding: 8px 4px;
+  padding: 8px 0 12px;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  -ms-overflow-style: none;
 }
 
 .checklist-pills::-webkit-scrollbar {
@@ -503,10 +502,10 @@ html[data-theme='light'] .checklist__item {
 
 .checklist-pill {
   flex-shrink: 0;
-  padding: 8px 16px;
-  border-radius: 20px;
-  border: 1px solid var(--border);
-  background: var(--surface);
+  padding: 6px 14px;
+  border-radius: 16px;
+  border: 1.5px solid var(--border);
+  background: transparent;
   color: var(--text);
   font-size: 14px;
   font-weight: 500;
@@ -1156,7 +1155,7 @@ html[data-theme='light'] .modal {
   justify-content: center;
   box-shadow: 0 2px 6px rgba(0,0,0,0.25);
 }
-.thumb__removeBtn:active { transform: scale(0.94); }
+.thumb__removeBtn:active { transform: scale(0.94); opacity: 0.9; }
 
 .small { font-size: 14px; color: var(--muted); }
 .hr { height: 1px; background: var(--border); margin: 12px 0; }

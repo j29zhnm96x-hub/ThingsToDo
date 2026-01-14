@@ -73,80 +73,79 @@ export async function renderProjectDetail(ctx, projectId) {
       subProjects.forEach(p => {
           const stats = subProjectStats.get(p.id);
 
-          const makeRow = (todo, completed) => {
-            let startX = 0;
-            let currentX = 0;
-            let swiping = false;
-            const SWIPE_THRESHOLD = 80;
-
-            const textSpan = el('span', { 
-              class: 'checklist__text',
-              style: 'cursor: pointer;'
-            }, todo.title);
-
-            const row = el('div', {
-              class: completed ? 'checklist__item checklist__item--done' : 'checklist__item',
-              style: 'position: relative; overflow: hidden;',
-              'data-todo-id': todo.id
-            },
-              el('span', { 
-                class: completed ? 'checklist__circle checklist__circle--done' : 'checklist__circle',
-                onClick: (e) => {
-                  e.stopPropagation();
-                  onToggleCompleted?.(todo, !completed);
-                }
-              }, completed ? '✓' : ''),
-              textSpan,
-              todo.protected ? el('span', { class: 'icon-protected', 'aria-label': 'Protected' }, '🔒') : null
-            );
-
-            // Simple tap to open item
-            textSpan.addEventListener('click', () => {
+          const card = renderProjectCard({
+            project: p,
+            stats,
+            onOpen: () => {
+              if (ignoreSubProjectClick) return;
               hapticLight();
-              onTap?.(todo);
-            });
+              location.hash = `#project/${p.id}`;
+            },
+            onMenu: () => {
+              hapticLight();
+              openProjectMenu(modalHost, { db, project: p, onChange: () => renderProjectDetail(ctx, projectId) });
+            }
+          });
 
-            const handleTouchStart = (e) => {
-              startX = e.touches[0].clientX;
-              currentX = startX;
-              swiping = false;
-            };
+          subProjectsList.appendChild(card);
+      });
 
-            const handleTouchMove = (e) => {
-              currentX = e.touches[0].clientX;
-              const diff = startX - currentX;
-      
-              if (diff > 20) {
-                swiping = true;
-                const translateX = Math.min(diff, SWIPE_THRESHOLD + 20);
-                row.style.transform = `translateX(-${translateX}px)`;
-                row.style.transition = 'none';
-              }
-            };
+      // Enable drag reordering for sub-projects (sibling order)
+      let pointerId = null;
+      let dragged = null;
+      let placeholder = null;
+      let started = false;
+      let startY = 0;
+      let offsetY = 0;
+      let rect = null;
+      let prevTouchAction = '';
+      let downTime = 0;
+      let scrollBaseline = 0;
+      const threshold = 6;
+      const appEl = typeof document !== 'undefined' ? document.getElementById('app') : null;
 
-            const handleTouchEnd = () => {
-              const diff = startX - currentX;
-      
-              if (diff > SWIPE_THRESHOLD) {
-                row.style.transition = 'transform 200ms ease';
-                row.style.transform = 'translateX(-100%)';
-                setTimeout(() => {
-                  hapticLight();
-                  onDelete?.(todo, row);
-                }, 150);
-              } else {
-                row.style.transition = 'transform 200ms ease';
-                row.style.transform = 'translateX(0)';
-              }
-              swiping = false;
-            };
+      const isInteractive = (node) => !!node.closest('button, input, a, select, textarea') || !!node.closest('.projectCard__menuBtn');
+      const cardFromEvent = (e) => e.target.closest('.projectCard');
 
-            row.addEventListener('touchstart', handleTouchStart, { passive: false });
-            row.addEventListener('touchmove', handleTouchMove, { passive: false });
-            row.addEventListener('touchend', handleTouchEnd, { passive: false });
+      function cleanup() {
+        if (dragged) {
+          dragged.classList.remove('todo--dragging');
+          dragged.style.width = '';
+          dragged.style.left = '';
+          dragged.style.top = '';
+        }
+        if (placeholder) placeholder.remove();
+        document.body.classList.remove('dragging-reorder');
+        subProjectsList.style.touchAction = prevTouchAction;
+        pointerId = null;
+        dragged = null;
+        placeholder = null;
+        started = false;
+        rect = null;
+      }
 
-            return row;
-          };
+      subProjectsList.addEventListener('pointerdown', (e) => {
+        if (pointerId != null) return;
+        const card = cardFromEvent(e);
+        if (!card) return;
+        if (isInteractive(e.target)) return;
+
+        pointerId = e.pointerId;
+        dragged = card;
+        startY = e.clientY;
+        rect = dragged.getBoundingClientRect();
+        offsetY = e.clientY - rect.top;
+        downTime = Date.now();
+        scrollBaseline = appEl ? appEl.scrollTop : (document.scrollingElement?.scrollTop || 0);
+        ignoreSubProjectClick = false;
+      });
+
+      subProjectsList.addEventListener('pointermove', (e) => {
+        if (pointerId == null || e.pointerId !== pointerId || !dragged) return;
+
+        const dy = e.clientY - startY;
+        if (!started && Math.abs(dy) < threshold) return;
+
         if (!started) {
           const currentScroll = appEl ? appEl.scrollTop : (document.scrollingElement?.scrollTop || 0);
           if (currentScroll !== scrollBaseline) return;
@@ -230,17 +229,17 @@ export async function renderProjectDetail(ctx, projectId) {
   }
 
   if ((project.type ?? 'default') === 'checklist') {
-    // Fetch checklist pages for this project
+    // --- Multi-page checklist support ---
     let pages = await db.checklistPages.listByProject(projectId);
     
-    // Migration: create default page if none exist (for existing checklists)
+    // Migration: create default page if none exist
     if (pages.length === 0) {
       const defaultPage = newChecklistPage({ projectId, name: '' });
       await db.checklistPages.put(defaultPage);
       pages = [defaultPage];
     }
     
-    // Get current page from localStorage or default to first page
+    // Get current page from localStorage or default to first
     const storagePageKey = `checklist-page-${projectId}`;
     let currentPageId = localStorage.getItem(storagePageKey) || pages[0]?.id;
     
@@ -267,22 +266,83 @@ export async function renderProjectDetail(ctx, projectId) {
         const pill = el('button', { 
           type: 'button',
           class: `checklist-pill ${isActive ? 'checklist-pill--active' : ''}`,
-          'data-page-id': page.id,
-          onClick: () => {
-            hapticLight();
-            localStorage.setItem(storagePageKey, page.id);
-            renderProjectDetail(ctx, projectId);
-          }
+          'data-page-id': page.id
         }, page.name || t('untitled'));
+        
+        // Single tap to switch page
+        pill.addEventListener('click', () => {
+          hapticLight();
+          localStorage.setItem(storagePageKey, page.id);
+          renderProjectDetail(ctx, projectId);
+        });
+        
+        // Double-tap to open rename/delete modal
+        let lastTap = 0;
+        pill.addEventListener('touchend', (e) => {
+          const now = Date.now();
+          if (now - lastTap < 350) {
+            e.preventDefault();
+            e.stopPropagation();
+            hapticLight();
+            openPageMenu(page);
+          }
+          lastTap = now;
+        }, { passive: false });
+        
+        // Double-click for desktop
+        pill.addEventListener('dblclick', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          hapticLight();
+          openPageMenu(page);
+        });
+        
         pillBar.appendChild(pill);
       });
     }
+    
+    // Page menu for rename/delete
+    const openPageMenu = (page) => {
+      const isOnlyPage = pages.length === 1;
+      openModal(modalHost, {
+        title: page.name || t('untitled'),
+        content: el('div', { class: 'small' }, t('pageActions') || 'Page actions'),
+        actions: [
+          { label: t('rename'), class: 'btn', onClick: () => {
+            setTimeout(() => openRenamePageModal({ modalHost, db, page, onSaved: () => renderProjectDetail(ctx, projectId) }), 50);
+            return true;
+          }},
+          !isOnlyPage ? { label: t('delete'), class: 'btn btn--danger', onClick: async () => {
+            const pageItemCount = pageTodos.length;
+            const ok = await confirm(modalHost, {
+              title: t('deletePage') || 'Delete page?',
+              message: pageItemCount > 0 
+                ? `${t('deletePageConfirm') || 'Delete this page?'} ${pageItemCount} ${t('itemsWillBeDeleted') || 'items will be deleted.'}`
+                : t('deletePageConfirmEmpty') || 'Delete this empty page?',
+              confirmLabel: t('delete'),
+              danger: true
+            });
+            if (!ok) return true;
+            
+            // Delete all todos in this page
+            for (const todo of pageTodos) {
+              await db.todos.delete(todo.id);
+            }
+            await db.checklistPages.delete(page.id);
+            localStorage.removeItem(storagePageKey);
+            await renderProjectDetail(ctx, projectId);
+            return true;
+          }} : null,
+          { label: t('cancel'), class: 'btn btn--ghost', onClick: () => true }
+        ].filter(Boolean)
+      });
+    };
     
     // --- Add Page Button (floating) ---
     const addPageBtn = el('button', {
       type: 'button',
       class: 'checklist-addPage-btn',
-      'aria-label': t('addPage'),
+      'aria-label': t('addPage') || 'Add page',
       onClick: () => {
         hapticLight();
         openAddPageModal({ modalHost, db, projectId, pages, onCreated: () => renderProjectDetail(ctx, projectId) });
@@ -314,7 +374,7 @@ export async function renderProjectDetail(ctx, projectId) {
       },
       onTap: (todo) => {
         openModal(modalHost, {
-          title: t('itemDetails'),
+          title: t('itemDetails') || 'Item Details',
           content: el('div', { style: 'word-wrap: break-word; white-space: pre-wrap;' }, todo.title),
           actions: [
             { label: t('edit'), class: 'btn', onClick: () => { 
@@ -331,8 +391,8 @@ export async function renderProjectDetail(ctx, projectId) {
       onDelete: async (todo, rowElement) => {
         if (todo.protected) {
           openModal(modalHost, {
-            title: t('taskProtected'),
-            content: el('div', {}, t('taskProtectedMessage')),
+            title: t('taskProtected') || 'Task Protected',
+            content: el('div', {}, t('taskProtectedMessage') || 'This task is protected.'),
             actions: [{ label: 'OK', class: 'btn btn--primary', onClick: () => true }]
           });
           if (rowElement) {
@@ -342,7 +402,7 @@ export async function renderProjectDetail(ctx, projectId) {
           return;
         }
         const ok = await confirm(modalHost, {
-          title: t('deleteItem'),
+          title: t('deleteItem') || 'Delete item?',
           message: `${t('delete')} "${todo.title}"?`,
           confirmLabel: t('delete'),
           danger: true,
@@ -366,8 +426,8 @@ export async function renderProjectDetail(ctx, projectId) {
         if (unprotected.length === 0) {
           if (protectedCount > 0) {
             openModal(modalHost, {
-              title: t('allProtected'),
-              content: el('div', {}, t('allProtectedMessage')),
+              title: t('allProtected') || 'All Protected',
+              content: el('div', {}, t('allProtectedMessage') || 'All completed items are protected.'),
               actions: [{ label: 'OK', class: 'btn btn--primary', onClick: () => true }]
             });
           }
@@ -375,13 +435,13 @@ export async function renderProjectDetail(ctx, projectId) {
         }
         
         const message = protectedCount > 0
-          ? `${t('deleteCompletedCount').replace('{n}', unprotected.length)} (${protectedCount} ${t('protectedKept')})`
-          : `${t('deleteAllCompleted').replace('{n}', unprotected.length)}`;
+          ? `${t('deleteCompletedCount') || 'Delete'} ${unprotected.length} ${t('completedItems') || 'completed items'}? (${protectedCount} ${t('protectedKept') || 'protected will be kept'})`
+          : `${t('deleteAllCompleted') || 'Delete all'} ${unprotected.length} ${t('completedItems') || 'completed items'}?`;
         
         const ok = await confirm(modalHost, {
-          title: t('deleteCompleted'),
+          title: t('deleteCompleted') || 'Delete completed?',
           message,
-          confirmLabel: t('deleteAll'),
+          confirmLabel: t('deleteAll') || 'Delete All',
           danger: true,
           align: 'center'
         });
@@ -394,11 +454,9 @@ export async function renderProjectDetail(ctx, projectId) {
       }
     });
 
-    const hint = el('div', { class: 'checklist__hint' }, t('doubleTapToAdd'));
+    const hint = el('div', { class: 'checklist__hint' }, t('doubleTapToAdd') || 'Double tap empty area to add');
     
-    // Long-press actions on pills disabled per request
-
-    // Content layout with draggable wrapper
+    // Content layout
     const contentStack = el('div', { class: 'stack' }, 
        subProjectsList,
        pillBar,
@@ -406,118 +464,20 @@ export async function renderProjectDetail(ctx, projectId) {
        hint
     );
 
-    const draggableWrapper = el('div', {
-      class: 'checklist-draggable-wrapper',
-      style: 'touch-action: pan-y; will-change: transform;'
-    }, contentStack);
-
     const container = el('div', { 
       class: 'checklist-container',
-      style: 'height: calc(100vh - 44px - var(--safe-top) - 74px - var(--safe-bottom) - 28px); position: relative; overflow-x: hidden; overflow-y: hidden;'
-    }, draggableWrapper, addPageBtn);
+      style: 'min-height: calc(100vh - 44px - var(--safe-top) - 74px - var(--safe-bottom) - 28px); position: relative;'
+    }, contentStack, addPageBtn);
 
     main.append(container);
 
-    // Track whether vertical scrolling is actually needed and toggle touch-action
-    let canScroll = false;
-    const updateScrollNeeded = () => {
-      canScroll = container.scrollHeight > container.clientHeight;
-      container.style.overflowY = canScroll ? 'auto' : 'hidden';
-      // allow or disallow native vertical panning depending on need
-      draggableWrapper.style.touchAction = canScroll ? 'pan-y' : 'none';
-    };
-    requestAnimationFrame(updateScrollNeeded);
-    // also update on window resize in case layout changes
-    window.addEventListener('resize', updateScrollNeeded);
-
-    // Swipe gesture for page navigation with smooth dragging
-    if (pages.length >= 2) {
-      let touchStartX = 0;
-      let touchStartY = 0;
-      let swiping = false;
-      let isDragging = false;
-      
-      draggableWrapper.addEventListener('touchstart', (e) => {
-        touchStartX = e.touches[0].clientX;
-        touchStartY = e.touches[0].clientY;
-        swiping = false;
-        isDragging = false;
-        draggableWrapper.style.transition = 'none';
-        // If content doesn't need vertical scrolling, prevent native pan from starting
-        if (!canScroll) e.preventDefault();
-      }, { passive: false });
-      
-      draggableWrapper.addEventListener('touchmove', (e) => {
-        const dx = e.touches[0].clientX - touchStartX;
-        const dy = e.touches[0].clientY - touchStartY;
-
-        // If content doesn't need scrolling, prevent any native scroll
-        if (!canScroll) {
-          e.preventDefault();
-        }
-
-        // Only consider horizontal swipes
-        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 20) {
-          if (!swiping) {
-            swiping = true;
-            isDragging = true;
-          }
-
-          // Prevent vertical scroll when swiping horizontally
-          e.preventDefault();
-
-          // Apply transform to follow finger
-          const currentIndex = pages.findIndex(p => p.id === currentPageId);
-          const canGoLeft = currentIndex > 0;
-          const canGoRight = currentIndex < pages.length - 1;
-
-          // Apply resistance at boundaries
-          let translateX = dx;
-          if ((dx > 0 && !canGoLeft) || (dx < 0 && !canGoRight)) {
-            translateX = dx * 0.3; // Resistance effect
-          }
-
-          draggableWrapper.style.transform = `translateX(${translateX}px)`;
-        }
-      }, { passive: false });
-      
-      draggableWrapper.addEventListener('touchend', (e) => {
-        if (!swiping) return;
-        
-        // Re-enable transition for snap effect
-        draggableWrapper.style.transition = 'transform 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-        draggableWrapper.style.transform = 'translateX(0)';
-        
-        const dx = e.changedTouches[0].clientX - touchStartX;
-        const threshold = 80;
-        
-        if (Math.abs(dx) > threshold) {
-          const currentIndex = pages.findIndex(p => p.id === currentPageId);
-          let newIndex;
-          
-          if (dx > 0) {
-            // Swipe right -> go to previous page
-            newIndex = currentIndex - 1;
-          } else {
-            // Swipe left -> go to next page
-            newIndex = currentIndex + 1;
-          }
-          
-          if (newIndex >= 0 && newIndex < pages.length) {
-            hapticLight();
-            localStorage.setItem(storagePageKey, pages[newIndex].id);
-            renderProjectDetail(ctx, projectId);
-          }
-        }
-      });
-    }
-
-    // Double-tap to add item
+    // Double-tap to add item (only on empty space below the list)
     const triggerAdd = () => quickAddChecklist({ modalHost, db, projectId, pageId: currentPageId, onCreated: () => renderProjectDetail(ctx, projectId) });
 
     let lastTap = 0;
     container.addEventListener('touchend', (e) => {
-      if (swiping) return; // Don't trigger add on swipe
+      // Only trigger if tapping on the container itself or empty space
+      if (e.target !== container && e.target !== contentStack && e.target !== hint && !e.target.classList.contains('stack')) return;
       const now = Date.now();
       if (now - lastTap < 350) {
         e.preventDefault();
@@ -526,10 +486,11 @@ export async function renderProjectDetail(ctx, projectId) {
       lastTap = now;
     }, { passive: false });
 
-    container.addEventListener('dblclick', (e) => { e.preventDefault(); triggerAdd(); });
-
-    // Variable for swipe detection in touchend
-    let swiping = false;
+    container.addEventListener('dblclick', (e) => {
+      if (e.target !== container && e.target !== contentStack && e.target !== hint && !e.target.classList.contains('stack')) return;
+      e.preventDefault();
+      triggerAdd();
+    });
 
     return;
   }
@@ -741,15 +702,10 @@ function renderChecklist({ todos, modalHost, onToggleCompleted, onDelete, onDele
     let swiping = false;
     const SWIPE_THRESHOLD = 80;
 
-      const textSpan = el('span', { 
-        class: 'checklist__text',
-        style: 'cursor: pointer;'
-      }, todo.title);
-        
-      textSpan.addEventListener('click', () => {
-        hapticLight();
-        onTap?.(todo);
-      });
+    const textSpan = el('span', { 
+      class: 'checklist__text',
+      style: 'cursor: pointer;'
+    }, todo.title);
 
     const row = el('div', {
       class: completed ? 'checklist__item checklist__item--done' : 'checklist__item',
@@ -865,9 +821,17 @@ function renderChecklist({ todos, modalHost, onToggleCompleted, onDelete, onDele
       swiping = false;
     };
 
-    row.addEventListener('touchstart', handleTouchStart, { passive: false });
-    row.addEventListener('touchmove', handleTouchMove, { passive: false });
-    row.addEventListener('touchend', handleTouchEnd, { passive: false });
+    textSpan.addEventListener('pointerdown', handlePressStart);
+    textSpan.addEventListener('pointerup', handlePressEnd);
+    textSpan.addEventListener('pointercancel', () => {
+      cancelPressTimer();
+      longPressTriggered = false;
+    });
+    textSpan.addEventListener('pointerleave', cancelPressTimer);
+
+    row.addEventListener('touchstart', handleTouchStart, { passive: true });
+    row.addEventListener('touchmove', handleTouchMove, { passive: true });
+    row.addEventListener('touchend', handleTouchEnd);
 
     return row;
   };
@@ -948,8 +912,8 @@ function renderChecklist({ todos, modalHost, onToggleCompleted, onDelete, onDele
   return container;
 }
 
-function quickAddChecklist({ modalHost, db, projectId, pageId = null, onCreated }) {
-  const input = el('input', { class: 'input', placeholder: t('itemName'), 'aria-label': t('itemName') });
+function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated }) {
+  const input = el('input', { class: 'input', placeholder: t('itemName') || 'Item name', 'aria-label': t('itemName') || 'Item name' });
 
   const addItem = async () => {
     const title = input.value.trim();
@@ -963,7 +927,7 @@ function quickAddChecklist({ modalHost, db, projectId, pageId = null, onCreated 
   };
 
   openModal(modalHost, {
-    title: t('addItem'),
+    title: t('addItem') || 'Add item',
     content: input,
     align: 'top',
     headerActions: [
@@ -982,58 +946,20 @@ function quickAddChecklist({ modalHost, db, projectId, pageId = null, onCreated 
   try { input.focus(); input.select?.(); } catch (e) { /* ignore */ }
 }
 
-function openEditChecklistItem({ modalHost, db, todo, onSaved }) {
-  const input = el('input', { class: 'input', value: todo.title, 'aria-label': t('itemName') });
-
-  const saveItem = async () => {
-    const title = input.value.trim();
-    if (!title) {
-      input.focus();
-      return false;
-    }
-    await db.todos.put({ ...todo, title });
-    onSaved?.();
-    return true;
-  };
-
-  openModal(modalHost, {
-    title: t('editItem'),
-    content: input,
-    align: 'top',
-    headerActions: [
-      { label: t('save'), class: 'btn btn--primary', onClick: saveItem }
-    ],
-    actions: [
-      { label: t('cancel'), class: 'btn btn--ghost', onClick: () => true },
-      {
-        label: t('save'),
-        class: 'btn btn--primary',
-        onClick: saveItem
-      }
-    ]
-  });
-
-  try { input.focus(); input.select?.(); } catch (e) { /* ignore */ }
-}
-
-// --- Page Management Helpers ---
-
 function openAddPageModal({ modalHost, db, projectId, pages, onCreated }) {
-  const input = el('input', { class: 'input', placeholder: t('pageName'), 'aria-label': t('pageName') });
+  const input = el('input', { class: 'input', placeholder: t('pageName') || 'Page name', 'aria-label': t('pageName') || 'Page name' });
 
   const addPage = async () => {
     const name = input.value.trim();
     const page = newChecklistPage({ projectId, name });
     page.order = pages.length;
     await db.checklistPages.put(page);
-    // Switch to new page
-    localStorage.setItem(`checklist-page-${projectId}`, page.id);
     onCreated?.();
     return true;
   };
 
   openModal(modalHost, {
-    title: t('addPage'),
+    title: t('addPage') || 'Add page',
     content: input,
     align: 'top',
     actions: [
@@ -1046,7 +972,7 @@ function openAddPageModal({ modalHost, db, projectId, pages, onCreated }) {
 }
 
 function openRenamePageModal({ modalHost, db, page, onSaved }) {
-  const input = el('input', { class: 'input', value: page.name || '', placeholder: t('pageName'), 'aria-label': t('pageName') });
+  const input = el('input', { class: 'input', value: page.name || '', placeholder: t('pageName') || 'Page name', 'aria-label': t('pageName') || 'Page name' });
 
   const savePage = async () => {
     const name = input.value.trim();
@@ -1056,7 +982,7 @@ function openRenamePageModal({ modalHost, db, page, onSaved }) {
   };
 
   openModal(modalHost, {
-    title: t('renamePage'),
+    title: t('renamePage') || 'Rename page',
     content: input,
     align: 'top',
     actions: [
@@ -1068,7 +994,7 @@ function openRenamePageModal({ modalHost, db, page, onSaved }) {
   try { input.focus(); input.select?.(); } catch (e) { /* ignore */ }
 }
 
-// --- Checklist with Drag Reorder ---
+// --- Checklist with Drag Reorder (long-press to drag, like inbox) ---
 
 function renderChecklistWithDrag({ todos, modalHost, db, projectId, currentPageId, onReorder, onToggleCompleted, onTap, onEdit, onDelete, onDeleteAllCompleted }) {
   const active = todos.filter(todo => !todo.completed);
@@ -1104,6 +1030,7 @@ function renderChecklistWithDrag({ todos, modalHost, db, projectId, currentPageI
       todo.protected ? el('span', { class: 'icon-protected', 'aria-label': 'Protected' }, '🔒') : null
     );
 
+    // Simple tap to open item
     textSpan.addEventListener('click', () => {
       hapticLight();
       onTap?.(todo);
@@ -1144,9 +1071,9 @@ function renderChecklistWithDrag({ todos, modalHost, db, projectId, currentPageI
       swiping = false;
     };
 
-    row.addEventListener('touchstart', handleTouchStart, { passive: false });
-    row.addEventListener('touchmove', handleTouchMove, { passive: false });
-    row.addEventListener('touchend', handleTouchEnd, { passive: false });
+    row.addEventListener('touchstart', handleTouchStart, { passive: true });
+    row.addEventListener('touchmove', handleTouchMove, { passive: true });
+    row.addEventListener('touchend', handleTouchEnd);
 
     return row;
   };
@@ -1158,7 +1085,7 @@ function renderChecklistWithDrag({ todos, modalHost, db, projectId, currentPageI
   active.forEach(todo => activeContainer.appendChild(makeRow(todo, false)));
   container.appendChild(activeContainer);
   
-  // Drag reorder logic
+  // Drag reorder logic (long-press to start)
   let pointerId = null;
   let dragged = null;
   let placeholder = null;
@@ -1298,7 +1225,7 @@ function renderChecklistWithDrag({ todos, modalHost, db, projectId, currentPageI
       type: 'button',
       class: 'todo-divider__text',
       style: 'cursor: pointer;'
-    }, `${t('completed')} (${done.length})`);
+    }, `${t('completed') || 'Completed'} (${done.length})`);
     
     const handlePressStart = () => {
       pressTimer = setTimeout(() => {
@@ -1355,4 +1282,39 @@ function renderChecklistWithDrag({ todos, modalHost, db, projectId, currentPageI
   }
   
   return container;
+}
+
+function openEditChecklistItem({ modalHost, db, todo, onSaved }) {
+  const input = el('input', { class: 'input', value: todo.title, 'aria-label': 'Item name' });
+
+  const saveItem = async () => {
+    const title = input.value.trim();
+    if (!title) {
+      input.focus();
+      return false;
+    }
+    await db.todos.put({ ...todo, title });
+    onSaved?.();
+    return true;
+  };
+
+  openModal(modalHost, {
+    title: 'Edit item',
+    content: input,
+    align: 'top',
+    headerActions: [
+      { label: 'Save', class: 'btn btn--primary', onClick: saveItem }
+    ],
+    actions: [
+      { label: 'Cancel', class: 'btn btn--ghost', onClick: () => true },
+      {
+        label: 'Save',
+        class: 'btn btn--primary',
+        onClick: saveItem
+      }
+    ]
+  });
+
+  // Focus immediately (synchronously) to trigger mobile keyboard during the user gesture.
+  try { input.focus(); input.select?.(); } catch (e) { /* ignore */ }
 }

@@ -1,6 +1,6 @@
 import { el, clear, emptyState } from '../ui/dom.js';
 import { openModal } from '../ui/modal.js';
-import { newProject, newChecklistPage } from '../data/models.js';
+import { newProject } from '../data/models.js';
 import { hapticLight } from '../ui/haptic.js';
 import { scheduleChecklistReminder } from '../notifications.js';
 import { openProjectMenu } from '../ui/projectMenu.js';
@@ -259,9 +259,6 @@ export function openCreateProject({ db, modalHost, onCreated, parentId = null })
           await db.projects.put(project);
           
           if (type === 'checklist') {
-            // Create default page for checklist
-            const defaultPage = newChecklistPage({ projectId: project.id, name: '' });
-            await db.checklistPages.put(defaultPage);
             scheduleChecklistReminder(project.id);
           }
 
