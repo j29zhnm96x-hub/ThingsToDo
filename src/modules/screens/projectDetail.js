@@ -244,6 +244,11 @@ export async function renderProjectDetail(ctx, projectId) {
           await db.todos.put({ ...todo, pageId: defaultPage.id });
         }
       }
+      
+      // Reload todos after migration to get updated pageId values
+      const allUpdated = await db.todos.listByProject(projectId);
+      todos.length = 0;
+      todos.push(...allUpdated.filter((t) => !t.archived).sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || '')));
     }
     
     // Get current page from localStorage or default to first
@@ -258,8 +263,6 @@ export async function renderProjectDetail(ctx, projectId) {
     // Filter todos for current page
     const currentPage = pages.find(p => p.id === currentPageId);
     const pageTodos = todos.filter(t => {
-      // For migration: todos without pageId belong to first page
-      if (!t.pageId) return currentPage === pages[0];
       return t.pageId === currentPageId;
     }).sort((a, b) => (a.order || 0) - (b.order || 0));
     
