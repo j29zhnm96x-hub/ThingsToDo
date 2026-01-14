@@ -276,35 +276,61 @@ export async function renderProjectDetail(ctx, projectId) {
           'data-page-id': page.id
         }, page.name || t('untitled'));
         
-        let lastTap = 0;
-        let tapTimeout = null;
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchStartTime = 0;
+        let lastTapTime = 0;
+        let hasMoved = false;
         
-        // Handle touch events (mobile)
+        // Track touch start position
+        pill.addEventListener('touchstart', (e) => {
+          touchStartX = e.touches[0].clientX;
+          touchStartY = e.touches[0].clientY;
+          touchStartTime = Date.now();
+          hasMoved = false;
+        }, { passive: true });
+        
+        // Track if finger moved (scrolling)
+        pill.addEventListener('touchmove', (e) => {
+          const moveX = Math.abs(e.touches[0].clientX - touchStartX);
+          const moveY = Math.abs(e.touches[0].clientY - touchStartY);
+          if (moveX > 10 || moveY > 10) {
+            hasMoved = true;
+          }
+        }, { passive: true });
+        
+        // Handle touch end - only trigger if no significant movement
         pill.addEventListener('touchend', (e) => {
+          // Ignore if user was scrolling
+          if (hasMoved) return;
+          
           const now = Date.now();
-          if (now - lastTap < 350) {
-            // Double-tap detected
+          const timeSinceTouchStart = now - touchStartTime;
+          
+          // Ignore if touch was too long (probably scrolling attempt)
+          if (timeSinceTouchStart > 500) return;
+          
+          // Check for double-tap
+          if (now - lastTapTime < 350) {
+            // Double-tap detected - open menu
             e.preventDefault();
             e.stopPropagation();
-            clearTimeout(tapTimeout);
             hapticLight();
             openPageMenu(page);
-            lastTap = 0; // Reset
+            lastTapTime = 0; // Reset to prevent triple-tap
           } else {
-            // Single tap - wait to see if double-tap follows
-            lastTap = now;
-            tapTimeout = setTimeout(() => {
-              hapticLight();
-              localStorage.setItem(storagePageKey, page.id);
-              renderProjectDetail(ctx, projectId);
-            }, 350);
+            // Single tap - switch page
+            lastTapTime = now;
+            hapticLight();
+            localStorage.setItem(storagePageKey, page.id);
+            renderProjectDetail(ctx, projectId);
           }
         }, { passive: false });
         
-        // Handle mouse events (desktop)
+        // Handle mouse events (desktop) - simple click and double-click
         pill.addEventListener('click', (e) => {
+          // Only handle single click (detail === 1)
           if (e.detail === 1) {
-            // Single click
             hapticLight();
             localStorage.setItem(storagePageKey, page.id);
             renderProjectDetail(ctx, projectId);
