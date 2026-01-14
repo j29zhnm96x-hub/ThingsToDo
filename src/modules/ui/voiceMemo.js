@@ -80,7 +80,7 @@ export async function openRecordingModal({ modalHost, db, projectId = null, onSa
   const waveformCanvas = el('canvas', { 
     width: 280, 
     height: 60,
-    style: 'width: 100%; height: 60px; border-radius: 8px;'
+    style: 'width: 100%; height: 60px;'
   });
   
   const statusText = el('div', { 
@@ -132,9 +132,8 @@ export async function openRecordingModal({ modalHost, db, projectId = null, onSa
         waveformHistory.pop();
       }
       
-      // Clear with slight fade for additional blur effect
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.35)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // Clear canvas completely - no background box
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       
       const centerY = canvas.height / 2;
       const sensitivity = 4.5; // Higher = more dramatic waves
