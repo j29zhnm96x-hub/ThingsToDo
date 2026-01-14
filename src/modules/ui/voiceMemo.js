@@ -139,7 +139,7 @@ export async function openRecordingModal({ modalHost, db, projectId = null, onSa
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
       const centerY = canvas.height / 2;
-      const sensitivity = 2.5; // Higher = more dramatic waves
+      const sensitivity = 5.0; // Higher = more dramatic waves
       
       // Create gradient for the main wave
       const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
