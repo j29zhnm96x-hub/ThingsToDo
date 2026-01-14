@@ -125,7 +125,7 @@ export async function openRecordingModal({ modalHost, db, projectId = null, onSa
       
       for (let i = 0; i < bufferLength; i++) {
         const v = dataArray[i] / 128.0;
-        const y = canvas.height / 2 - (v * canvas.height) / 2.5;
+        const y = canvas.height / 2 - (v * canvas.height) / 2;
         
         if (i === 0) {
           ctx.moveTo(x, y);
@@ -135,7 +135,6 @@ export async function openRecordingModal({ modalHost, db, projectId = null, onSa
         x += sliceWidth;
       }
       
-      ctx.lineTo(canvas.width, canvas.height / 2);
       ctx.stroke();
     };
     
