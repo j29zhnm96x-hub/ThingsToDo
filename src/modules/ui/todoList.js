@@ -71,6 +71,13 @@ export function renderTodoList({
     const noteIcon = todo.notes ? el('span', { class: 'todo__noteIcon', 'aria-label': 'Has notes' }, '✏️') : null;
     const protectedIcon = todo.protected ? el('span', { class: 'icon-protected', 'aria-label': 'Protected' }, '🔒') : null;
     
+    // Recurring icon if this is a recurring task
+    const recurringIcon = todo.recurrenceType ? el('span', { 
+      class: 'icon-protected icon-recurring', 
+      'aria-label': t('recurring') || 'Recurring',
+      title: t('recurring') || 'Recurring'
+    }, '🔄') : null;
+    
     // Link icon if showInInbox is true
     const linkIcon = todo.showInInbox ? el('span', { 
       class: 'icon-protected', // Re-using protected style for size/margin
@@ -198,6 +205,7 @@ export function renderTodoList({
       checkbox,
       titleArea,
       dueTagInline,
+      recurringIcon,
       noteIcon,
       protectedIcon,
       linkIcon,

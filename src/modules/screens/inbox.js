@@ -2,7 +2,7 @@ import { el, clear, emptyState } from '../ui/dom.js';
 import { renderTodoList } from '../ui/todoList.js';
 import { pickProject } from '../ui/pickProject.js';
 import { confirm } from '../ui/confirm.js';
-import { moveTodo, reorderBucket } from '../logic/todoOps.js';
+import { moveTodo, reorderBucket, completeTodo, uncompleteTodo } from '../logic/todoOps.js';
 import { compressAttachmentsForArchive } from '../logic/attachments.js';
 import { openTodoMenu } from '../ui/todoMenu.js';
 import { openTodoInfo } from '../ui/todoInfo.js';
@@ -12,6 +12,7 @@ import { hapticLight } from '../ui/haptic.js';
 import { Priority } from '../data/models.js';
 import { t } from '../utils/i18n.js';
 import { renderVoiceMemoList, openPlaybackModal, openVoiceMemoMenu } from '../ui/voiceMemo.js';
+import { openModal } from '../ui/modal.js';
 
 async function buildProjectsById(db) {
   const projects = await db.projects.list();
@@ -60,12 +61,12 @@ export async function renderInbox(ctx) {
       });
     },
     onToggleCompleted: async (todo, checked) => {
-      await db.todos.put({ 
-        ...todo, 
-        completed: checked,
-        completedAt: checked ? new Date().toISOString() : null,
-        priority: checked ? Priority.P3 : todo.priority
-      });
+      if (checked) {
+        // Use completeTodo for proper recurring task handling
+        await completeTodo(db, { ...todo, priority: Priority.P3 });
+      } else {
+        await uncompleteTodo(db, todo);
+      }
       await renderInbox(ctx);
     },
     onEdit: (todo) => ctx.openTodoEditor({ mode: 'edit', todoId: todo.id, projectId: todo.projectId, db }),

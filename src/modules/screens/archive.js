@@ -9,6 +9,7 @@ import { hapticLight } from '../ui/haptic.js';
 import { openModal } from '../ui/modal.js';
 import { openBinModal } from '../ui/binModal.js';
 import { t } from '../utils/i18n.js';
+import { endRecurringSeries } from '../logic/recurrence.js';
 
 async function buildProjectsById(db) {
   const projects = await db.projects.list();
@@ -211,16 +212,41 @@ export async function renderArchive(ctx) {
       onDelete: async (todo) => {
         if (todo.protected) {
           openModal(modalHost, {
-            title: 'Task Protected',
-            content: el('div', {}, 'This task is protected. Please uncheck "Protect task" in the editor to delete it.'),
-            actions: [{ label: 'OK', class: 'btn btn--primary', onClick: () => true }]
+            title: t('taskProtected') || 'Task Protected',
+            content: el('div', {}, t('taskProtectedMsg') || 'This task is protected. Please uncheck "Protect task" in the editor to delete it.'),
+            actions: [{ label: t('ok') || 'OK', class: 'btn btn--primary', onClick: () => true }]
           });
           return;
         }
+        
+        // Check if this is a recurring task
+        if (todo.seriesId) {
+          // Show special modal for recurring tasks
+          openModal(modalHost, {
+            title: t('deleteRecurringTask') || 'Delete Recurring Task',
+            content: el('div', {}, t('deleteRecurringTaskMsg') || 'This is part of a repeating series. What would you like to do?'),
+            actions: [
+              { label: t('deleteJustThis') || 'Delete just this', class: 'btn', onClick: async () => {
+                await recycleTodos(db, [todo]);
+                await renderArchive(ctx);
+                return true;
+              }},
+              { label: t('endSeries') || 'End entire series', class: 'btn btn--danger', onClick: async () => {
+                await endRecurringSeries(todo.seriesId, db);
+                await recycleTodos(db, [todo]);
+                await renderArchive(ctx);
+                return true;
+              }},
+              { label: t('cancel') || 'Cancel', class: 'btn btn--ghost', onClick: () => true }
+            ]
+          });
+          return;
+        }
+        
         const ok = await confirm(modalHost, {
-          title: 'Delete archived todo?',
-          message: 'This will permanently delete the todo and its images.',
-          confirmLabel: 'Delete',
+          title: t('deleteArchivedTodo') || 'Delete archived todo?',
+          message: t('deleteArchivedTodoMsg') || 'This will permanently delete the todo and its images.',
+          confirmLabel: t('delete') || 'Delete',
           danger: true
         });
         if (!ok) return;
@@ -248,19 +274,43 @@ export async function renderArchive(ctx) {
             }
             return true;
           } },
-          { label: 'Delete', class: 'btn btn--danger', onClick: async () => {
+          { label: t('delete') || 'Delete', class: 'btn btn--danger', onClick: async () => {
             if (todo.protected) {
               openModal(modalHost, {
-                title: 'Task Protected',
-                content: el('div', {}, 'This task is protected. Please uncheck "Protect task" in the editor to delete it.'),
-                actions: [{ label: 'OK', class: 'btn btn--primary', onClick: () => true }]
+                title: t('taskProtected') || 'Task Protected',
+                content: el('div', {}, t('taskProtectedMsg') || 'This task is protected. Please uncheck "Protect task" in the editor to delete it.'),
+                actions: [{ label: t('ok') || 'OK', class: 'btn btn--primary', onClick: () => true }]
               });
               return true;
             }
+            
+            // Check if this is a recurring task
+            if (todo.seriesId) {
+              openModal(modalHost, {
+                title: t('deleteRecurringTask') || 'Delete Recurring Task',
+                content: el('div', {}, t('deleteRecurringTaskMsg') || 'This is part of a repeating series. What would you like to do?'),
+                actions: [
+                  { label: t('deleteJustThis') || 'Delete just this', class: 'btn', onClick: async () => {
+                    await recycleTodos(db, [todo]);
+                    await renderArchive(ctx);
+                    return true;
+                  }},
+                  { label: t('endSeries') || 'End entire series', class: 'btn btn--danger', onClick: async () => {
+                    await endRecurringSeries(todo.seriesId, db);
+                    await recycleTodos(db, [todo]);
+                    await renderArchive(ctx);
+                    return true;
+                  }},
+                  { label: t('cancel') || 'Cancel', class: 'btn btn--ghost', onClick: () => true }
+                ]
+              });
+              return true;
+            }
+            
             const ok = await confirm(modalHost, {
-              title: 'Delete archived todo?',
-              message: 'This will permanently delete the todo and its images.',
-              confirmLabel: 'Delete',
+              title: t('deleteArchivedTodo') || 'Delete archived todo?',
+              message: t('deleteArchivedTodoMsg') || 'This will permanently delete the todo and its images.',
+              confirmLabel: t('delete') || 'Delete',
               danger: true
             });
             if (ok) {

@@ -288,6 +288,83 @@ html[data-theme='dark'] .topbar__addBtn {
   padding-right: 32px;
 }
 
+.select--small {
+  height: 36px;
+  font-size: 14px;
+  padding: 4px 32px 4px 10px;
+}
+
+.input--small {
+  height: 36px;
+  font-size: 14px;
+  padding: 4px 10px;
+}
+
+/* Recurrence UI */
+.recurrence-details {
+  margin-top: 8px;
+  padding: 12px;
+  background: var(--surface2);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.recurrence-weekly-days {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.recurrence-day-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.recurrence-day-btn:hover {
+  border-color: var(--accent);
+}
+
+.recurrence-day-btn--active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+.recurrence-monthly-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.recurrence-end {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.recurrence-end .select--small,
+.recurrence-end .input--small {
+  flex-shrink: 0;
+}
+
+/* Recurring icon styling */
+.icon-recurring {
+  opacity: 0.7;
+  font-size: 14px;
+}
+
 .textarea { min-height: 96px; resize: vertical; }
 .input:focus-visible, .select:focus-visible, .textarea:focus-visible {
   outline: none;

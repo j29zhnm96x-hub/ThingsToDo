@@ -1,5 +1,6 @@
 import { maxOrderFor } from './sorting.js';
 import { compressAttachmentsForArchive } from './attachments.js';
+import { createNextRecurringInstance } from './recurrence.js';
 
 // Shared operations that must keep ordering rules consistent.
 // Default sorting:
@@ -131,4 +132,45 @@ export async function autoEmptyBin(db) {
     }
   }
   return count;
+}
+
+/**
+ * Complete a todo and handle recurring task logic.
+ * If the task is recurring, creates the next instance.
+ * @param {object} db - Database instance
+ * @param {object} todo - The todo being completed
+ * @returns {object|null} - The next recurring instance if created, or null
+ */
+export async function completeTodo(db, todo) {
+  // Mark as completed
+  const completedTodo = {
+    ...todo,
+    completed: true,
+    completedAt: new Date().toISOString()
+  };
+  
+  await db.todos.put(completedTodo);
+  
+  // If this is a recurring task, create the next instance
+  if (todo.recurrenceType) {
+    const nextInstance = await createNextRecurringInstance(completedTodo, db);
+    return nextInstance;
+  }
+  
+  return null;
+}
+
+/**
+ * Uncomplete a todo (toggle back to active).
+ * @param {object} db - Database instance
+ * @param {object} todo - The todo being uncompleted
+ */
+export async function uncompleteTodo(db, todo) {
+  const activeTodo = {
+    ...todo,
+    completed: false,
+    completedAt: null
+  };
+  
+  await db.todos.put(activeTodo);
 }

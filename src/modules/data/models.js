@@ -50,6 +50,14 @@ export function newTodo({ title, projectId, pageId = null }) {
     archivedFromProjectId: null,
     showInInbox: false,
     order: 0,
+    // Recurrence fields
+    recurrenceType: null, // 'daily' | 'weekly' | 'monthly' | 'yearly' | null
+    recurrenceDetails: null, // { days: [0,1,2...], type: 'date'|'weekday', value: number }
+    recurrenceEndType: 'never', // 'never' | 'date' | 'occurrences'
+    recurrenceEndValue: null, // ISO date string or number of occurrences
+    recurrenceCount: 0, // Number of times this has recurred
+    seriesId: null, // UUID linking all instances in a series
+    isRecurringInstance: false, // True if this was auto-created from recurrence
     createdAt: t,
     updatedAt: t
   };

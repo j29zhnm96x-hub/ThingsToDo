@@ -2,7 +2,7 @@ import { el, clear } from '../ui/dom.js';
 import { renderTodoList } from '../ui/todoList.js';
 import { pickProject } from '../ui/pickProject.js';
 import { confirm } from '../ui/confirm.js';
-import { moveTodo, reorderBucket } from '../logic/todoOps.js';
+import { moveTodo, reorderBucket, completeTodo, uncompleteTodo } from '../logic/todoOps.js';
 import { openTodoMenu } from '../ui/todoMenu.js';
 import { openTodoInfo } from '../ui/todoInfo.js';
 import { openModal } from '../ui/modal.js';
@@ -421,11 +421,11 @@ export async function renderProjectDetail(ctx, projectId) {
         }
       },
       onToggleCompleted: async (todo, checked) => {
-        await db.todos.put({
-          ...todo,
-          completed: checked,
-          completedAt: checked ? new Date().toISOString() : null
-        });
+        if (checked) {
+          await completeTodo(db, todo);
+        } else {
+          await uncompleteTodo(db, todo);
+        }
         await renderProjectDetail(ctx, projectId);
       },
       onTap: (todo) => {
@@ -562,12 +562,11 @@ export async function renderProjectDetail(ctx, projectId) {
       onEdit: () => ctx.openTodoEditor({ mode: 'edit', todoId: todo.id, projectId: todo.projectId, db })
     }),
     onToggleCompleted: async (todo, checked) => {
-      await db.todos.put({ 
-        ...todo, 
-        completed: checked,
-        completedAt: checked ? new Date().toISOString() : null,
-        priority: checked ? Priority.P3 : todo.priority
-      });
+      if (checked) {
+        await completeTodo(db, { ...todo, priority: Priority.P3 });
+      } else {
+        await uncompleteTodo(db, todo);
+      }
       await renderProjectDetail(ctx, projectId);
     },
     onEdit: (todo) => ctx.openTodoEditor({ mode: 'edit', todoId: todo.id, projectId: todo.projectId, db }),
