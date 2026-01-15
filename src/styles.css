@@ -329,6 +329,15 @@ html[data-theme='dark'] .topbar__addBtn {
   cursor: pointer;
   transition: all 150ms ease;
   -webkit-tap-highlight-color: transparent;
+  padding: 0;
+  margin: 0;
+  outline: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.recurrence-day-btn:active {
+  transform: scale(0.95);
 }
 
 .recurrence-day-btn:hover {

@@ -83,17 +83,18 @@ export async function openTodoEditor({
   const selectedDays = new Set(todo.recurrenceDetails?.days || []);
   
   for (let i = 0; i < 7; i++) {
-    const isSelected = selectedDays.has(i);
+    const dayIndex = i; // Capture the value in the closure
+    const isSelected = selectedDays.has(dayIndex);
     const btn = el('button', {
       type: 'button',
       class: `recurrence-day-btn ${isSelected ? 'recurrence-day-btn--active' : ''}`,
-      'data-day': i,
+      'data-day': dayIndex,
       onClick: () => {
-        if (selectedDays.has(i)) {
-          selectedDays.delete(i);
+        if (selectedDays.has(dayIndex)) {
+          selectedDays.delete(dayIndex);
           btn.classList.remove('recurrence-day-btn--active');
         } else {
-          selectedDays.add(i);
+          selectedDays.add(dayIndex);
           btn.classList.add('recurrence-day-btn--active');
         }
       }
