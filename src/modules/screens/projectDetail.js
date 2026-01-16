@@ -43,9 +43,10 @@ export async function renderProjectDetail(ctx, projectId) {
   const todos = all
     .filter((t) => !t.archived)
     .filter((t) => {
-      // Exclude future recurring instances
-      if (t.isRecurringInstance && t.dueDate && !isDueNowOrPast(t.dueDate)) return false;
-      return true;
+      // Only exclude future recurring instances - regular tasks always pass
+      if (!t.isRecurringInstance) return true;
+      if (!t.dueDate) return true;
+      return isDueNowOrPast(t.dueDate);
     })
     .sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
 
@@ -282,8 +283,12 @@ export async function renderProjectDetail(ctx, projectId) {
     
     // Filter todos for current page
     const currentPage = pages.find(p => p.id === currentPageId);
+    const isFirstPage = pages.indexOf(currentPage) === 0;
     const pageTodos = todos.filter(t => {
-      return t.pageId === currentPageId;
+      // Match explicit pageId, OR if on first page also show todos without pageId (legacy/unmigrated)
+      if (t.pageId === currentPageId) return true;
+      if (isFirstPage && !t.pageId) return true;
+      return false;
     }).sort((a, b) => (a.order || 0) - (b.order || 0));
     
     // --- Page Pill Bar (only show if 2+ pages) ---
