@@ -76,7 +76,7 @@ export function renderTodoList({
       class: 'icon-recurring', 
       'aria-label': t('recurring') || 'Recurring',
       title: t('recurring') || 'Recurring'
-    }, '🔄') : null;
+    }, '↻') : null;
     
     // Link icon if showInInbox is true
     const linkIcon = todo.showInInbox ? el('span', { 
