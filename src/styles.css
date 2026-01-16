@@ -313,18 +313,20 @@ html[data-theme='dark'] .topbar__addBtn {
 
 .recurrence-weekly-days {
   display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px;
+  flex-wrap: nowrap;
 }
 
 .recurrence-day-btn {
-  width: 36px;
-  height: 36px;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
   border-radius: 50%;
   border: 2px solid var(--border);
   background: var(--surface);
   color: var(--text);
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   transition: all 150ms ease;
@@ -334,10 +336,12 @@ html[data-theme='dark'] .topbar__addBtn {
   outline: none;
   user-select: none;
   -webkit-user-select: none;
+  touch-action: manipulation;
 }
 
 .recurrence-day-btn:active {
-  transform: scale(0.95);
+  transform: scale(0.92);
+  background: var(--surface2);
 }
 
 .recurrence-day-btn:hover {

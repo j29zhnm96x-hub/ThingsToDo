@@ -317,7 +317,8 @@ export async function openTodoEditor({
     
     // Auto-set dueDate to today's midnight for recurring tasks without a due date
     // This makes today the first occurrence
-    if (recurrenceType && !dueDate) {
+    // For weekly tasks, we'll use the selected days instead of due date
+    if (recurrenceType && !dueDate && recurrenceType !== 'weekly') {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       dueDate = today.toISOString();
@@ -326,7 +327,6 @@ export async function openTodoEditor({
     todo.title = title;
     todo.notes = notesInput.value || '';
     todo.priority = prioritySelect.value;
-    todo.dueDate = dueDate;
     todo.completed = !!completedInput.checked;
     todo.protected = !!protectedInput.checked;
 
@@ -338,7 +338,37 @@ export async function openTodoEditor({
       const details = {};
       
       if (recurrenceType === 'weekly') {
+        // If no days selected, use today's day of week
+        if (selectedDays.size === 0) {
+          const today = new Date();
+          selectedDays.add(today.getDay());
+        }
         details.days = Array.from(selectedDays).sort((a, b) => a - b);
+        // For weekly tasks without explicit due date, set to next occurrence of selected day
+        if (!dueDate && details.days.length > 0) {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const currentDay = today.getDay();
+          const targetDays = details.days;
+          
+          // Find next occurrence (could be today if it's one of the selected days)
+          let daysToAdd = 0;
+          let found = false;
+          for (let i = 0; i < 7; i++) {
+            const checkDay = (currentDay + i) % 7;
+            if (targetDays.includes(checkDay)) {
+              daysToAdd = i;
+              found = true;
+              break;
+            }
+          }
+          
+          if (found) {
+            const nextOccurrence = new Date(today);
+            nextOccurrence.setDate(today.getDate() + daysToAdd);
+            dueDate = nextOccurrence.toISOString();
+          }
+        }
       } else if (recurrenceType === 'monthly' || recurrenceType === 'yearly') {
         details.type = monthlyTypeSelect.value || 'date';
         if (details.type === 'date') {
@@ -377,6 +407,9 @@ export async function openTodoEditor({
       todo.seriesId = null;
       todo.recurrenceCount = 0;
     }
+
+    // Set dueDate after all recurrence calculations
+    todo.dueDate = dueDate;
 
     // Manual order management:
     // - Default sort: priority -> order -> createdAt
