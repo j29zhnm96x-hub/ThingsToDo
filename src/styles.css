@@ -312,24 +312,26 @@ html[data-theme='dark'] .topbar__addBtn {
 }
 
 .recurrence-weekly-days {
-  display: flex;
-  justify-content: space-between;
-  gap: 4px;
-  flex-wrap: nowrap;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(34px, 1fr));
+  gap: 8px;
+  align-items: center;
+  width: 100%;
 }
 
 .recurrence-day-btn {
-  width: 48px;
-  height: 48px;
-  flex-shrink: 0;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-width: 48px;
+  justify-self: center;
   border-radius: 50%;
   border: 2px solid var(--border);
   background: var(--surface);
   color: var(--text);
-  font-size: 16px;
+  font-size: clamp(12px, 2.8vw, 16px);
   font-weight: 600;
   cursor: pointer;
-  transition: all 150ms ease;
+  transition: transform 150ms ease, background 150ms ease;
   -webkit-tap-highlight-color: transparent;
   padding: 0;
   margin: 0;
@@ -340,8 +342,7 @@ html[data-theme='dark'] .topbar__addBtn {
 }
 
 .recurrence-day-btn:active {
-  transform: scale(0.92);
-  background: var(--surface2);
+  transform: scale(0.96);
 }
 
 .recurrence-day-btn:hover {
