@@ -73,7 +73,7 @@ export function renderTodoList({
     
     // Recurring icon if this is a recurring task
     const recurringIcon = todo.recurrenceType ? el('span', { 
-      class: 'icon-protected icon-recurring', 
+      class: 'icon-recurring', 
       'aria-label': t('recurring') || 'Recurring',
       title: t('recurring') || 'Recurring'
     }, '🔄') : null;

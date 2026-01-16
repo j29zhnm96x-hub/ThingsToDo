@@ -378,6 +378,20 @@ html[data-theme='dark'] .topbar__addBtn {
   font-size: 14px;
 }
 
+/* Plain text recurring icon (no box, just glyph) */
+.icon-recurring {
+  font-size: 16px;
+  line-height: 1;
+  vertical-align: middle;
+  margin-left: 6px;
+  opacity: 0.85;
+  cursor: default;
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  display: inline-block;
+}
+
 .textarea { min-height: 96px; resize: vertical; }
 .input:focus-visible, .select:focus-visible, .textarea:focus-visible {
   outline: none;
