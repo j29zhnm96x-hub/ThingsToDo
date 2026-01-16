@@ -41,7 +41,14 @@ export async function renderInbox(ctx) {
   const linkedProjectStats = new Map();
   for (const p of linkedProjects) {
     const pTodos = await db.todos.listByProject(p.id);
-    const nonArchived = pTodos.filter((t) => !t.archived);
+    // Filter out archived and future recurring instances (same as display logic)
+    const nonArchived = pTodos
+      .filter((t) => !t.archived)
+      .filter((t) => {
+        // Exclude future recurring instances
+        if (t.isRecurringInstance && t.dueDate && !isDueNowOrPast(t.dueDate)) return false;
+        return true;
+      });
     const total = nonArchived.length;
     const completed = nonArchived.filter((t) => t.completed).length;
     const active = total - completed;

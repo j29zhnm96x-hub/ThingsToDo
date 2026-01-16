@@ -6,6 +6,7 @@ import { scheduleChecklistReminder } from '../notifications.js';
 import { openProjectMenu } from '../ui/projectMenu.js';
 import { renderProjectCard } from '../ui/projectCard.js';
 import { t } from '../utils/i18n.js';
+import { isDueNowOrPast } from '../logic/recurrence.js';
 
 export async function renderProjects(ctx) {
   const { main, db, modalHost } = ctx;
@@ -31,7 +32,14 @@ export async function renderProjects(ctx) {
   const projectStats = new Map();
   for (const p of projects) {
     const todos = await db.todos.listByProject(p.id);
-    const nonArchived = todos.filter((t) => !t.archived);
+    // Filter out archived and future recurring instances (same as display logic)
+    const nonArchived = todos
+      .filter((t) => !t.archived)
+      .filter((t) => {
+        // Exclude future recurring instances
+        if (t.isRecurringInstance && t.dueDate && !isDueNowOrPast(t.dueDate)) return false;
+        return true;
+      });
     const total = nonArchived.length;
     const completed = nonArchived.filter(t => t.completed).length;
     const active = total - completed;
