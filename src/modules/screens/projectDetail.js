@@ -66,7 +66,14 @@ export async function renderProjectDetail(ctx, projectId) {
   const subProjectStats = new Map();
   for (const p of subProjects) {
       const pTodos = await db.todos.listByProject(p.id);
-      const nonArchived = pTodos.filter((t) => !t.archived);
+      // Filter out archived and future recurring instances (same as main display logic)
+      const nonArchived = pTodos
+        .filter((t) => !t.archived)
+        .filter((t) => {
+          // Exclude future recurring instances
+          if (t.isRecurringInstance && t.dueDate && !isDueNowOrPast(t.dueDate)) return false;
+          return true;
+        });
       const total = nonArchived.length;
       const completed = nonArchived.filter(t => t.completed).length;
       const active = total - completed;
