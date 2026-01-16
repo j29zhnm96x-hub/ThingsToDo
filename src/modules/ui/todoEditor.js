@@ -312,18 +312,15 @@ export async function openTodoEditor({
       return false;
     }
 
-    // Validate: recurring tasks need a due date
     const recurrenceType = recurrenceSelect.value || null;
-    const dueDate = toIsoDateOrNull(dueInput.value);
+    let dueDate = toIsoDateOrNull(dueInput.value);
     
+    // Auto-set dueDate to today's midnight for recurring tasks without a due date
+    // This makes today the first occurrence
     if (recurrenceType && !dueDate) {
-      openModal(modalHost, {
-        title: t('dueDateRequired') || 'Due Date Required',
-        content: el('div', {}, t('recurringNeedsDueDate') || 'Recurring tasks need a due date to calculate the next occurrence.'),
-        actions: [{ label: t('ok') || 'OK', class: 'btn btn--primary', onClick: () => true }]
-      });
-      dueInput.focus();
-      return false;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      dueDate = today.toISOString();
     }
 
     todo.title = title;

@@ -13,6 +13,7 @@ import { Priority } from '../data/models.js';
 import { t } from '../utils/i18n.js';
 import { renderVoiceMemoList, openPlaybackModal, openVoiceMemoMenu } from '../ui/voiceMemo.js';
 import { openModal } from '../ui/modal.js';
+import { isDueNowOrPast } from '../logic/recurrence.js';
 
 async function buildProjectsById(db) {
   const projects = await db.projects.list();
@@ -25,7 +26,14 @@ export async function renderInbox(ctx) {
   clear(main);
 
   const allTodos = await db.todos.listActive();
-  const todos = allTodos.filter(t => t.projectId === null || t.showInInbox === true);
+  // Filter for inbox items and exclude future recurring instances
+  const todos = allTodos.filter(t => {
+    // Include if it's inbox or linked to inbox
+    if (!(t.projectId === null || t.showInInbox === true)) return false;
+    // Exclude future recurring instances (not yet due)
+    if (t.isRecurringInstance && t.dueDate && !isDueNowOrPast(t.dueDate)) return false;
+    return true;
+  });
   const { projects, map: projectsById } = await buildProjectsById(db);
 
   // Projects linked to Inbox

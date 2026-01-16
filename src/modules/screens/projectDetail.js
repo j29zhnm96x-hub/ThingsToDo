@@ -15,6 +15,7 @@ import { Priority } from '../data/models.js';
 import { showToast } from '../ui/toast.js';
 import { t } from '../utils/i18n.js';
 import { renderVoiceMemoList, openRecordingModal } from '../ui/voiceMemo.js';
+import { isDueNowOrPast } from '../logic/recurrence.js';
 
 import { compressAttachmentsForArchive } from '../logic/attachments.js';
 
@@ -38,7 +39,15 @@ export async function renderProjectDetail(ctx, projectId) {
   }
 
   const all = await db.todos.listByProject(projectId);
-  const todos = all.filter((t) => !t.archived).sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
+  // Filter out future recurring instances (not yet due)
+  const todos = all
+    .filter((t) => !t.archived)
+    .filter((t) => {
+      // Exclude future recurring instances
+      if (t.isRecurringInstance && t.dueDate && !isDueNowOrPast(t.dueDate)) return false;
+      return true;
+    })
+    .sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
 
   const { projects, map: projectsById } = await buildProjectsById(db);
 

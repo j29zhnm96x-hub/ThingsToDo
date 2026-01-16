@@ -7,16 +7,20 @@ import { generateId, nowIso } from '../data/models.js';
 
 /**
  * Calculate the next due date based on recurrence settings.
+ * Always normalizes to local midnight for consistency.
  * @param {string} currentDueDate - ISO date string of current due date
  * @param {string} recurrenceType - 'daily' | 'weekly' | 'monthly' | 'yearly'
  * @param {object} recurrenceDetails - Configuration for the recurrence
- * @returns {string|null} - Next due date as ISO date string, or null if invalid
+ * @returns {string|null} - Next due date as local-midnight ISO string, or null if invalid
  */
 export function calculateNextDueDate(currentDueDate, recurrenceType, recurrenceDetails) {
   if (!currentDueDate || !recurrenceType) return null;
   
   const current = new Date(currentDueDate);
   if (isNaN(current.getTime())) return null;
+  
+  // Normalize anchor to local midnight
+  current.setHours(0, 0, 0, 0);
   
   let next = new Date(current);
   
@@ -177,10 +181,12 @@ export function hasRecurrenceEnded(todo) {
 export function isDueToday(dueDate) {
   if (!dueDate) return false;
   
-  const today = toDateOnlyIso(new Date());
-  const due = dueDate.split('T')[0];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = new Date(dueDate);
+  due.setHours(0, 0, 0, 0);
   
-  return due === today;
+  return due.getTime() === today.getTime();
 }
 
 /**
@@ -191,24 +197,31 @@ export function isDueToday(dueDate) {
 export function isDueNowOrPast(dueDate) {
   if (!dueDate) return false;
   
-  const today = toDateOnlyIso(new Date());
-  const due = dueDate.split('T')[0];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = new Date(dueDate);
+  due.setHours(0, 0, 0, 0);
   
-  return due <= today;
+  return due.getTime() <= today.getTime();
 }
 
 /**
  * Create the next instance of a recurring task.
+ * Calculates from the completed instance's anchor date (normalized to local midnight).
+ * Instance is persisted but only returned if due today or earlier.
  * @param {object} completedTodo - The todo that was just completed
  * @param {object} db - Database instance
- * @returns {object|null} - The new todo instance, or null if series ended
+ * @returns {object|null} - The new todo instance if due today, or null
  */
 export async function createNextRecurringInstance(completedTodo, db) {
   if (!completedTodo.recurrenceType) return null;
   if (hasRecurrenceEnded(completedTodo)) return null;
   
+  // Use the anchor date from the completed instance (prefer dueDate, fallback to createdAt)
+  const anchorDate = completedTodo.dueDate || completedTodo.createdAt;
+  
   const nextDueDate = calculateNextDueDate(
-    completedTodo.dueDate,
+    anchorDate,
     completedTodo.recurrenceType,
     completedTodo.recurrenceDetails
   );
@@ -225,6 +238,7 @@ export async function createNextRecurringInstance(completedTodo, db) {
   
   if (completedTodo.recurrenceEndType === 'date') {
     const endDate = new Date(completedTodo.recurrenceEndValue);
+    endDate.setHours(0, 0, 0, 0);
     const nextDue = new Date(nextDueDate);
     if (nextDue > endDate) return null;
   }
@@ -248,7 +262,20 @@ export async function createNextRecurringInstance(completedTodo, db) {
   delete newTodo.archivedFromProjectId;
   
   await db.todos.put(newTodo);
-  return newTodo;
+  
+  // Only return the instance if it's due today or earlier (for immediate UI display)
+  // Future instances stay in DB and will appear when their due date arrives
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const nextDue = new Date(nextDueDate);
+  nextDue.setHours(0, 0, 0, 0);
+  
+  if (nextDue.getTime() <= today.getTime()) {
+    return newTodo;
+  }
+  
+  // Instance created but not yet due - don't return for immediate display
+  return null;
 }
 
 /**
@@ -350,15 +377,15 @@ export function getRecurrenceDescription(todo, t) {
 }
 
 /**
- * Convert Date to date-only ISO string (YYYY-MM-DD).
+ * Convert Date to local-midnight ISO string.
+ * Normalizes to 00:00:00.000 in local timezone for consistent date comparisons.
  * @param {Date} date
  * @returns {string}
  */
 function toDateOnlyIso(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  const normalized = new Date(date);
+  normalized.setHours(0, 0, 0, 0);
+  return normalized.toISOString();
 }
 
 /**
