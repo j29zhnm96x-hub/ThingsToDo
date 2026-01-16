@@ -142,6 +142,7 @@ export async function renderSettings(ctx) {
       exportedAt: new Date().toISOString(),
       projects: await db.projects.list(),
       todos: [...(await db.todos.listActive()), ...(await db.todos.listArchived())],
+      checklistPages: await db.checklistPages.list(),
       settings: await db.settings.get(),
       attachments: []
     };
@@ -234,6 +235,7 @@ export async function renderSettings(ctx) {
 
             for (const p of (parsed.projects || [])) await db.projects.put(p);
             for (const t of (parsed.todos || [])) await db.todos.put(t);
+            for (const page of (parsed.checklistPages || [])) await db.checklistPages.put(page);
             if (parsed.settings) await db.settings.put(parsed.settings);
 
             for (const a of (parsed.attachments || [])) {

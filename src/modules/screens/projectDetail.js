@@ -260,19 +260,20 @@ export async function renderProjectDetail(ctx, projectId) {
       pages = [defaultPage];
     }
     
-    // Ensure all todos have a valid pageId - assign to first page if missing or orphaned
+    // Fix orphaned todos: assign todos with missing or invalid pageIds to first page
     const firstPageId = pages[0]?.id;
     const validPageIds = new Set(pages.map(p => p.id));
     let needsReload = false;
+    
     for (const todo of todos) {
-      // Migrate todos without pageId OR with invalid/orphaned pageId
+      // Fix todos without pageId OR with invalid/orphaned pageId
       if (firstPageId && (!todo.pageId || !validPageIds.has(todo.pageId))) {
         await db.todos.put({ ...todo, pageId: firstPageId });
         needsReload = true;
       }
     }
     
-    // Reload todos if we migrated any
+    // Reload todos if we fixed any
     if (needsReload) {
       const allUpdated = await db.todos.listByProject(projectId);
       todos.length = 0;
@@ -298,28 +299,12 @@ export async function renderProjectDetail(ctx, projectId) {
     // Filter todos for current page
     const currentPage = pages.find(p => p.id === currentPageId);
     const isFirstPage = pages.indexOf(currentPage) === 0;
-    
-    // Debug logging
-    console.log('[Checklist Debug] pages:', pages.map(p => ({ id: p.id, name: p.name })));
-    console.log('[Checklist Debug] currentPageId:', currentPageId);
-    console.log('[Checklist Debug] isFirstPage:', isFirstPage);
-    console.log('[Checklist Debug] todos before filter:', todos.map(t => ({ 
-      id: t.id, 
-      title: t.title, 
-      pageId: t.pageId,
-      pageIdMatch: t.pageId === currentPageId,
-      hasPageId: !!t.pageId,
-      completed: t.completed 
-    })));
-    
     const pageTodos = todos.filter(t => {
       // Match explicit pageId, OR if on first page also show todos without pageId (legacy/unmigrated)
       if (t.pageId === currentPageId) return true;
       if (isFirstPage && !t.pageId) return true;
       return false;
     }).sort((a, b) => (a.order || 0) - (b.order || 0));
-    
-    console.log('[Checklist Debug] pageTodos after filter:', pageTodos.length);
     
     // --- Page Pill Bar (only show if 2+ pages) ---
     let pillBar = null;

@@ -287,6 +287,10 @@ export const db = {
       const dbi = await getDb();
       return storeApi(dbi, 'checklistPages').delete(id);
     },
+    async list() {
+      const dbi = await getDb();
+      return storeApi(dbi, 'checklistPages').list();
+    },
     async listByProject(projectId) {
       const items = await listByIndex('checklistPages', 'by_project', projectId);
       return items.sort((a, b) => (a.order || 0) - (b.order || 0));
