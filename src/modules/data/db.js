@@ -2,7 +2,7 @@ import { openDb, storeApi, txDone, reqDone } from './idb.js';
 import { nowIso } from './models.js';
 
 const DB_NAME = 'thingstodo-db';
-const DB_VERSION = 7;
+const DB_VERSION = 9;
 
 // IndexedDB indexes cannot use `null` keys reliably across browsers.
 // We store Inbox as a stable string sentinel and normalize at the API boundary.
@@ -23,6 +23,7 @@ function normalizeTodoOut(todo) {
 }
 
 function upgrade(db, tx) {
+  const upgradeFrom = tx?.oldVersion ?? 0;
   // todos: by id
   if (!db.objectStoreNames.contains('todos')) {
     const s = db.createObjectStore('todos', { keyPath: 'id' });
@@ -63,6 +64,12 @@ function upgrade(db, tx) {
     s.createIndex('by_project', 'projectId', { unique: false });
   }
 
+  // checklistSuggestions: autocomplete memory for checklist items
+  if (!db.objectStoreNames.contains('checklistSuggestions')) {
+    const s = db.createObjectStore('checklistSuggestions', { keyPath: 'id', autoIncrement: true });
+    s.createIndex('by_textLower', 'textLower', { unique: true });
+  }
+
   // Migration (v1 -> v2): replace null projectId with sentinel so it indexes.
   // This fixes Safari/WebKit issues where null values are not indexed and
   // transitions null -> string may not re-index reliably.
@@ -83,6 +90,35 @@ function upgrade(db, tx) {
     }
   } catch {
     // Best-effort migration; app will still function via fallbacks.
+  }
+
+  if (upgradeFrom < 8 && tx && tx.objectStoreNames.contains('checklistPages')) {
+    const store = tx.objectStore('checklistPages');
+    const pages = [];
+    const cursorReq = store.openCursor();
+    cursorReq.onsuccess = () => {
+      const cursor = cursorReq.result;
+      if (!cursor) {
+        if (pages.length === 0) return;
+        const missing = pages.filter(page => !Number.isFinite(page.order));
+        if (missing.length === 0) return;
+        const sorted = [...pages].sort((a, b) => {
+          const aDate = Date.parse(a.createdAt || '') || 0;
+          const bDate = Date.parse(b.createdAt || '') || 0;
+          if (aDate !== bDate) return aDate - bDate;
+          return (a.id || '').localeCompare(b.id || '');
+        });
+        let maxOrder = sorted.reduce((acc, page) => (Number.isFinite(page.order) ? Math.max(acc, page.order) : acc), -1);
+        for (const page of sorted) {
+          if (Number.isFinite(page.order)) continue;
+          page.order = ++maxOrder;
+          store.put(page);
+        }
+        return;
+      }
+      pages.push(cursor.value);
+      cursor.continue();
+    };
   }
 }
 
@@ -203,6 +239,51 @@ export const db = {
     async list() {
       const dbi = await getDb();
       return storeApi(dbi, 'attachments').list();
+    }
+  },
+
+  checklistSuggestions: {
+    async remember(texts = []) {
+      const clean = (texts || [])
+        .map((t) => (t || '').trim())
+        .filter(Boolean)
+        .map((t) => ({ text: t, textLower: t.toLowerCase(), createdAt: nowIso() }));
+      if (!clean.length) return;
+
+      const dbi = await getDb();
+      const tx = dbi.transaction('checklistSuggestions', 'readwrite');
+      const store = tx.objectStore('checklistSuggestions');
+      const idx = store.index('by_textLower');
+
+      for (const item of clean) {
+        try {
+          const existing = await reqDone(idx.get(item.textLower));
+          if (existing) continue;
+          store.add(item);
+        } catch {
+          // best-effort; ignore failures
+        }
+      }
+
+      await txDone(tx);
+    },
+
+    async search(prefix = '', limit = 5) {
+      const query = (prefix || '').trim().toLowerCase();
+      if (!query) return [];
+
+      const dbi = await getDb();
+      const all = await storeApi(dbi, 'checklistSuggestions').list();
+      return all
+        .filter((item) => item?.textLower?.startsWith(query))
+        .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))
+        .slice(0, limit)
+        .map((item) => item.text);
+    },
+
+    async clear() {
+      const dbi = await getDb();
+      return storeApi(dbi, 'checklistSuggestions').clear();
     }
   },
 

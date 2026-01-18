@@ -37,6 +37,8 @@ Default sorting is:
 
 Reordering uses touch-friendly **Move Up / Move Down** buttons (no HTML5 drag/drop dependency).
 
+- Checklist projects now allow their colored page pills to be reordered via drag-and-drop (long-press or swipe the pill tab). The order is persisted and respected across reloads.
+
 ## Run locally (recommended)
 
 Service workers require `http(s)`.

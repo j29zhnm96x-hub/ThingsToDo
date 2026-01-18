@@ -96,7 +96,7 @@ export function newChecklistPage({ projectId, name = '' }) {
     id: uuid(),
     projectId,
     name: name.trim(),
-    order: Date.now(),
+    order: 0,
     createdAt: t,
     updatedAt: t
   };

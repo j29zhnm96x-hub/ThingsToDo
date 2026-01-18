@@ -68,6 +68,8 @@ export function renderHelp(ctx) {
 
     section('📥', t('helpInbox'), t('helpInboxContent'), '#06b6d4'),
     section('📂', t('helpProjects'), t('helpProjectsContent'), '#f59e0b'),
+    section('🗂️', t('helpChecklists'), t('helpChecklistsContent'), '#22c55e'),
+    section('✨', t('helpSuggestions'), t('helpSuggestionsContent'), '#8b5cf6'),
     section('⚡', t('helpFocusMode'), t('helpFocusModeContent'), '#8b5cf6'),
     section('🔒', t('helpProtected'), t('helpProtectedContent'), '#ef4444'),
     section('🔥', t('helpPriorities'), t('helpPrioritiesContent'), '#f97316'),

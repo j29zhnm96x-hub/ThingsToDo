@@ -598,6 +598,7 @@ html[data-theme='light'] .checklist__item {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  touch-action: pan-x;
 }
 
 .checklist-pills::-webkit-scrollbar {
@@ -616,6 +617,34 @@ html[data-theme='light'] .checklist__item {
   cursor: pointer;
   transition: all 200ms ease;
   -webkit-tap-highlight-color: transparent;
+  touch-action: pan-x;
+}
+
+.pill {
+  cursor: grab;
+  user-select: none;
+}
+
+.pill--dragging {
+  cursor: grabbing;
+}
+
+.pill-placeholder {
+  display: inline-block;
+  border-radius: 16px;
+  background: rgba(99, 102, 241, 0.12);
+  transition: all 0.2s ease;
+  vertical-align: middle;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.pill-ghost {
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.25);
+  transform: scale(1.02);
+  border-radius: 16px;
+  opacity: 0.95;
+  pointer-events: none;
 }
 
 .checklist-pill--active {
@@ -980,6 +1009,34 @@ body.dragging-reorder .app {
 .todo-divider__text:active { 
   background: var(--surface3); 
   transform: scale(0.97);
+}
+
+/* Suggestion dropdown for checklist quick-add */
+.suggestion-dropdown {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  margin-top: 4px;
+  list-style: none;
+  padding: 6px 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--card-shadow);
+  z-index: 20;
+}
+
+.suggestion-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 15px;
+}
+
+.suggestion-item:hover,
+.suggestion-item:active {
+  background: var(--surface2);
 }
 
 /* Collapsed completed stack */

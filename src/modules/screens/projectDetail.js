@@ -11,6 +11,7 @@ import { hapticLight } from '../ui/haptic.js';
 import { openCreateProject } from './projects.js';
 import { openProjectMenu } from '../ui/projectMenu.js';
 import { renderProjectCard } from '../ui/projectCard.js';
+import { enablePillReorder } from '../ui/pillReorder.js';
 import { Priority } from '../data/models.js';
 import { showToast } from '../ui/toast.js';
 import { t } from '../utils/i18n.js';
@@ -21,6 +22,11 @@ import { compressAttachmentsForArchive } from '../logic/attachments.js';
 
 // Track pill tap times globally to persist across re-renders
 const pillTapTimes = new Map();
+const sortPagesByOrder = (a, b) => {
+  const aOrder = Number.isFinite(a.order) ? a.order : 0;
+  const bOrder = Number.isFinite(b.order) ? b.order : 0;
+  return aOrder - bOrder;
+};
 
 async function buildProjectsById(db) {
   const projects = await db.projects.list();
@@ -28,7 +34,7 @@ async function buildProjectsById(db) {
   return { projects, map };
 }
 
-export async function renderProjectDetail(ctx, projectId) {
+export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
   const { main, db, modalHost } = ctx;
   clear(main);
 
@@ -252,13 +258,16 @@ export async function renderProjectDetail(ctx, projectId) {
   if ((project.type ?? 'default') === 'checklist') {
     // --- Multi-page checklist support ---
     let pages = await db.checklistPages.listByProject(projectId);
+    pages.sort(sortPagesByOrder);
     
     // Migration: create default page if none exist
     if (pages.length === 0) {
       const defaultPage = newChecklistPage({ projectId, name: '' });
+      defaultPage.order = 0;
       await db.checklistPages.put(defaultPage);
       pages = [defaultPage];
     }
+    pages.sort(sortPagesByOrder);
     
     // Fix orphaned todos: assign todos with missing or invalid pageIds to first page
     const firstPageId = pages[0]?.id;
@@ -309,14 +318,23 @@ export async function renderProjectDetail(ctx, projectId) {
     // --- Page Pill Bar (only show if 2+ pages) ---
     let pillBar = null;
     if (pages.length >= 2) {
-      pillBar = el('div', { class: 'checklist-pills' });
+      pillBar = el('div', { 
+        class: 'checklist-pills',
+        style: 'overflow-x: auto; overflow-y: hidden; white-space: nowrap;'
+      });
       
       pages.forEach(page => {
         const isActive = page.id === currentPageId;
         const pill = el('button', { 
           type: 'button',
-          class: `checklist-pill ${isActive ? 'checklist-pill--active' : ''}`,
-          'data-page-id': page.id
+          class: `checklist-pill pill ${isActive ? 'checklist-pill--active' : ''}`,
+          role: 'button',
+          dataset: {
+            pageId: page.id,
+            order: Number.isFinite(page.order) ? String(page.order) : '',
+            dragging: 'false'
+          },
+          'aria-grabbed': 'false'
         }, page.name || t('untitled'));
         
         let touchStartX = 0;
@@ -326,6 +344,8 @@ export async function renderProjectDetail(ctx, projectId) {
         
         // Track touch start position
         pill.addEventListener('touchstart', (e) => {
+          // Skip if reorder is in progress
+          if (pill.dataset.dragging === 'true' || pill.dataset.reorderActive === 'true') return;
           touchStartX = e.touches[0].clientX;
           touchStartY = e.touches[0].clientY;
           touchStartTime = Date.now();
@@ -334,6 +354,8 @@ export async function renderProjectDetail(ctx, projectId) {
         
         // Track if finger moved (scrolling)
         pill.addEventListener('touchmove', (e) => {
+          // Skip if reorder is in progress
+          if (pill.dataset.dragging === 'true' || pill.dataset.reorderActive === 'true') return;
           const moveX = Math.abs(e.touches[0].clientX - touchStartX);
           const moveY = Math.abs(e.touches[0].clientY - touchStartY);
           if (moveX > 10 || moveY > 10) {
@@ -343,9 +365,13 @@ export async function renderProjectDetail(ctx, projectId) {
         
         // Handle touch end - only trigger if no significant movement
         pill.addEventListener('touchend', (e) => {
+          // Skip if reorder is in progress or was active
+          if (pill.dataset.dragging === 'true') {
+            return;
+          }
           // Ignore if user was scrolling
           if (hasMoved) return;
-          
+
           const now = Date.now();
           const timeSinceTouchStart = now - touchStartTime;
           
@@ -368,21 +394,31 @@ export async function renderProjectDetail(ctx, projectId) {
             pillTapTimes.set(page.id, now);
             hapticLight();
             localStorage.setItem(storagePageKey, page.id);
-            renderProjectDetail(ctx, projectId);
+            const scrollPos = pillBar.scrollLeft;
+            renderProjectDetail(ctx, projectId, scrollPos);
           }
         }, { passive: false });
         
         // Handle mouse events (desktop)
         pill.addEventListener('click', (e) => {
+          // Skip if reorder is in progress or was active
+          if (pill.dataset.dragging === 'true') {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+          }
           if (e.detail === 1) {
             // Single click - switch immediately
             hapticLight();
             localStorage.setItem(storagePageKey, page.id);
-            renderProjectDetail(ctx, projectId);
+            const scrollPos = pillBar.scrollLeft;
+            renderProjectDetail(ctx, projectId, scrollPos);
           }
         });
-        
+
         pill.addEventListener('dblclick', (e) => {
+          // Skip if reorder is in progress
+          if (pill.dataset.dragging === 'true' || pill.dataset.reorderActive === 'true') return;
           e.preventDefault();
           e.stopPropagation();
           hapticLight();
@@ -391,6 +427,27 @@ export async function renderProjectDetail(ctx, projectId) {
         
         pillBar.appendChild(pill);
       });
+      
+      const persistPageOrder = async (newOrderIds) => {
+        const pageById = new Map(pages.map((p) => [p.id, p]));
+        const updates = [];
+        for (let idx = 0; idx < newOrderIds.length; idx++) {
+          const id = newOrderIds[idx];
+          const storedPage = pageById.get(id);
+          if (!storedPage) continue;
+          if (storedPage.order === idx) continue;
+          updates.push(db.checklistPages.put({ ...storedPage, order: idx }));
+        }
+        if (updates.length === 0) return;
+        try {
+          await Promise.all(updates);
+        } catch (err) {
+          showToast(t('reorderPagesFailed') || 'Unable to reorder pages.');
+        }
+        const scrollPos = pillBar.scrollLeft;
+        await renderProjectDetail(ctx, projectId, scrollPos);
+      };
+      enablePillReorder(pillBar, { onPersistOrder: persistPageOrder }).attach();
     }
     
     // Page menu for rename/delete
@@ -401,7 +458,7 @@ export async function renderProjectDetail(ctx, projectId) {
         content: el('div', { class: 'small' }, t('pageActions') || 'Page actions'),
         actions: [
           { label: t('rename'), class: 'btn', onClick: () => {
-            setTimeout(() => openRenamePageModal({ modalHost, db, page, onSaved: () => renderProjectDetail(ctx, projectId) }), 50);
+            setTimeout(() => openRenamePageModal({ modalHost, db, page, onSaved: () => renderProjectDetail(ctx, projectId, 0) }), 50);
             return true;
           }},
           !isOnlyPage ? { label: t('delete'), class: 'btn btn--danger', onClick: async () => {
@@ -422,7 +479,7 @@ export async function renderProjectDetail(ctx, projectId) {
             }
             await db.checklistPages.delete(page.id);
             localStorage.removeItem(storagePageKey);
-            await renderProjectDetail(ctx, projectId);
+            await renderProjectDetail(ctx, projectId, 0);
             return true;
           }} : null,
           { label: t('cancel'), class: 'btn btn--ghost', onClick: () => true }
@@ -462,7 +519,7 @@ export async function renderProjectDetail(ctx, projectId) {
         } else {
           await uncompleteTodo(db, todo);
         }
-        await renderProjectDetail(ctx, projectId);
+        await renderProjectDetail(ctx, projectId, 0);
       },
       onTap: (todo) => {
         openModal(modalHost, {
@@ -470,7 +527,7 @@ export async function renderProjectDetail(ctx, projectId) {
           content: el('div', { style: 'word-wrap: break-word; white-space: pre-wrap;' }, todo.title),
           actions: [
             { label: t('edit'), class: 'btn', onClick: () => { 
-              setTimeout(() => openEditChecklistItem({ modalHost, db, todo, onSaved: () => renderProjectDetail(ctx, projectId) }), 50);
+              setTimeout(() => openEditChecklistItem({ modalHost, db, todo, onSaved: () => renderProjectDetail(ctx, projectId, 0) }), 50);
               return true; 
             } },
             { label: t('close'), class: 'btn btn--primary', onClick: () => true }
@@ -478,7 +535,7 @@ export async function renderProjectDetail(ctx, projectId) {
         });
       },
       onEdit: (todo) => {
-        openEditChecklistItem({ modalHost, db, todo, onSaved: () => renderProjectDetail(ctx, projectId) });
+        openEditChecklistItem({ modalHost, db, todo, onSaved: () => renderProjectDetail(ctx, projectId, 0) });
       },
       onDelete: async (todo, rowElement) => {
         if (todo.protected) {
@@ -508,7 +565,7 @@ export async function renderProjectDetail(ctx, projectId) {
           return;
         }
         await db.todos.delete(todo.id);
-        await renderProjectDetail(ctx, projectId);
+        await renderProjectDetail(ctx, projectId, 0);
       },
       onDeleteAllCompleted: async () => {
         const completedTodos = pageTodos.filter(t => t.completed);
@@ -542,7 +599,7 @@ export async function renderProjectDetail(ctx, projectId) {
         for (const todo of unprotected) {
           await db.todos.delete(todo.id);
         }
-        await renderProjectDetail(ctx, projectId);
+        await renderProjectDetail(ctx, projectId, 0);
       }
     });
 
@@ -562,6 +619,11 @@ export async function renderProjectDetail(ctx, projectId) {
     }, contentStack, addPageBtn);
 
     main.append(container);
+
+    // Restore scroll position
+    if (pillBar) {
+      pillBar.scrollLeft = scrollPosition;
+    }
 
     // Double-tap to add item (only on empty space below the list)
     const triggerAdd = () => quickAddChecklist({ modalHost, db, projectId, pageId: currentPageId, onCreated: () => renderProjectDetail(ctx, projectId) });
@@ -603,20 +665,20 @@ export async function renderProjectDetail(ctx, projectId) {
       } else {
         await uncompleteTodo(db, todo);
       }
-      await renderProjectDetail(ctx, projectId);
+      await renderProjectDetail(ctx, projectId, 0);
     },
     onEdit: (todo) => ctx.openTodoEditor({ mode: 'edit', todoId: todo.id, projectId: todo.projectId, db }),
     onMove: async (todo) => {
       const dest = await pickProject(modalHost, { title: 'Move to…', projects, includeInbox: true, initial: todo.projectId ?? null, confirmLabel: 'Move' });
       if (dest === undefined) return;
       await moveTodo(db, todo, dest);
-      await renderProjectDetail(ctx, projectId);
+      await renderProjectDetail(ctx, projectId, 0);
     },
     onLinkToggle: async (todo) => {
         // Toggle inbox link
         const wasLinked = todo.showInInbox;
         await db.todos.put({ ...todo, showInInbox: !todo.showInInbox });
-        await renderProjectDetail(ctx, projectId);
+        await renderProjectDetail(ctx, projectId, 0);
         
         // Show success toast
         const message = wasLinked ? t('taskUnlinkedFromInbox') : t('taskLinkedToInbox');
@@ -645,7 +707,7 @@ export async function renderProjectDetail(ctx, projectId) {
         priority: Priority.P3
       });
       await compressAttachmentsForArchive(db, todo.id);
-      await renderProjectDetail(ctx, projectId);
+      await renderProjectDetail(ctx, projectId, 0);
     },
     onMenu: (todo, { onLinkToggle } = {}) => openTodoMenu(modalHost, {
       title: todo.title || 'Todo',
@@ -654,7 +716,7 @@ export async function renderProjectDetail(ctx, projectId) {
         { label: todo.showInInbox ? 'Unlink from Inbox' : 'Link to Inbox', class: 'btn', onClick: async () => {
              const wasLinked = todo.showInInbox;
              await db.todos.put({ ...todo, showInInbox: !todo.showInInbox });
-             await renderProjectDetail(ctx, projectId);
+             await renderProjectDetail(ctx, projectId, 0);
              
              // Show success toast (modal will close automatically via return true)
              const message = wasLinked ? t('taskUnlinkedFromInbox') : t('taskLinkedToInbox');
@@ -665,7 +727,7 @@ export async function renderProjectDetail(ctx, projectId) {
           const dest = await pickProject(modalHost, { title: 'Move to…', projects, includeInbox: true, initial: todo.projectId ?? null, confirmLabel: 'Move' });
           if (dest !== undefined) {
             await moveTodo(db, todo, dest);
-            await renderProjectDetail(ctx, projectId);
+            await renderProjectDetail(ctx, projectId, 0);
           }
           return true;
         } },
@@ -691,7 +753,7 @@ export async function renderProjectDetail(ctx, projectId) {
               archivedFromProjectId: todo.projectId
             });
             await compressAttachmentsForArchive(db, todo.id);
-            await renderProjectDetail(ctx, projectId);
+            await renderProjectDetail(ctx, projectId, 0);
           }
           return true;
         } }
@@ -699,7 +761,7 @@ export async function renderProjectDetail(ctx, projectId) {
     }),
     onReorder: async ({ priority, projectId: containerId, orderedIds }) => {
       await reorderBucket(db, { priority, projectId: containerId, orderedIds });
-      await renderProjectDetail(ctx, projectId);
+      await renderProjectDetail(ctx, projectId, 0);
     }
   });
 
@@ -1004,7 +1066,56 @@ function renderChecklist({ todos, modalHost, onToggleCompleted, onDelete, onDele
 }
 
 function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated }) {
-  const input = el('input', { class: 'input', placeholder: t('itemName') || 'Item name', 'aria-label': t('itemName') || 'Item name' });
+  const input = el('input', { class: 'input', placeholder: t('itemName') || 'Item name', 'aria-label': t('itemName') || 'Item name', autocomplete: 'off' });
+
+  const dropdown = el('ul', { class: 'suggestion-dropdown', style: 'display:none;' });
+  const container = el('div', { style: 'position: relative;' }, input, dropdown);
+
+  const hideDropdown = () => {
+    dropdown.style.display = 'none';
+    dropdown.innerHTML = '';
+  };
+
+  const showSuggestions = (items) => {
+    dropdown.innerHTML = '';
+    if (!items || items.length === 0) {
+      hideDropdown();
+      return;
+    }
+    for (const text of items) {
+      const li = el('li', { class: 'suggestion-item' }, text);
+      li.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        input.value = text;
+        hideDropdown();
+      });
+      dropdown.appendChild(li);
+    }
+    dropdown.style.display = 'block';
+  };
+
+  const fetchSuggestions = async (value) => {
+    const trimmed = (value || '').trim();
+    if (!trimmed) {
+      hideDropdown();
+      return;
+    }
+    try {
+      const suggestions = await db.checklistSuggestions.search(trimmed, 5);
+      showSuggestions(suggestions);
+    } catch {
+      hideDropdown();
+    }
+  };
+
+  input.addEventListener('input', (e) => {
+    fetchSuggestions(e.target.value);
+  });
+
+  input.addEventListener('blur', () => {
+    // Delay to allow click on suggestion
+    setTimeout(hideDropdown, 120);
+  });
 
   const addItem = async () => {
     const title = input.value.trim();
@@ -1013,13 +1124,14 @@ function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated }) {
       return false;
     }
     await db.todos.put(newTodo({ title, projectId, pageId }));
+    await db.checklistSuggestions.remember([title]);
     onCreated?.();
     return true;
   };
 
   openModal(modalHost, {
     title: t('addItem') || 'Add item',
-    content: input,
+    content: container,
     align: 'top',
     headerActions: [
       { label: t('add'), class: 'btn btn--primary', onClick: addItem }
@@ -1043,7 +1155,8 @@ function openAddPageModal({ modalHost, db, projectId, pages, onCreated }) {
   const addPage = async () => {
     const name = input.value.trim();
     const page = newChecklistPage({ projectId, name });
-    page.order = pages.length;
+    const maxOrder = pages.reduce((prev, existing) => Math.max(prev, Number.isFinite(existing.order) ? existing.order : -1), -1);
+    page.order = maxOrder + 1;
     await db.checklistPages.put(page);
     onCreated?.();
     return true;
