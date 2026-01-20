@@ -498,6 +498,31 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
       }
     }, '+');
     
+    // --- Clear Page Button (floating, above add page) ---
+    const clearPageBtn = el('button', {
+      type: 'button',
+      class: 'checklist-clearPage-btn',
+      'aria-label': t('clearPage') || 'Clear page',
+      onClick: async () => {
+        const itemsOnPage = pageTodos;
+        if (itemsOnPage.length === 0) {
+          showToast(t('noItemsToClear') || 'No items to clear');
+          return;
+        }
+        const ok = await confirm(modalHost, {
+          title: t('clearAllItems') || 'Clear all items?',
+          message: t('clearAllItemsConfirm') || 'This will delete all items on this page. Are you sure?',
+          confirmLabel: t('clearPage') || 'Clear Page',
+          danger: true
+        });
+        if (!ok) return;
+        for (const todo of itemsOnPage) {
+          await db.todos.delete(todo.id);
+        }
+        await renderProjectDetail(ctx, projectId, 0);
+      }
+    }, (t('clearPage') || 'Clear\nPage').split('\n').map(line => el('div', {}, line)));
+    
     // --- Render Checklist with Drag Reorder ---
     const listEl = renderChecklistWithDrag({ 
       todos: pageTodos,
@@ -603,6 +628,30 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
       }
     });
 
+    // Clear All button for the current page
+    const clearAllBtn = el('button', {
+      class: 'btn btn--danger',
+      style: 'margin-left: auto; margin-bottom: 8px;',
+      onClick: async () => {
+        const itemsOnPage = pageTodos;
+        if (itemsOnPage.length === 0) {
+          showToast(t('noItemsToClear') || 'No items to clear');
+          return;
+        }
+        const ok = await confirm(modalHost, {
+          title: t('clearAllItems') || 'Clear all items?',
+          message: t('clearAllItemsConfirm') || 'This will delete all items on this page. Are you sure?',
+          confirmLabel: t('clearAll') || 'Clear All',
+          danger: true
+        });
+        if (!ok) return;
+        for (const todo of itemsOnPage) {
+          await db.todos.delete(todo.id);
+        }
+        await renderProjectDetail(ctx, projectId, 0);
+      }
+    }, t('clearAll') || 'Clear All');
+
     const hint = el('div', { class: 'checklist__hint' }, t('doubleTapToAdd') || 'Double tap empty area to add');
     
     // Content layout
@@ -616,7 +665,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
     const container = el('div', { 
       class: 'checklist-container',
       style: 'min-height: calc(100vh - 44px - var(--safe-top) - 74px - var(--safe-bottom) - 28px); position: relative;'
-    }, contentStack, addPageBtn);
+    }, contentStack, clearPageBtn, addPageBtn);
 
     main.append(container);
 
