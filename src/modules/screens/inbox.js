@@ -29,7 +29,22 @@ export async function renderInbox(ctx) {
   // Filter for inbox items and exclude future recurring instances
   const todos = allTodos.filter(t => {
     // Include if it's inbox or linked to inbox
-    if (!(t.projectId === null || t.showInInbox === true)) return false;
+    if (!(t.projectId === null || t.showInInbox === true)) {
+      // Check if it's a task with due date approaching (3 days before)
+      if (t.dueDate && t.projectId !== null) {
+        const dueTime = new Date(t.dueDate).getTime();
+        const now = Date.now();
+        const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+        if (now >= dueTime - threeDaysMs) {
+          // Include as virtual link
+          t.isVirtualLink = true;
+        } else {
+          return false;
+        }
+      } else {
+        return false;
+      }
+    }
     // Exclude future recurring instances (not yet due)
     if (t.isRecurringInstance && t.dueDate && !isDueNowOrPast(t.dueDate)) return false;
     return true;
@@ -64,7 +79,7 @@ export async function renderInbox(ctx) {
     mode: 'active',
     onTap: (todo) => {
       // If linked card (has project but shown here), navigate to project
-      if (todo.projectId && todo.showInInbox) {
+      if (todo.projectId && (todo.showInInbox || todo.isVirtualLink)) {
          location.hash = '#project/' + todo.projectId;
          return;
       }
@@ -84,7 +99,10 @@ export async function renderInbox(ctx) {
       }
       await renderInbox(ctx);
     },
-    onEdit: (todo) => ctx.openTodoEditor({ mode: 'edit', todoId: todo.id, projectId: todo.projectId, db }),
+    onEdit: (todo) => {
+      if (todo.isVirtualLink) return; // No edit for virtual links
+      ctx.openTodoEditor({ mode: 'edit', todoId: todo.id, projectId: todo.projectId, db });
+    },
     onMove: async (todo) => {
       const dest = await pickProject(modalHost, { title: 'Move to…', projects, includeInbox: true, initial: todo.projectId ?? null, confirmLabel: 'Move' });
       if (dest === undefined) return;

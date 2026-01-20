@@ -78,8 +78,8 @@ export function renderTodoList({
       title: t('recurring') || 'Recurring'
     }, '↻') : null;
     
-    // Link icon if showInInbox is true
-    const linkIcon = todo.showInInbox ? el('span', { 
+    // Link icon if showInInbox is true or isVirtualLink
+    const linkIcon = (todo.showInInbox || todo.isVirtualLink) ? el('span', { 
       class: 'icon-protected', // Re-using protected style for size/margin
       style: { opacity: 0.6 },
       'aria-label': 'Linked to Inbox' 
