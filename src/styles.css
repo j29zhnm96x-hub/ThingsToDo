@@ -1938,3 +1938,48 @@ body.focus-mode .focus-toggle-btn {
   margin-bottom: 12px;
   padding: 0 4px;
 }
+
+.suggestion-history {
+  gap: 0.75rem;
+}
+
+.suggestion-history-list {
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface2);
+  padding: 6px;
+}
+
+.suggestion-history-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 10px;
+  border-radius: 10px;
+  background: var(--surface3);
+  margin-bottom: 6px;
+}
+
+.suggestion-history-item:last-child {
+  margin-bottom: 0;
+}
+
+.suggestion-history-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.suggestion-history-empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 14px 6px;
+}
+
+.suggestion-history-delete {
+  white-space: nowrap;
+}

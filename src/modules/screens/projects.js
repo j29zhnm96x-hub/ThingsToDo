@@ -243,9 +243,20 @@ export function openCreateProject({ db, modalHost, onCreated, parentId = null })
     el('option', { value: 'checklist' }, t('checklist'))
   );
 
+  const useSuggestionsToggle = el('input', { type: 'checkbox', 'aria-label': t('useSuggestions') || 'Use suggestions' });
+  const suggestionsRow = el('label', { class: 'label', style: 'display:none;' },
+    el('span', {}, t('enableSuggestionsQuick') || 'Enable suggestions for quick item entry'),
+    useSuggestionsToggle
+  );
+
+  typeSelect.addEventListener('change', () => {
+    suggestionsRow.style.display = typeSelect.value === 'checklist' ? '' : 'none';
+  });
+
   const content = el('div', { class: 'stack' },
     el('label', { class: 'label' }, el('span', {}, t('projectName')), nameInput),
-    el('label', { class: 'label' }, el('span', {}, t('projectType')), typeSelect)
+    el('label', { class: 'label' }, el('span', {}, t('projectType')), typeSelect),
+    suggestionsRow
   );
 
   openModal(modalHost, {
@@ -263,7 +274,7 @@ export function openCreateProject({ db, modalHost, onCreated, parentId = null })
             return false;
           }
           const type = typeSelect.value === 'checklist' ? 'checklist' : 'default';
-          const project = newProject({ name, type, parentId });
+          const project = newProject({ name, type, parentId, useSuggestions: type === 'checklist' ? useSuggestionsToggle.checked : false });
           await db.projects.put(project);
           
           if (type === 'checklist') {

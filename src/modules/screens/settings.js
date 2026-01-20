@@ -3,6 +3,7 @@ import { openModal } from '../ui/modal.js';
 import { confirm } from '../ui/confirm.js';
 import { applyTheme } from '../ui/theme.js';
 import { openBinModal } from '../ui/binModal.js';
+import { showToast } from '../ui/toast.js';
 import { t, getLang, setLang, languageNames, getAvailableLanguages } from '../utils/i18n.js';
 
 async function blobToDataUrl(blob) {
@@ -94,6 +95,7 @@ export async function renderSettings(ctx) {
   const binBtn = el('button', { class: 'btn', type: 'button', onClick: () => openBinModal(ctx) }, t('bin'));
   const helpBtn = el('button', { class: 'btn', type: 'button', onClick: () => location.hash = '#help' }, t('help'));
   const resetBtn = el('button', { class: 'btn btn--danger', type: 'button', onClick: resetData }, t('clearAllData'));
+  const manageSuggestionsBtn = el('button', { class: 'btn', type: 'button', onClick: openSuggestionHistoryModal }, t('clearSuggestionHistory') || 'Clear suggestion history');
 
   main.append(el('div', { class: 'stack' },
     el('div', { class: 'card stack' },
@@ -106,6 +108,11 @@ export async function renderSettings(ctx) {
         el('span', {}, t('voiceRecordingQuality') || 'Recording quality'),
         voiceQualitySelect
       )
+    ),
+    el('div', { class: 'card stack' },
+      el('div', { style: { fontWeight: '700' } }, t('checklistOptions') || 'Checklists options'),
+      el('div', { class: 'small' }, t('manageSuggestionHistory') || 'Manage saved checklist suggestions'),
+      manageSuggestionsBtn
     ),
     el('div', { class: 'card stack' },
       el('div', { style: { fontWeight: '700' } }, t('theme')),
@@ -135,6 +142,85 @@ export async function renderSettings(ctx) {
       resetBtn
     )
   ));
+
+  async function openSuggestionHistoryModal() {
+    let suggestions = [];
+    try {
+      suggestions = await db.checklistSuggestions.list();
+      // Sort alphabetically, case-insensitive
+      suggestions.sort((a, b) => a.text.localeCompare(b.text, undefined, { sensitivity: 'base' }));
+    } catch (err) {
+      console.error(err);
+    }
+
+    const listEl = el('div', { class: 'suggestion-history-list' });
+    const emptyState = el('div', { class: 'suggestion-history-empty small' }, t('noSuggestionsYet') || 'No suggestions stored yet');
+
+    const renderList = () => {
+      clear(listEl);
+      if (!suggestions.length) {
+        listEl.append(emptyState);
+        return;
+      }
+      for (const item of suggestions) {
+        const row = el('div', { class: 'suggestion-history-item' },
+          el('div', { class: 'suggestion-history-text' }, item.text),
+          el('button', {
+            class: 'btn btn--ghost suggestion-history-delete',
+            type: 'button',
+            onClick: async () => {
+              try {
+                await db.checklistSuggestions.delete(item.id);
+                suggestions = suggestions.filter((s) => s.id !== item.id);
+                renderList();
+              } catch (err) {
+                showToast(t('error') || 'Error');
+                console.error(err);
+              }
+            }
+          }, '✕')
+        );
+        listEl.append(row);
+      }
+    };
+
+    const modalContent = el('div', { class: 'stack suggestion-history' },
+      el('div', { class: 'small' }, t('manageSuggestionHistory') || 'Review and clear saved checklist suggestions'),
+      listEl
+    );
+
+    renderList();
+
+    openModal(modalHost, {
+      title: t('clearSuggestionHistory') || 'Clear suggestion history',
+      content: modalContent,
+      actions: [
+        { label: t('cancel'), class: 'btn btn--ghost', onClick: () => true },
+        {
+          label: t('clearAll') || 'Clear All',
+          class: 'btn btn--danger',
+          onClick: async () => {
+            const ok = await confirm(modalHost, {
+              title: t('clearSuggestionHistory') || 'Clear suggestion history',
+              message: t('confirmClearSuggestions') || 'Clear all saved suggestions?',
+              confirmLabel: t('clearAll') || 'Clear All',
+              danger: true
+            });
+            if (!ok) return false;
+            try {
+              await db.checklistSuggestions.clear();
+              showToast(t('suggestionHistoryCleared') || 'Suggestion history cleared');
+              return true;
+            } catch (err) {
+              showToast(t('error') || 'Error');
+              console.error(err);
+              return false;
+            }
+          }
+        }
+      ]
+    });
+  }
 
   async function exportData() {
     const payload = {

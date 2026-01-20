@@ -281,6 +281,16 @@ export const db = {
         .map((item) => item.text);
     },
 
+    async list() {
+      const dbi = await getDb();
+      return storeApi(dbi, 'checklistSuggestions').list();
+    },
+
+    async delete(id) {
+      const dbi = await getDb();
+      return storeApi(dbi, 'checklistSuggestions').delete(id);
+    },
+
     async clear() {
       const dbi = await getDb();
       return storeApi(dbi, 'checklistSuggestions').clear();

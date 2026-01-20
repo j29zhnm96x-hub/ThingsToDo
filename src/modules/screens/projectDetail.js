@@ -626,7 +626,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
     }
 
     // Double-tap to add item (only on empty space below the list)
-    const triggerAdd = () => quickAddChecklist({ modalHost, db, projectId, pageId: currentPageId, onCreated: () => renderProjectDetail(ctx, projectId) });
+    const triggerAdd = () => quickAddChecklist({ modalHost, db, projectId, pageId: currentPageId, useSuggestions: project.useSuggestions === true, onCreated: () => renderProjectDetail(ctx, projectId) });
 
     let lastTap = 0;
     container.addEventListener('touchend', (e) => {
@@ -1065,7 +1065,7 @@ function renderChecklist({ todos, modalHost, onToggleCompleted, onDelete, onDele
   return container;
 }
 
-function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated }) {
+function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated, useSuggestions = false }) {
   const input = el('input', { class: 'input', placeholder: t('itemName') || 'Item name', 'aria-label': t('itemName') || 'Item name', autocomplete: 'off' });
 
   const dropdown = el('ul', { class: 'suggestion-dropdown', style: 'display:none;' });
@@ -1095,6 +1095,7 @@ function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated }) {
   };
 
   const fetchSuggestions = async (value) => {
+    if (!useSuggestions) return;
     const trimmed = (value || '').trim();
     if (!trimmed) {
       hideDropdown();
@@ -1108,14 +1109,16 @@ function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated }) {
     }
   };
 
-  input.addEventListener('input', (e) => {
-    fetchSuggestions(e.target.value);
-  });
+  if (useSuggestions) {
+    input.addEventListener('input', (e) => {
+      fetchSuggestions(e.target.value);
+    });
 
-  input.addEventListener('blur', () => {
-    // Delay to allow click on suggestion
-    setTimeout(hideDropdown, 120);
-  });
+    input.addEventListener('blur', () => {
+      // Delay to allow click on suggestion
+      setTimeout(hideDropdown, 120);
+    });
+  }
 
   const addItem = async () => {
     const title = input.value.trim();
@@ -1124,7 +1127,9 @@ function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated }) {
       return false;
     }
     await db.todos.put(newTodo({ title, projectId, pageId }));
-    await db.checklistSuggestions.remember([title]);
+    if (useSuggestions) {
+      await db.checklistSuggestions.remember([title]);
+    }
     onCreated?.();
     return true;
   };
