@@ -206,6 +206,13 @@ const translations = {
     recordVoiceMemo: 'Record Voice Memo',
     saveVoiceMemo: 'Save Voice Memo',
     voiceRecordingQuality: 'Recording quality',
+    // Notes
+    notes: 'Notes',
+    note: 'Note',
+    notesLabel: 'notes',
+    noteActions: 'Choose an action for this note',
+    deleteNote: 'Delete note',
+    deleteNoteConfirm: 'Delete this note?',
     lowQuality: 'Low quality (smaller files)',
     highQuality: 'High quality',
     voiceMemoSaved: 'Voice memo saved',

@@ -103,4 +103,17 @@ export function newChecklistPage({ projectId, name = '' }) {
   };
 }
 
+export function newProjectNote({ projectId, text = '', xPct = 0.5, yPct = 0.5 }) {
+  const t = nowIso();
+  return {
+    id: uuid(),
+    projectId,
+    text: text.trim(),
+    xPct,
+    yPct,
+    createdAt: t,
+    updatedAt: t
+  };
+}
+
 export { uuid as generateId };

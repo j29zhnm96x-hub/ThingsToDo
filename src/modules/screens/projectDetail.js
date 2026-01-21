@@ -6,7 +6,7 @@ import { moveTodo, reorderBucket, completeTodo, uncompleteTodo } from '../logic/
 import { openTodoMenu } from '../ui/todoMenu.js';
 import { openTodoInfo } from '../ui/todoInfo.js';
 import { openModal } from '../ui/modal.js';
-import { newTodo, newChecklistPage } from '../data/models.js';
+import { newTodo, newChecklistPage, newProjectNote } from '../data/models.js';
 import { hapticLight } from '../ui/haptic.js';
 import { openCreateProject } from './projects.js';
 import { openProjectMenu } from '../ui/projectMenu.js';
@@ -32,6 +32,84 @@ async function buildProjectsById(db) {
   const projects = await db.projects.list();
   const map = new Map(projects.map((p) => [p.id, p]));
   return { projects, map };
+}
+
+function clamp01(v) {
+  if (Number.isNaN(v)) return 0;
+  return Math.min(1, Math.max(0, v));
+}
+
+async function openNoteMenu(ctx, note) {
+  const { modalHost, db } = ctx;
+
+  // Determine current project; if none found it's Inbox
+  const currentProject = await db.projects.get(note.projectId);
+  const isInbox = !currentProject;
+  const isChecklist = !!currentProject && (currentProject.type === 'checklist');
+
+  // Build a list of candidate move destinations: exclude checklists and the current project, and do not include Inbox
+  const allProjects = await db.projects.list();
+  const candidate = allProjects.filter(p => p.id !== note.projectId && p.type !== 'checklist');
+  // Build hierarchical display names (Parent / Child)
+  const projectsById = new Map(allProjects.map(p => [p.id, p]));
+  const buildPath = (p) => {
+    const parts = [p.name];
+    let cur = p;
+    while (cur.parentId) {
+      const parent = projectsById.get(cur.parentId);
+      if (!parent) break;
+      parts.unshift(parent.name);
+      cur = parent;
+    }
+    return parts.join(' / ');
+  };
+  const projects = candidate.map(p => ({ id: p.id, name: buildPath(p) }));
+
+  const actions = [
+    // Only show Move if this note is not in Inbox and not in a checklist project
+  ];
+
+  if (!isInbox && !isChecklist) {
+    actions.push({
+      label: t('move') || 'Move',
+      class: 'btn',
+      onClick: async () => {
+        const pick = await pickProject(modalHost, { title: t('moveNote') || 'Move note', projects, includeInbox: false });
+        if (pick !== undefined) {
+          await db.projectNotes.put({ ...note, projectId: pick });
+          renderProjectDetail(ctx, note.projectId);
+        }
+        return true;
+      }
+    });
+  }
+
+  actions.push({
+    label: t('delete') || 'Delete',
+    class: 'btn btn--danger',
+    onClick: async () => {
+      const ok = await confirm(modalHost, {
+        title: t('deleteNote') || 'Delete note?',
+        message: t('deleteNoteConfirm') || 'Delete this note?',
+        confirmLabel: t('delete') || 'Delete',
+        danger: true
+      });
+      if (ok) {
+        await db.projectNotes.delete(note.id);
+        renderProjectDetail(ctx, note.projectId);
+      }
+      return true;
+    }
+  });
+  actions.push({ label: t('cancel') || 'Cancel', class: 'btn btn--ghost', onClick: () => true });
+
+  openModal(modalHost, {
+    title: t('note') || 'Note',
+    content: el('div', { class: 'stack' },
+      el('p', {}, t('noteActions') || 'Note actions')
+    ),
+    actions
+  });
 }
 
 export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
@@ -89,6 +167,9 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
 
   // Voice memos for this project
   const voiceMemos = await db.voiceMemos.listByProject(projectId);
+
+  // Notes for this project (inline)
+  const projectNotes = await db.projectNotes.listByProject(projectId);
 
   // Render Sub-projects section
   let subProjectsList = null;
@@ -828,9 +909,112 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
       )
     : null;
 
+  // Notes section (inline)
+  // Flush any unsaved changes from existing textareas before re-rendering
+  const existingTextareas = document.querySelectorAll('.inlineNote__input');
+  if (existingTextareas.length) {
+    const savePromises = [];
+    for (const ta of existingTextareas) {
+      const noteId = ta.dataset.noteId;
+      if (!noteId) continue;
+      try {
+        const stored = await db.projectNotes.get(noteId);
+        const current = (ta.value || '').trim();
+        const storedText = (stored && stored.text) ? stored.text.trim() : '';
+        if (stored && current !== storedText) {
+          console.log('Saving unsaved text for note (flushed):', noteId, 'text:', current);
+          savePromises.push(db.projectNotes.put({ ...stored, text: current }));
+        }
+      } catch (err) {
+        console.error('Error reading note for flush:', noteId, err);
+      }
+    }
+    if (savePromises.length) {
+      try {
+        await Promise.all(savePromises);
+        console.log('Flushed unsaved note saves before render');
+      } catch (err) {
+        console.error('Error flushing note saves before render:', err);
+      }
+    }
+  }
+
+  let notesList = null;
+  if (projectNotes.length > 0) {
+    console.log('Rendering project notes:', projectNotes.map(n => ({ id: n.id, text: n.text })));
+    notesList = el('div', { class: 'notesList' },
+      el('div', { class: 'notesList__header' }, t('notes') || 'Notes'),
+      ...projectNotes.map(note => {
+        console.log('Rendering note:', note.id, 'text:', note.text);
+        const existingTa = document.querySelector(`.inlineNote__input[data-note-id="${note.id}"]`);
+        const currentValue = existingTa ? existingTa.value : note.text;
+        const textarea = el('textarea', {
+          class: 'inlineNote__input',
+          'data-note-id': note.id,
+          rows: 1,
+          'aria-label': t('note') || 'Note'
+        });
+        // `el()` sets attributes but not the live `value` property on textarea
+        // Set the property explicitly so the saved text appears in the UI.
+        textarea.value = currentValue || '';
+
+        const autosize = () => {
+          textarea.style.height = 'auto';
+          textarea.style.height = `${Math.max(textarea.scrollHeight, 40)}px`;
+        };
+        autosize();
+
+        let saving = false;
+        const saveText = async (value) => {
+          if (saving) return;
+          saving = true;
+          try {
+            const trimmed = (value || '').trim();
+            console.log('Saving note text:', trimmed);
+            await db.projectNotes.put({ ...note, text: trimmed });
+            console.log('Saved successfully');
+          } catch (error) {
+            console.error('Error saving note:', error);
+          } finally {
+            saving = false;
+          }
+        };
+
+        textarea.addEventListener('input', () => {
+          autosize();
+          void saveText(textarea.value);
+        });
+        textarea.addEventListener('blur', () => { void saveText(textarea.value); });
+
+        const clearBtn = el('button', {
+          type: 'button',
+          class: 'inlineNote__clear',
+          'aria-label': t('clear') || 'Clear',
+          onClick: () => {
+            textarea.value = '';
+            autosize();
+            void saveText('');
+          }
+        }, '✕');
+
+        const menuBtn = el('button', {
+          type: 'button',
+          class: 'inlineNote__menu',
+          'aria-label': t('menu') || 'Menu',
+          onClick: () => {
+            openNoteMenu(ctx, note);
+          }
+        }, '⋯');
+
+        return el('div', { class: 'inlineNote' }, textarea, menuBtn, clearBtn);
+      })
+    );
+  }
+
   main.append(el('div', { class: 'stack' }, 
       subProjectsList, // Add sub-projects list at the top
       voiceMemosList,
+      notesList,
       todos.length ? list : el('div', { class: 'card small' }, 'No todos in this project yet. Tap + to add one.')
   ));
 }
@@ -838,52 +1022,76 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
 // New function to handle the "+" menu
 export function openProjectAddMenu(ctx, project) {
     const { modalHost, db } = ctx;
-    
-    // Bottom sheet style
-    openModal(modalHost, {
+
+    // We'll assign this after opening the modal so content buttons can close it.
+    let closeModal = null;
+
+    const content = el('div', { class: 'stack' }, 
+        el('button', { 
+            class: 'btn btn--primary',
+            style: { justifyContent: 'flex-start', padding: '16px' }, 
+            onClick: () => {
+               // Close modal synchronously, then open editor
+               closeModal?.();
+               ctx.openTodoEditor({ mode: 'create', projectId: project.id });
+            }
+        }, '📄 ' + t('newTask')),
+         el('button', { 
+            class: 'btn', 
+            style: { justifyContent: 'flex-start', padding: '16px' }, 
+            onClick: () => {
+               closeModal?.();
+               // Open Create Project with parentId preset
+               openCreateProject({ 
+                   db, 
+                   modalHost, 
+                   parentId: project.id,
+                   onCreated: () => renderProjectDetail(ctx, project.id)
+               });
+            }
+        }, '📁 ' + t('newSubProject')),
+        el('button', { 
+            class: 'btn', 
+            style: { justifyContent: 'flex-start', padding: '16px' }, 
+            onClick: () => {
+               closeModal?.();
+               openRecordingModal({
+                 modalHost,
+                 db,
+                 projectId: project.id,
+                 onSaved: () => renderProjectDetail(ctx, project.id)
+               });
+            }
+        }, '🎤 ' + t('voiceMemo')),
+        el('button', { 
+          class: 'btn', 
+          style: { justifyContent: 'flex-start', padding: '16px' }, 
+          onClick: () => {
+             // Close the modal synchronously, then create the note in background.
+             closeModal?.();
+             (async () => {
+               try {
+                 const note = newProjectNote({ projectId: project.id, text: '' });
+                 await db.projectNotes.put(note);
+                 renderProjectDetail(ctx, project.id);
+               } catch (err) {
+                 console.error('Error creating note:', err);
+               }
+             })();
+          }
+        }, '📝 ' + (t('note') || 'Note'))
+    );
+
+    const modalRef = openModal(modalHost, {
         title: t('addToProject') || 'Add to Project',
         align: 'bottom',
-        content: el('div', { class: 'stack' }, 
-            el('button', { 
-                class: 'btn btn--primary',
-                style: { justifyContent: 'flex-start', padding: '16px' }, 
-                onClick: () => {
-                   ctx.openTodoEditor({ mode: 'create', projectId: project.id });
-                   return true; // close modal
-                }
-            }, '📄 ' + t('newTask')),
-             el('button', { 
-                class: 'btn', 
-                style: { justifyContent: 'flex-start', padding: '16px' }, 
-                onClick: () => {
-                   // Open Create Project with parentId preset
-                   openCreateProject({ 
-                       db, 
-                       modalHost, 
-                       parentId: project.id,
-                       onCreated: () => renderProjectDetail(ctx, project.id)
-                   });
-                   return true; // close modal
-                }
-            }, '📁 ' + t('newSubProject')),
-            el('button', { 
-                class: 'btn', 
-                style: { justifyContent: 'flex-start', padding: '16px' }, 
-                onClick: () => {
-                   openRecordingModal({
-                     modalHost,
-                     db,
-                     projectId: project.id,
-                     onSaved: () => renderProjectDetail(ctx, project.id)
-                   });
-                   return true; // close modal
-                }
-            }, '🎤 ' + t('voiceMemo'))
-        ),
+        content,
         actions: [
             { label: t('cancel'), class: 'btn btn--ghost', onClick: () => true }
         ]
     });
+
+    closeModal = modalRef.close;
 }
 
 function renderChecklist({ todos, modalHost, onToggleCompleted, onDelete, onDeleteAllCompleted, onTap, onEdit }) {

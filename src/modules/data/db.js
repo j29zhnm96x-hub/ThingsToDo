@@ -2,7 +2,7 @@ import { openDb, storeApi, txDone, reqDone } from './idb.js';
 import { nowIso } from './models.js';
 
 const DB_NAME = 'thingstodo-db';
-const DB_VERSION = 9;
+const DB_VERSION = 10;
 
 // IndexedDB indexes cannot use `null` keys reliably across browsers.
 // We store Inbox as a stable string sentinel and normalize at the API boundary.
@@ -68,6 +68,12 @@ function upgrade(db, tx) {
   if (!db.objectStoreNames.contains('checklistSuggestions')) {
     const s = db.createObjectStore('checklistSuggestions', { keyPath: 'id', autoIncrement: true });
     s.createIndex('by_textLower', 'textLower', { unique: true });
+  }
+
+  // projectNotes: freeform notes per project
+  if (!db.objectStoreNames.contains('projectNotes')) {
+    const s = db.createObjectStore('projectNotes', { keyPath: 'id' });
+    s.createIndex('by_project', 'projectId', { unique: false });
   }
 
   // Migration (v1 -> v2): replace null projectId with sentinel so it indexes.
@@ -388,6 +394,35 @@ export const db = {
     }
   },
 
+  projectNotes: {
+    async get(id) {
+      const dbi = await getDb();
+      return storeApi(dbi, 'projectNotes').get(id);
+    },
+    async put(note) {
+      const dbi = await getDb();
+      note.updatedAt = nowIso();
+      return storeApi(dbi, 'projectNotes').put(note);
+    },
+    async delete(id) {
+      const dbi = await getDb();
+      return storeApi(dbi, 'projectNotes').delete(id);
+    },
+    async listByProject(projectId) {
+      return listByIndex('projectNotes', 'by_project', projectId);
+    },
+    async clearForProject(projectId) {
+      const dbi = await getDb();
+      const tx = dbi.transaction('projectNotes', 'readwrite');
+      const store = tx.objectStore('projectNotes');
+      const idx = store.index('by_project');
+      const keysReq = idx.getAllKeys(projectId);
+      const keys = await reqDone(keysReq);
+      for (const key of keys) store.delete(key);
+      await txDone(tx);
+    }
+  },
+
   async wipeAll() {
     const dbi = await getDb();
     await Promise.all([
@@ -397,7 +432,8 @@ export const db = {
       storeApi(dbi, 'settings').clear(),
       storeApi(dbi, 'bin').clear(),
       storeApi(dbi, 'voiceMemos').clear(),
-      storeApi(dbi, 'checklistPages').clear()
+      storeApi(dbi, 'checklistPages').clear(),
+      storeApi(dbi, 'projectNotes').clear()
     ]);
   }
 };

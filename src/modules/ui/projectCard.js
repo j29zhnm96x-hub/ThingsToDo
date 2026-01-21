@@ -8,7 +8,8 @@ export function renderProjectCard({
   onMenu
 }) {
   const projectType = project.type || 'default';
-  const progress = stats.total > 0 ? (stats.completed / stats.total) * 100 : 0;
+  const hasTodos = stats.total > 0;
+  const progress = hasTodos ? Math.round((stats.completed / stats.total) * 100) : null;
 
   return el('div', {
     class: 'projectCard',
@@ -24,7 +25,8 @@ export function renderProjectCard({
         el('span', { class: 'projectCard__name' }, project.name),
         stats.active > 0
           ? el('span', { class: 'projectCard__count' }, `${stats.active} ${t('active')}`)
-          : (stats.total > 0 ? el('span', { class: 'projectCard__count' }, t('done')) : null)
+          : (stats.total > 0 ? el('span', { class: 'projectCard__count' }, t('done')) : null),
+        hasTodos ? el('span', { class: 'projectCard__progressText' }, `${progress}%`) : null
       ),
       project.protected ? el('span', { class: 'icon-protected', 'aria-label': t('protect') }, '🔒') : null,
       project.showInInbox ? el('span', { class: 'icon-protected', style: { opacity: 0.6 }, 'aria-label': t('linkToInbox') }, '🔗') : null,
@@ -37,9 +39,6 @@ export function renderProjectCard({
           onMenu?.(project, e);
         }
       }, '⋯')
-    ),
-    stats.total > 0
-      ? el('div', { class: 'projectCard__progress', style: { width: `${progress}%` } })
-      : null
+    )
   );
 }
