@@ -387,6 +387,12 @@ html[data-theme='dark'] .topbar__addBtn {
 .btn:active { transform: translateY(1px); }
 .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
+.btn--small {
+  padding: 6px 8px;
+  font-size: 14px;
+  min-height: 32px;
+}
+
 .btn--primary { 
   background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
   border-color: transparent; 
