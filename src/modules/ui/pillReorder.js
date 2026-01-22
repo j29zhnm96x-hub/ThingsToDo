@@ -189,6 +189,7 @@ export function enablePillReorder(containerEl, { onPersistOrder, longPressDelay 
     // Start long-press timer
     state.timer = window.setTimeout(() => {
       if (state && !state.dragStarted) {
+        state.pill.dataset.reordering = 'true';
         startDrag();
       }
     }, longPressDelay);
@@ -207,6 +208,7 @@ export function enablePillReorder(containerEl, { onPersistOrder, longPressDelay 
       if (dist > moveThreshold) {
         window.clearTimeout(state.timer);
         state.pill.dataset.dragging = 'false';
+        state.pill.dataset.reordering = 'false';
         state = null;
       }
       return;
@@ -225,6 +227,8 @@ export function enablePillReorder(containerEl, { onPersistOrder, longPressDelay 
     if (state.dragStarted) {
       e.preventDefault();
       e.stopPropagation();
+    } else {
+      state.pill.dataset.reordering = 'false';
     }
 
     finishDrag(true);

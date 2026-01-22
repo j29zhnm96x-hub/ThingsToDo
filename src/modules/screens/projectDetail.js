@@ -605,20 +605,22 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
     }, (t('clearPage') || 'Clear\nPage').split('\n').map(line => el('div', {}, line)));
     
     // --- Render Checklist with Drag Reorder ---
+    const onReorderItems = async (orderedIds) => {
+      for (let i = 0; i < orderedIds.length; i++) {
+        const todo = pageTodos.find(t => t.id === orderedIds[i]);
+        if (todo && todo.order !== i) {
+          await db.todos.put({ ...todo, order: i });
+        }
+      }
+    };
+
     const listEl = renderChecklistWithDrag({ 
       todos: pageTodos,
       modalHost,
       db,
       projectId,
       currentPageId,
-      onReorder: async (orderedIds) => {
-        for (let i = 0; i < orderedIds.length; i++) {
-          const todo = pageTodos.find(t => t.id === orderedIds[i]);
-          if (todo && todo.order !== i) {
-            await db.todos.put({ ...todo, order: i });
-          }
-        }
-      },
+      onReorder: onReorderItems,
       onToggleCompleted: async (todo, checked) => {
         if (checked) {
           await completeTodo(db, todo);
@@ -708,6 +710,8 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
         await renderProjectDetail(ctx, projectId, 0);
       }
     });
+
+    enablePillReorder(ctx, listEl, { onPersistOrder: onReorderItems, moveThreshold: 20, longPressDelay: 250 });
 
     // Clear All button for the current page
     const clearAllBtn = el('button', {
@@ -1493,7 +1497,7 @@ function renderChecklistWithDrag({ todos, modalHost, db, projectId, currentPageI
     }, todo.title);
 
     const row = el('div', {
-      class: completed ? 'checklist__item checklist__item--done' : 'checklist__item',
+      class: completed ? 'checklist__item checklist__item--done pill' : 'checklist__item pill',
       style: 'position: relative; overflow: hidden;',
       'data-todo-id': todo.id
     },
@@ -1509,9 +1513,15 @@ function renderChecklistWithDrag({ todos, modalHost, db, projectId, currentPageI
     );
 
     // Simple tap to open item
-    textSpan.addEventListener('click', () => {
-      hapticLight();
-      onTap?.(todo);
+    row.addEventListener('click', (e) => {
+      if (ignoreClick) {
+        ignoreClick = false;
+        return;
+      }
+      if (e.target.closest('.checklist__text')) {
+        hapticLight();
+        onTap?.(todo);
+      }
     });
 
     const handleTouchStart = (e) => {
