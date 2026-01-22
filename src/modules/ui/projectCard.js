@@ -28,17 +28,19 @@ export function renderProjectCard({
           : (stats.total > 0 ? el('span', { class: 'projectCard__count' }, t('done')) : null),
         hasTodos ? el('span', { class: 'projectCard__progressText' }, `${progress}%`) : null
       ),
-      project.protected ? el('span', { class: 'icon-protected', 'aria-label': t('protect') }, '🔒') : null,
-      project.showInInbox ? el('span', { class: 'icon-protected', style: { opacity: 0.6 }, 'aria-label': t('linkToInbox') }, '🔗') : null,
-      el('button', {
-        type: 'button',
-        class: 'projectCard__menuBtn iconBtn',
-        'aria-label': t('menu'),
-        onClick: (e) => {
-          e.stopPropagation();
-          onMenu?.(project, e);
-        }
-      }, '⋯')
+      el('div', { class: 'projectCard__icons' },
+        project.protected ? el('span', { class: 'icon-protected', 'aria-label': t('protect') }, '🔒') : null,
+        project.showInInbox ? el('span', { class: 'icon-protected', style: { opacity: 0.6 }, 'aria-label': t('linkToInbox') }, '🔗') : null,
+        el('button', {
+          type: 'button',
+          class: 'projectCard__menuBtn iconBtn',
+          'aria-label': t('menu'),
+          onClick: (e) => {
+            e.stopPropagation();
+            onMenu?.(project, e);
+          }
+        }, '⋯')
+      )
     )
   );
 }

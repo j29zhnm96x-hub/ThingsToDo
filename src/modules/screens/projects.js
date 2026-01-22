@@ -28,21 +28,45 @@ export async function renderProjects(ctx) {
     return 0;
   });
 
-  // Get todo counts for each project
-  const projectStats = new Map();
-  for (const p of projects) {
-    const todos = await db.todos.listByProject(p.id);
-    // Filter out archived and future recurring instances (same as display logic)
+  const projectsById = new Map(allProjects.map(p => [p.id, p]));
+
+  async function getAllTodosForProject(projectId, db, projectsById) {
+    const todos = await db.todos.listByProject(projectId);
     const nonArchived = todos
       .filter((t) => !t.archived)
       .filter((t) => {
-        // Exclude future recurring instances
         if (t.isRecurringInstance && t.dueDate && !isDueNowOrPast(t.dueDate)) return false;
         return true;
       });
-    const total = nonArchived.length;
-    const completed = nonArchived.filter(t => t.completed).length;
-    const active = total - completed;
+    const subprojects = Array.from(projectsById.values()).filter(p => p.parentId === projectId);
+    for (const sub of subprojects) {
+      const subTodos = await getAllTodosForProject(sub.id, db, projectsById);
+      nonArchived.push(...subTodos);
+    }
+    return nonArchived;
+  }
+
+  // Get todo counts for each project
+  const projectStats = new Map();
+  for (const p of projects) {
+    let total, completed, active;
+    if (p.type === 'default') {
+      const allTodos = await getAllTodosForProject(p.id, db, projectsById);
+      total = allTodos.length;
+      completed = allTodos.filter(t => t.completed).length;
+      active = total - completed;
+    } else {
+      const todos = await db.todos.listByProject(p.id);
+      const nonArchived = todos
+        .filter((t) => !t.archived)
+        .filter((t) => {
+          if (t.isRecurringInstance && t.dueDate && !isDueNowOrPast(t.dueDate)) return false;
+          return true;
+        });
+      total = nonArchived.length;
+      completed = nonArchived.filter(t => t.completed).length;
+      active = total - completed;
+    }
     projectStats.set(p.id, { total, completed, active });
   }
 

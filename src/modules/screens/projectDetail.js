@@ -943,7 +943,6 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
   if (projectNotes.length > 0) {
     console.log('Rendering project notes:', projectNotes.map(n => ({ id: n.id, text: n.text })));
     notesList = el('div', { class: 'notesList' },
-      el('div', { class: 'notesList__header' }, t('notes') || 'Notes'),
       ...projectNotes.map(note => {
         console.log('Rendering note:', note.id, 'text:', note.text);
         const existingTa = document.querySelector(`.inlineNote__input[data-note-id="${note.id}"]`);
@@ -963,6 +962,9 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
           textarea.style.height = `${Math.max(textarea.scrollHeight, 40)}px`;
         };
         autosize();
+
+        // Ensure autosize is called after the element is in the DOM
+        requestAnimationFrame(() => autosize());
 
         let saving = false;
         const saveText = async (value) => {
@@ -1006,7 +1008,17 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
           }
         }, '⋯');
 
-        return el('div', { class: 'inlineNote' }, textarea, menuBtn, clearBtn);
+        // Create header row with 'Note' label and menu on the same line
+        const noteHeader = el('div', { class: 'inlineNote__header' },
+          el('div', { class: 'inlineNote__label' }, t('note') || 'Note'),
+          menuBtn
+        );
+
+        // Body contains the textarea; clear button will be absolutely positioned inside
+        const body = el('div', { class: 'inlineNote__body' }, textarea);
+        const noteBox = el('div', { class: 'inlineNote' }, body, clearBtn);
+
+        return el('div', { class: 'inlineNoteWrapper' }, noteHeader, noteBox);
       })
     );
   }

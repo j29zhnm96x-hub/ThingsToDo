@@ -42,14 +42,99 @@
 
 .inlineNote {
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
   margin-bottom: 12px;
-  padding: 12px;
+  padding: 16px;
   border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--surface);
   position: relative;
+}
+
+.inlineNote__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: -20px;
+}
+
+.inlineNote__label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: none;
+  margin-top: -10px;
+}
+
+.inlineNote__body {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.inlineNote__input {
+  flex: 1;
+}
+
+.inlineNoteWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.inlineNote__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.inlineNote__label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin-top: -10px;
+}
+
+.inlineNote {
+  position: relative;
+}
+
+.inlineNote__clear {
+  position: absolute;
+  top: -3px;
+  right: 6px;
+  width: 18px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.inlineNote__menu {
+  align-self: center;
+  padding: 0;
+  min-width: 44px;
+  min-height: 44px;
+  font-size: 22px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(-6px);
+  background: none !important;
+  border: none !important;
+  color: var(--muted);
+  vertical-align: middle;
 }
 
 .inlineNote__input {
@@ -59,7 +144,7 @@
   border: none;
   background: transparent;
   color: var(--text);
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.4;
   outline: none;
   padding: 0;
@@ -67,25 +152,20 @@
 }
 
 .inlineNote__menu {
-  border: none;
-  background: rgba(255,255,255,0.08);
+  align-self: center;
+  padding: 0;
+  min-width: 44px;
+  min-height: 44px;
+  font-size: 22px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(-6px);
+  background: none !important;
+  border: none !important;
   color: var(--muted);
-  border-radius: 8px;
-  padding: 4px 8px;
-  font-size: 12px;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.inlineNote__clear {
-  border: none;
-  background: rgba(255,255,255,0.08);
-  color: var(--muted);
-  border-radius: 8px;
-  padding: 4px 8px;
-  font-size: 12px;
-  cursor: pointer;
-  flex-shrink: 0;
+  vertical-align: middle;
 }
 
   /* Surfaces used by inputs/todos so themes can swap them. */
@@ -300,6 +380,7 @@ html[data-theme='dark'] .topbar__addBtn {
   background: var(--surface2);
   color: var(--text);
   font-weight: 600;
+  font-size: 18px;
   cursor: pointer;
   transition: all 180ms ease;
 }
@@ -574,6 +655,12 @@ html[data-theme='light'] .projectCard[data-type='checklist'] {
   font-weight: 700;
   letter-spacing: 0.2px;
   color: var(--muted);
+}
+
+.projectCard__icons {
+  display: flex;
+  align-items: center;
+  gap: 2px;
 }
 
 .projectCard__menuBtn {
@@ -903,6 +990,12 @@ html[data-theme='light'] .checklist-clearPage-btn {
   min-width: 0;
 }
 
+.todo__icons {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
 .todo__titleArea {
   flex: 1;
   min-width: 0;
@@ -912,7 +1005,7 @@ html[data-theme='light'] .checklist-clearPage-btn {
 .todo__row2 {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 2px;
   color: var(--muted);
   font-size: 13px;
   min-height: 16px;
@@ -1695,7 +1788,6 @@ body.focus-mode .topbar {
   background: transparent;
   border: none;
   pointer-events: auto;
-  backdrop-filter: none;
 }
 
 body.focus-mode .topbar > * {
@@ -1728,7 +1820,6 @@ body.focus-mode .topbar {
   background: transparent !important;
   border-bottom: none !important;
   box-shadow: none !important;
-  backdrop-filter: none !important;
   pointer-events: auto;
 }
 

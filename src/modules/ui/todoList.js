@@ -204,12 +204,14 @@ export function renderTodoList({
     el('div', { class: 'todo__row1' },
       checkbox,
       titleArea,
-      dueTagInline,
-      recurringIcon,
-      noteIcon,
-      protectedIcon,
-      linkIcon,
-      menuBtn
+      el('div', { class: 'todo__icons' },
+        dueTagInline,
+        recurringIcon,
+        noteIcon,
+        protectedIcon,
+        linkIcon,
+        menuBtn
+      )
     ),
     row2);
 
