@@ -133,18 +133,6 @@ export function initApp(root) {
                   } 
               }, '+')
             );
-          } else {
-             // Focus Mode Toggle
-             const toggleBtn = el('button', { 
-                 class: 'focus-toggle-btn', 
-                 type: 'button', 
-                 'aria-label': 'Focus Mode', 
-                 onClick: () => { 
-                     hapticLight(); 
-                     document.body.classList.toggle('focus-mode'); 
-                 } 
-             }, '⛶');
-             topbarActions.append(toggleBtn);
           }
         }
         await renderProjectDetail(ctx, route.params.projectId);

@@ -618,7 +618,7 @@ const translations = {
     clearAllItems: 'Obrisati sve stavke?',
     clearAllItemsConfirm: 'Ovo će obrisati sve stavke na ovoj stranici. Jeste li sigurni?',
     noItemsToClear: 'Nema stavki za brisanje',
-    clearPage: 'Obriši\nstranicu',
+    clearPage: 'Obriši\nsve',
     confirmClearSuggestions: 'Obrisati sve spremljene prijedloge?',
     deleteSuggestionConfirm: 'Obrisati ovaj prijedlog?',
     suggestionDeleted: 'Prijedlog obrisan',

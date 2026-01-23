@@ -539,7 +539,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
         content: el('div', { class: 'small' }, t('pageActions') || 'Page actions'),
         actions: [
           { label: t('rename'), class: 'btn', onClick: () => {
-            setTimeout(() => openRenamePageModal({ modalHost, db, page, onSaved: () => renderProjectDetail(ctx, projectId, 0) }), 50);
+            openRenamePageModal({ modalHost, db, page, onSaved: () => renderProjectDetail(ctx, projectId, 0) });
             return true;
           }},
           !isOnlyPage ? { label: t('delete'), class: 'btn btn--danger', onClick: async () => {
@@ -577,7 +577,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
         hapticLight();
         openAddPageModal({ modalHost, db, projectId, pages, onCreated: () => renderProjectDetail(ctx, projectId) });
       }
-    }, '+');
+    }, 'Add\npage'.split('\n').map(line => el('div', {}, line)));
     
     // --- Clear Page Button (floating, above add page) ---
     const clearPageBtn = el('button', {
@@ -603,6 +603,17 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
         await renderProjectDetail(ctx, projectId, 0);
       }
     }, (t('clearPage') || 'Clear\nPage').split('\n').map(line => el('div', {}, line)));
+    
+    // --- Focus Mode Toggle Button (floating, under add page) ---
+    const focusBtn = el('button', {
+      type: 'button',
+      class: 'checklist-focus-btn',
+      'aria-label': 'Toggle Focus Mode',
+      onClick: () => {
+        hapticLight();
+        document.body.classList.toggle('focus-mode');
+      }
+    }, '⛶');
     
     // --- Render Checklist with Drag Reorder ---
     const onReorderItems = async (orderedIds) => {
@@ -750,7 +761,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
     const container = el('div', { 
       class: 'checklist-container',
       style: 'min-height: calc(100vh - 44px - var(--safe-top) - 74px - var(--safe-bottom) - 28px); position: relative;'
-    }, contentStack, clearPageBtn, addPageBtn);
+    }, contentStack, clearPageBtn, addPageBtn, focusBtn);
 
     main.append(container);
 
@@ -760,7 +771,15 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
     }
 
     // Double-tap to add item (only on empty space below the list)
-    const triggerAdd = () => quickAddChecklist({ modalHost, db, projectId, pageId: currentPageId, useSuggestions: project.useSuggestions === true, onCreated: () => renderProjectDetail(ctx, projectId) });
+    const triggerAdd = () => quickAddChecklist({ 
+      modalHost, 
+      db, 
+      projectId, 
+      pageId: currentPageId, 
+      useSuggestions: project.useSuggestions === true, 
+      enableQtyUnits: project.enableQtyUnits === true,
+      onCreated: () => renderProjectDetail(ctx, projectId) 
+    });
 
     let lastTap = 0;
     container.addEventListener('touchend', (e) => {
@@ -1338,15 +1357,17 @@ function renderChecklist({ todos, modalHost, onToggleCompleted, onDelete, onDele
   return container;
 }
 
-async function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated, useSuggestions = false }) {
-  const input = el('input', { class: 'input', placeholder: t('itemName') || 'Item name', 'aria-label': t('itemName') || 'Item name', autocomplete: 'off' });
+function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated, useSuggestions = false, enableQtyUnits = false }) {
+  const input = el('input', { 
+    class: 'input', 
+    placeholder: t('itemName') || 'Item name', 
+    'aria-label': t('itemName') || 'Item name', 
+    autocomplete: 'off'
+  });
+  input.autofocus = true; // Set property directly
 
   const dropdown = el('ul', { class: 'suggestion-dropdown', style: 'display:none;' });
   let container = el('div', { style: 'position: relative;' }, input, dropdown);
-
-  // Check if project has qty/units enabled
-  const project = await db.projects.get(projectId);
-  const enableQtyUnits = project ? project.enableQtyUnits : false;
 
   let qtyInput, selectedUnit = '';
 
@@ -1456,11 +1477,26 @@ async function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated, 
     ]
   });
 
-  try { input.focus(); input.select?.(); } catch (e) { /* ignore */ }
+  // Triple-focus strategy for mobile keyboard reliability
+  const focusInput = () => {
+    try {
+      if (document.activeElement !== input) {
+        input.focus();
+        // A click can help some mobile browsers realize focus is intended
+        if (document.activeElement !== input) input.click();
+      }
+    } catch (e) { /* ignore */ }
+  };
+
+  focusInput(); // 1. Immediate focus
+  setTimeout(focusInput, 10);  // 2. Very shortly after (allow DOM to settle)
+  setTimeout(focusInput, 100); // 3. Slightly delayed
+  setTimeout(focusInput, 400); // 4. Safety delay for slow renders
 }
 
 function openAddPageModal({ modalHost, db, projectId, pages, onCreated }) {
   const input = el('input', { class: 'input', placeholder: t('pageName') || 'Page name', 'aria-label': t('pageName') || 'Page name' });
+  input.autofocus = true;
 
   const addPage = async () => {
     const name = input.value.trim();
@@ -1482,11 +1518,18 @@ function openAddPageModal({ modalHost, db, projectId, pages, onCreated }) {
     ]
   });
 
-  try { input.focus(); } catch (e) { /* ignore */ }
+  const focusInput = () => {
+    try { input.focus(); } catch (e) { /* ignore */ }
+  };
+  focusInput();
+  requestAnimationFrame(focusInput);
+  setTimeout(focusInput, 100);
+  setTimeout(focusInput, 300);
 }
 
 function openRenamePageModal({ modalHost, db, page, onSaved }) {
   const input = el('input', { class: 'input', value: page.name || '', placeholder: t('pageName') || 'Page name', 'aria-label': t('pageName') || 'Page name' });
+  input.autofocus = true;
 
   const savePage = async () => {
     const name = input.value.trim();
@@ -1505,7 +1548,13 @@ function openRenamePageModal({ modalHost, db, page, onSaved }) {
     ]
   });
 
-  try { input.focus(); input.select?.(); } catch (e) { /* ignore */ }
+  const focusInput = () => {
+    try { input.focus(); input.select?.(); } catch (e) { /* ignore */ }
+  };
+  focusInput();
+  requestAnimationFrame(focusInput);
+  setTimeout(focusInput, 100);
+  setTimeout(focusInput, 300);
 }
 
 // --- Checklist with Drag Reorder (long-press to drag, like inbox) ---

@@ -824,7 +824,7 @@ html[data-theme='light'] .checklist-pill--active {
 /* Add Page Button (floating) */
 .checklist-addPage-btn {
   position: fixed;
-  bottom: calc(55px + 74px);
+  bottom: calc(55px + 74px + 6px);
   right: 16px;
   width: 48px;
   height: 48px;
@@ -832,9 +832,10 @@ html[data-theme='light'] .checklist-pill--active {
   border: none;
   background: var(--accent);
   color: white;
-  font-size: 24px;
-  font-weight: 300;
+  font-size: 10px;
+  font-weight: 500;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   cursor: pointer;
@@ -842,6 +843,7 @@ html[data-theme='light'] .checklist-pill--active {
   transition: transform 200ms ease, box-shadow 200ms ease;
   -webkit-tap-highlight-color: transparent;
   z-index: 100;
+  line-height: 1.1;
 }
 
 .checklist-addPage-btn:hover {
@@ -861,7 +863,7 @@ html[data-theme='light'] .checklist-addPage-btn {
 /* Clear Page Button (floating, above add page) */
 .checklist-clearPage-btn {
   position: fixed;
-  bottom: calc(55px + 74px + 64px);
+  bottom: calc(55px + 74px + 64px + 6px);
   right: 16px;
   width: 48px;
   height: 48px;
@@ -890,6 +892,43 @@ html[data-theme='light'] .checklist-addPage-btn {
 
 .checklist-clearPage-btn:active {
   transform: scale(0.95);
+}
+
+/* Focus Mode Toggle Button (floating, under add page) */
+.checklist-focus-btn {
+  position: fixed;
+  bottom: calc(55px + 74px - 64px + 6px);
+  right: 16px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  color: white;
+  font-size: 20px;
+  font-weight: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+  -webkit-tap-highlight-color: transparent;
+  z-index: 100;
+}
+
+.checklist-focus-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+}
+
+.checklist-focus-btn:active {
+  transform: scale(0.95);
+}
+
+html[data-theme='light'] .checklist-focus-btn {
+  background: #6366f1;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
 }
 
 html[data-theme='light'] .checklist-clearPage-btn {
@@ -1734,36 +1773,17 @@ body.focus-mode .tabbar {
   display: none !important;
 }
 
-/* Keep topbar mounted so the focus toggle remains accessible */
+/* Hide topbar in focus mode for full screen */
 body.focus-mode .topbar {
-  display: flex !important;
+  display: none !important;
 }
 
 body.focus-mode .main {
-  padding-top: calc(env(safe-area-inset-top) + 16px);
-  padding-bottom: calc(env(safe-area-inset-bottom) + 16px);
+  padding-top: 0;
 }
 
-.focus-exit-btn {
-  display: none;
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 1000;
-  background: var(--primary);
-  color: white;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-  font-size: 24px;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-
-body.focus-mode .focus-exit-btn {
-  display: flex;
+body.focus-mode .checklist-container {
+  min-height: calc(100vh - env(safe-area-inset-bottom));
 }
 
 
@@ -1774,20 +1794,6 @@ body.focus-mode .focus-exit-btn {
   margin-bottom: 24px;
   padding-bottom: 16px;
   border-bottom: 1px dashed var(--border);
-}
-
-
-.focus-toggle-btn {
-  background: transparent;
-  border: none;
-  font-size: 1.2rem;
-  margin-right: 8px;
-  z-index: 2000;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 8px;
-  color: var(--text);
-  transition: opacity 0.2s;
 }
 
 body.focus-mode .topbar {
@@ -1819,41 +1825,6 @@ body.focus-mode .focus-toggle-btn {
 
 html, body {
   scroll-behavior: auto !important;
-}
-
-/* Improved Focus Mode Logic */
-body.focus-mode .topbar {
-  background: transparent !important;
-  border-bottom: none !important;
-  box-shadow: none !important;
-  pointer-events: auto;
-}
-
-body.focus-mode .topbar__title, 
-body.focus-mode .topbar__menuBtn,
-body.focus-mode .topbar__backBtn,
-body.focus-mode .topbar__addBtn {
-  opacity: 0 !important;
-  pointer-events: none !important;
-  visibility: hidden; /* Ensure they don't block clicks if opacity fails */
-}
-
-body.focus-mode .topbar__actions {
-  visibility: visible; 
-  pointer-events: auto;
-}
-
-body.focus-mode .focus-toggle-btn {
-  visibility: visible;
-  opacity: 1 !important;
-  pointer-events: auto !important;
-  background: transparent;
-  color: var(--text);
-  border: none;
-  box-shadow: none;
-  /* Ensure it sits on top of scrolling content */
-  position: relative; 
-  z-index: 5000;
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
