@@ -579,7 +579,18 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
       }
     }, 'Add\npage'.split('\n').map(line => el('div', {}, line)));
     
-    // --- Clear Page Button (floating, above add page) ---
+    // --- Add Item Button (floating, above clear page) ---
+    const addItemBtn = el('button', {
+      type: 'button',
+      class: 'checklist-addItem-btn',
+      'aria-label': t('addItem') || 'Add item',
+      onClick: () => {
+        hapticLight();
+        quickAddChecklist({ modalHost, db, projectId, pageId: currentPageId, useSuggestions: project.useSuggestions === true, enableQtyUnits: project.enableQtyUnits === true, onCreated: () => renderProjectDetail(ctx, projectId) });
+      }
+    }, '+');
+    
+    // --- Clear Page Button (floating, above add item) ---
     const clearPageBtn = el('button', {
       type: 'button',
       class: 'checklist-clearPage-btn',
@@ -761,7 +772,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
     const container = el('div', { 
       class: 'checklist-container',
       style: 'min-height: calc(100vh - 44px - var(--safe-top) - 74px - var(--safe-bottom) - 28px); position: relative;'
-    }, contentStack, clearPageBtn, addPageBtn, focusBtn);
+    }, contentStack, clearPageBtn, addItemBtn, addPageBtn, focusBtn);
 
     main.append(container);
 

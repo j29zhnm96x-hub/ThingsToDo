@@ -860,7 +860,44 @@ html[data-theme='light'] .checklist-addPage-btn {
   box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
 }
 
-/* Clear Page Button (floating, above add page) */
+/* Add Item Button (floating, top of stack) */
+.checklist-addItem-btn {
+  position: fixed;
+  bottom: calc(55px + 74px + 64px + 6px + 64px);
+  right: 16px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  background: #4ade80; /* Light green */
+  color: white;
+  font-size: 24px;
+  font-weight: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(74, 222, 128, 0.4);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+  -webkit-tap-highlight-color: transparent;
+  z-index: 100;
+}
+
+.checklist-addItem-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(74, 222, 128, 0.5);
+}
+
+.checklist-addItem-btn:active {
+  transform: scale(0.95);
+}
+
+html[data-theme='light'] .checklist-addItem-btn {
+  background: #22c55e;
+  box-shadow: 0 4px 16px rgba(34, 197, 94, 0.3);
+}
+
+/* Clear Page Button (floating, below add item) */
 .checklist-clearPage-btn {
   position: fixed;
   bottom: calc(55px + 74px + 64px + 6px);
