@@ -273,14 +273,23 @@ export function openCreateProject({ db, modalHost, onCreated, parentId = null })
     useSuggestionsToggle
   );
 
+  const enableQtyUnitsToggle = el('input', { type: 'checkbox', 'aria-label': t('enableQtyUnits') || 'Enable quantity and units' });
+  const qtyUnitsRow = el('label', { class: 'label', style: 'display:none;' },
+    el('span', {}, t('enableQtyUnits') || 'Enable quantity and units for items'),
+    enableQtyUnitsToggle
+  );
+
   typeSelect.addEventListener('change', () => {
-    suggestionsRow.style.display = typeSelect.value === 'checklist' ? '' : 'none';
+    const isChecklist = typeSelect.value === 'checklist';
+    suggestionsRow.style.display = isChecklist ? '' : 'none';
+    qtyUnitsRow.style.display = isChecklist ? '' : 'none';
   });
 
   const content = el('div', { class: 'stack' },
     el('label', { class: 'label' }, el('span', {}, t('projectName')), nameInput),
     el('label', { class: 'label' }, el('span', {}, t('projectType')), typeSelect),
-    suggestionsRow
+    suggestionsRow,
+    qtyUnitsRow
   );
 
   openModal(modalHost, {
@@ -298,7 +307,7 @@ export function openCreateProject({ db, modalHost, onCreated, parentId = null })
             return false;
           }
           const type = typeSelect.value === 'checklist' ? 'checklist' : 'default';
-          const project = newProject({ name, type, parentId, useSuggestions: type === 'checklist' ? useSuggestionsToggle.checked : false });
+          const project = newProject({ name, type, parentId, useSuggestions: type === 'checklist' ? useSuggestionsToggle.checked : false, enableQtyUnits: type === 'checklist' ? enableQtyUnitsToggle.checked : false });
           await db.projects.put(project);
           
           if (type === 'checklist') {

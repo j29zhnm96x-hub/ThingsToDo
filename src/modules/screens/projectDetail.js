@@ -1338,28 +1338,36 @@ function renderChecklist({ todos, modalHost, onToggleCompleted, onDelete, onDele
   return container;
 }
 
-function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated, useSuggestions = false }) {
+async function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated, useSuggestions = false }) {
   const input = el('input', { class: 'input', placeholder: t('itemName') || 'Item name', 'aria-label': t('itemName') || 'Item name', autocomplete: 'off' });
 
-  const qtyInput = el('input', { type: 'text', inputmode: 'numeric', pattern: '[0-9]*', placeholder: t('qty') || 'Qty', class: 'input input--small', style: 'width: 60px; margin-right: 8px;' });
-  let selectedUnit = '';
-
-  const unitButtons = ['unitPcs', 'unitKg', 'unitLit'].map(key => 
-    el('button', { 
-      type: 'button', 
-      class: 'btn btn--small', 
-      onClick: () => { 
-        selectedUnit = t(key) || key; 
-        unitButtons.forEach(btn => btn.classList.remove('btn--primary')); 
-        event.target.classList.add('btn--primary'); 
-      } 
-    }, t(key) || key)
-  );
-
-  const qtyRow = el('div', { style: 'display: flex; align-items: center; margin-top: 8px; gap: 6px;' }, qtyInput, ...unitButtons);
-
   const dropdown = el('ul', { class: 'suggestion-dropdown', style: 'display:none;' });
-  const container = el('div', { style: 'position: relative;' }, input, qtyRow, dropdown);
+  let container = el('div', { style: 'position: relative;' }, input, dropdown);
+
+  // Check if project has qty/units enabled
+  const project = await db.projects.get(projectId);
+  const enableQtyUnits = project ? project.enableQtyUnits : false;
+
+  let qtyInput, selectedUnit = '';
+
+  if (enableQtyUnits) {
+    qtyInput = el('input', { type: 'text', inputmode: 'numeric', pattern: '[0-9]*', placeholder: t('qty') || 'Qty', class: 'input input--small', style: 'width: 60px; margin-right: 8px;' });
+
+    const unitButtons = ['unitPcs', 'unitKg', 'unitLit'].map(key => 
+      el('button', { 
+        type: 'button', 
+        class: 'btn btn--small', 
+        onClick: () => { 
+          selectedUnit = t(key) || key; 
+          unitButtons.forEach(btn => btn.classList.remove('btn--primary')); 
+          event.target.classList.add('btn--primary'); 
+        } 
+      }, t(key) || key)
+    );
+
+    const qtyRow = el('div', { style: 'display: flex; align-items: center; margin-top: 8px; gap: 6px;' }, qtyInput, ...unitButtons);
+    container.appendChild(qtyRow);
+  }
 
   const hideDropdown = () => {
     dropdown.style.display = 'none';
@@ -1417,7 +1425,7 @@ function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated, useSug
       return false;
     }
     const baseTitle = title; // Store base title for suggestions
-    const qty = qtyInput.value.trim();
+    const qty = enableQtyUnits && qtyInput ? qtyInput.value.trim() : '';
     if (qty && selectedUnit) {
       title += ` (${qty} ${selectedUnit})`;
     } else if (qty) {

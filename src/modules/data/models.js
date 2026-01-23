@@ -19,7 +19,7 @@ export function nowIso() {
   return new Date().toISOString();
 }
 
-export function newProject({ name, type = 'default', parentId = null, useSuggestions = false }) {
+export function newProject({ name, type = 'default', parentId = null, useSuggestions = false, enableQtyUnits = false }) {
   const t = nowIso();
   return {
     id: uuid(),
@@ -28,6 +28,7 @@ export function newProject({ name, type = 'default', parentId = null, useSuggest
     parentId, // Parent project ID if it is a sub-project
     showInInbox: false,
     useSuggestions: !!useSuggestions,
+    enableQtyUnits: !!enableQtyUnits,
     createdAt: t,
     updatedAt: t,
     sortOrder: t // default: by created time
