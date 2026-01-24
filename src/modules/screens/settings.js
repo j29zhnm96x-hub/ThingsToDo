@@ -223,15 +223,25 @@ export async function renderSettings(ctx) {
   }
 
   async function exportData() {
+    const projects = await db.projects.list();
     const payload = {
       version: 1,
       exportedAt: new Date().toISOString(),
-      projects: await db.projects.list(),
+      projects,
       todos: [...(await db.todos.listActive()), ...(await db.todos.listArchived())],
       checklistPages: await db.checklistPages.list(),
       settings: await db.settings.get(),
-      attachments: []
+      attachments: [],
+      projectNotes: []
     };
+
+    // Gather all project notes so they are included in the export (covers edge cases)
+    try {
+      const allNotes = await db.projectNotes.list();
+      if (allNotes && allNotes.length) payload.projectNotes.push(...allNotes);
+    } catch (e) {
+      // If projectNotes store is missing on older DB versions, skip gracefully
+    }
 
     const atts = await db.attachments.list();
     // Convert blobs to data URLs for portability.
@@ -323,6 +333,15 @@ export async function renderSettings(ctx) {
             for (const t of (parsed.todos || [])) await db.todos.put(t);
             for (const page of (parsed.checklistPages || [])) await db.checklistPages.put(page);
             if (parsed.settings) await db.settings.put(parsed.settings);
+
+            // Restore project notes if present in the export (backward compatible)
+            for (const note of (parsed.projectNotes || [])) {
+              try {
+                await db.projectNotes.put(note);
+              } catch (e) {
+                // If projectNotes store doesn't exist on this runtime, skip restoring notes
+              }
+            }
 
             for (const a of (parsed.attachments || [])) {
               if (!a.dataUrl || !a.todoId) continue;

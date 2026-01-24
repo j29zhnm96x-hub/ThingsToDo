@@ -411,6 +411,10 @@ export const db = {
     async listByProject(projectId) {
       return listByIndex('projectNotes', 'by_project', projectId);
     },
+    async list() {
+      const dbi = await getDb();
+      return storeApi(dbi, 'projectNotes').list();
+    },
     async clearForProject(projectId) {
       const dbi = await getDb();
       const tx = dbi.transaction('projectNotes', 'readwrite');
