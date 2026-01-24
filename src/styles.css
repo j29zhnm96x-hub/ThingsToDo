@@ -186,26 +186,26 @@
   --safe-right: env(safe-area-inset-right, 0px);
 }
 
-/* Light mode - Fresh Sunrise Theme */
+/* Light mode - Warm Sunrise Theme */
 html[data-theme='light'] {
-  --bg: #f8fafc;
-  --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e8f0fe 100%);
-  --surface: #ffffff;
-  --surface2: #f8fafc;
-  --surface3: #f1f5f9;
-  --text: #1e293b;
-  --muted: #64748b;
-  --border: #e2e8f0;
-  --accent: #6366f1; /* Indigo accent */
-  --accent2: #ec4899; /* Pink secondary */
-  --glow: rgba(99, 102, 241, 0.2);
+  --bg: #FFF8F2; /* very pale beige */
+  --bg-gradient: linear-gradient(135deg, #FFF8F2 0%, #F5EFE6 50%, #F0E6D9 100%);
+  --surface: #F5EFE6; /* light beige card bg */
+  --surface2: #EFE6DB; /* slightly darker surface */
+  --surface3: #F0E6D9;
+  --text: #3C2E27; /* dark warm brown */
+  --muted: #76655A; /* medium warm brown */
+  --border: #E6DACE; /* subtle border */
+  --accent: #F6A86B; /* soft light orange (action) */
+  --accent2: #C9A984; /* soft brown secondary */
+  --glow: rgba(246,168,107,0.12);
 
-  /* Bar colors - soft gradient */
-  --topbar-bg: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-  --tabbar-bg: linear-gradient(0deg, #f1f5f9 0%, #ffffff 100%);
-  --modal-bg: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+  /* Bar colors - soft warm gradients */
+  --topbar-bg: linear-gradient(180deg, #FFF8F2 0%, #F5EFE6 100%);
+  --tabbar-bg: linear-gradient(0deg, #F0E6D9 0%, #FFF8F2 100%);
+  --modal-bg: linear-gradient(145deg, #FFF8F2 0%, #F5EFE6 100%);
 
-  --field: #ffffff;
+  --field: #fffaf5;
   --field-focus: #f8fafc;
 
   /* Card effects */
