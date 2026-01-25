@@ -4,6 +4,7 @@ import { confirm } from './confirm.js';
 import { compressAttachmentsForArchive } from '../logic/attachments.js';
 import { showToast } from './toast.js';
 import { t } from '../utils/i18n.js';
+import { pickProject } from './pickProject.js';
 
 async function deleteProjectRecursive(db, projectId) {
   const allProjects = await db.projects.list();
@@ -136,6 +137,7 @@ async function openDeleteProject(modalHost, { db, project, onChange }) {
 export function openProjectMenu(modalHost, { db, project, onChange }) {
   const editBtn = el('button', { class: 'btn', type: 'button' }, 'Edit');
   const linkBtn = el('button', { class: 'btn', type: 'button' }, project.showInInbox ? 'Unlink from Inbox' : 'Link to Inbox');
+  const moveBtn = el('button', { class: 'btn', type: 'button' }, t('move'));
   const deleteBtn = el('button', { class: 'btn btn--danger', type: 'button' }, 'Delete');
 
   editBtn.addEventListener('click', () => openEditProject(modalHost, { db, project, onChange }));
@@ -156,12 +158,56 @@ export function openProjectMenu(modalHost, { db, project, onChange }) {
   
   deleteBtn.addEventListener('click', () => openDeleteProject(modalHost, { db, project, onChange }));
 
+  moveBtn.addEventListener('click', async () => {
+    const allProjects = await db.projects.list();
+    const validProjects = allProjects.filter(p => p.type !== 'checklist' && p.id !== project.id);
+    
+    // Create custom picker with Top Level option
+    const select = el('select', { class: 'select', 'aria-label': 'Destination' });
+    select.appendChild(el('option', { value: '' }, t('topLevel')));
+    for (const p of validProjects) {
+      select.appendChild(el('option', { value: p.id }, p.name));
+    }
+    
+    const chosenId = await new Promise((resolve) => {
+      openModal(modalHost, {
+        title: t('moveToProject'),
+        content: el('div', { class: 'stack' },
+          el('label', { class: 'label' },
+            el('span', {}, 'Destination'),
+            select
+          )
+        ),
+        actions: [
+          { label: 'Cancel', class: 'btn btn--ghost', onClick: () => resolve(undefined) },
+          {
+            label: t('move'),
+            class: 'btn btn--primary',
+            onClick: () => {
+              const v = select.value;
+              resolve(v === '' ? null : v);
+              return true;
+            }
+          }
+        ]
+      });
+    });
+    
+    if (chosenId !== undefined) {
+      await db.projects.put({ ...project, parentId: chosenId });
+      onChange?.();
+      if (modalRef) modalRef.close();
+      showToast(t('projectMoved') || 'Project moved');
+    }
+  });
+
   modalRef = openModal(modalHost, {
     title: project.name,
     content: el('div', { class: 'stack' },
       el('div', { class: 'small' }, 'Project actions'),
       editBtn,
       linkBtn,
+      moveBtn,
       deleteBtn
     ),
     actions: [{ label: 'Close', class: 'btn btn--ghost', onClick: () => true }]
