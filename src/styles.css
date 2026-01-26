@@ -310,8 +310,8 @@ html[data-theme='light'] .topbar {
 }
 
 .topbar__date {
-  font-size: 12px;
-  color: var(--muted);
+  font-size: 14px;
+  color: var(--text);
   font-weight: 500;
   margin-left: 12px;
   margin-right: 6px;

@@ -22,7 +22,10 @@ export async function renderArchive(ctx) {
   clear(main);
 
   // Add Bin button to topbar
+  // Preserve existing date element (added by app init) when clearing actions
+  const existingDateEl = topbarActions.querySelector('.topbar__date');
   topbarActions.innerHTML = '';
+  if (existingDateEl) topbarActions.appendChild(existingDateEl);
   const binBtn = el('button', { 
     class: 'topbar__addBtn', 
     type: 'button', 
