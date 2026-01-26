@@ -15,6 +15,24 @@ import { t } from './utils/i18n.js';
 import { openModal } from './ui/modal.js';
 import { openRecordingModal } from './ui/voiceMemo.js';
 
+function getCurrentDateString() {
+  const now = new Date();
+  const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const dayName = t(days[now.getDay()]);
+  const options = { month: 'short', day: 'numeric' };
+  const dateStr = now.toLocaleDateString(undefined, options);
+  return `${dayName}, ${dateStr}`;
+}
+
+function appendDateToTopbar(topbarActions) {
+  const dateEl = el('div', { class: 'topbar__date', 'aria-label': 'Current date' }, getCurrentDateString());
+  topbarActions.append(dateEl);
+  // Update every minute
+  setInterval(() => {
+    dateEl.textContent = getCurrentDateString();
+  }, 60000);
+}
+
 export function initApp(root) {
   const main = document.getElementById('main');
   const topbarTitle = document.getElementById('topbarTitle');
@@ -89,6 +107,7 @@ export function initApp(root) {
       // Render screen
       if (route.name === 'inbox') {
         topbarTitle.textContent = t('inbox');
+        appendDateToTopbar(topbarActions);
         topbarActions.append(
           el('button', { class: 'topbar__addBtn', type: 'button', 'aria-label': t('addTask'), onClick: () => { 
             hapticLight(); 
@@ -98,6 +117,7 @@ export function initApp(root) {
         await renderInbox(ctx);
       } else if (route.name === 'projects') {
         topbarTitle.textContent = t('projects');
+        appendDateToTopbar(topbarActions);
         topbarActions.append(
           el('button', { class: 'topbar__addBtn', type: 'button', 'aria-label': t('newProject'), onClick: () => { hapticLight(); openCreateProject({ db, modalHost, onCreated: () => router.refresh() }); } }, '+')
         );
@@ -138,9 +158,11 @@ export function initApp(root) {
         await renderProjectDetail(ctx, route.params.projectId);
       } else if (route.name === 'archive') {
         topbarTitle.textContent = t('archive');
+        appendDateToTopbar(topbarActions);
         await renderArchive(ctx);
       } else if (route.name === 'settings') {
         topbarTitle.textContent = t('settings');
+        appendDateToTopbar(topbarActions);
         await renderSettings(ctx);
       } else if (route.name === 'help') {
         topbarTitle.textContent = t('help');
