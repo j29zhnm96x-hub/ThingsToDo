@@ -7,6 +7,7 @@ import { openProjectMenu } from '../ui/projectMenu.js';
 import { renderProjectCard } from '../ui/projectCard.js';
 import { t } from '../utils/i18n.js';
 import { isDueNowOrPast } from '../logic/recurrence.js';
+import { getAllTodosForProject } from '../logic/todoOps.js';
 
 export async function renderProjects(ctx) {
   const { main, db, modalHost } = ctx;
@@ -29,22 +30,6 @@ export async function renderProjects(ctx) {
   });
 
   const projectsById = new Map(allProjects.map(p => [p.id, p]));
-
-  async function getAllTodosForProject(projectId, db, projectsById) {
-    const todos = await db.todos.listByProject(projectId);
-    const nonArchived = todos
-      .filter((t) => !t.archived)
-      .filter((t) => {
-        if (t.isRecurringInstance && t.dueDate && !isDueNowOrPast(t.dueDate)) return false;
-        return true;
-      });
-    const subprojects = Array.from(projectsById.values()).filter(p => p.parentId === projectId);
-    for (const sub of subprojects) {
-      const subTodos = await getAllTodosForProject(sub.id, db, projectsById);
-      nonArchived.push(...subTodos);
-    }
-    return nonArchived;
-  }
 
   // Get todo counts for each project
   const projectStats = new Map();

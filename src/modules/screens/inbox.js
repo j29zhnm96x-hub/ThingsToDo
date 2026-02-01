@@ -2,7 +2,7 @@ import { el, clear, emptyState } from '../ui/dom.js';
 import { renderTodoList } from '../ui/todoList.js';
 import { pickProject } from '../ui/pickProject.js';
 import { confirm } from '../ui/confirm.js';
-import { moveTodo, reorderBucket, completeTodo, uncompleteTodo } from '../logic/todoOps.js';
+import { moveTodo, reorderBucket, completeTodo, uncompleteTodo, getAllTodosForProject } from '../logic/todoOps.js';
 import { compressAttachmentsForArchive } from '../logic/attachments.js';
 import { openTodoMenu } from '../ui/todoMenu.js';
 import { openTodoInfo } from '../ui/todoInfo.js';
@@ -55,9 +55,8 @@ export async function renderInbox(ctx) {
   const linkedProjects = projects.filter((p) => p.showInInbox);
   const linkedProjectStats = new Map();
   for (const p of linkedProjects) {
-    const pTodos = await db.todos.listByProject(p.id);
-    // Filter out archived and future recurring instances (same as display logic)
-    const nonArchived = pTodos
+    const allTodos = await getAllTodosForProject(p.id, db, projectsById);
+    const nonArchived = allTodos
       .filter((t) => !t.archived)
       .filter((t) => {
         // Exclude future recurring instances

@@ -209,8 +209,19 @@ html[data-theme='light'] {
   --field-focus: #f8fafc;
 
   /* Card effects */
-  --card-shadow: 0 4px 15px rgba(99, 102, 241, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
-  --card-hover-shadow: 0 8px 25px rgba(99, 102, 241, 0.12), 0 4px 6px rgba(0, 0, 0, 0.05);
+  /* stronger card shadow for light theme for better visibility */
+  --card-shadow: 0 6px 24px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(99, 102, 241, 0.08);
+  --card-hover-shadow: 0 10px 36px rgba(0, 0, 0, 0.14), 0 6px 18px rgba(99, 102, 241, 0.10);
+}
+
+/* Add a subtle 1px dark outline to all common card elements in light mode */
+html[data-theme='light'] .card,
+html[data-theme='light'] .todo,
+html[data-theme='light'] .projectCard,
+html[data-theme='light'] .inlineNote,
+html[data-theme='light'] .voiceMemo,
+html[data-theme='light'] .modal {
+  outline: 1px solid rgba(0,0,0,0.28);
 }
 
 
@@ -562,7 +573,7 @@ html[data-theme='dark'] .topbar__addBtn {
 
 .list {
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 .todo {
@@ -586,9 +597,10 @@ html[data-theme='dark'] .topbar__addBtn {
 
 /* Project cards - same size/style as todo cards but lighter */
 .projectCard {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 0;
-  padding: 2px 12px;
+  padding: 0 12px 4px;
   border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--surface);
@@ -633,11 +645,37 @@ html[data-theme='light'] .projectCard[data-type='checklist'] {
   border-left: 4px solid #a855f7;
 }
 
+html[data-theme='light'] .projectCard[data-type='default'] .projectCard__progressFill {
+  background: #f59e0b; /* darker yellow for light theme */
+}
+
+html[data-theme='light'] .projectCard[data-type='checklist'] .projectCard__progressFill {
+  background: #a855f7; /* darker purple for light theme */
+}
+
 .projectCard__row {
   display: flex;
   align-items: center;
   gap: 8px;
   min-width: 0;
+}
+
+.projectCard__row1 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  margin-bottom: -1px;
+}
+
+.projectCard__row2 {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+  margin-top: -4px;
+  transform: translateY(-4px);
 }
 
 .projectCard__info {
@@ -651,7 +689,7 @@ html[data-theme='light'] .projectCard[data-type='checklist'] {
 .projectCard__name {
   font-weight: 600;
   font-size: 15px;
-  line-height: 1.2;
+  line-height: 0.98;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -659,6 +697,7 @@ html[data-theme='light'] .projectCard[data-type='checklist'] {
 
 .projectCard__count {
   font-size: 13px;
+  line-height: 0.98;
   color: var(--muted);
   white-space: nowrap;
   flex-shrink: 0;
@@ -666,10 +705,35 @@ html[data-theme='light'] .projectCard[data-type='checklist'] {
 
 .projectCard__progressText {
   margin-left: auto;
+  position: relative;
+  top: 0px;
   font-size: 12px;
+  line-height: 0.98;
   font-weight: 700;
   letter-spacing: 0.2px;
   color: var(--muted);
+}
+
+.projectCard__progressBar {
+  width: 100%;
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  margin-top: -3px;
+}
+
+.projectCard__progressFill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.projectCard[data-type='default'] .projectCard__progressFill {
+  background: #eab308; /* yellow */
+}
+
+.projectCard[data-type='checklist'] .projectCard__progressFill {
+  background: #8b5cf6; /* purple */
 }
 
 .projectCard__icons {

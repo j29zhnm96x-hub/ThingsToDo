@@ -20,14 +20,8 @@ export function renderProjectCard({
     },
     'aria-label': `${t('project')}: ${project.name}`
   },
-    el('div', { class: 'projectCard__row' },
-      el('div', { class: 'projectCard__info' },
-        el('span', { class: 'projectCard__name' }, project.name),
-        stats.active > 0
-          ? el('span', { class: 'projectCard__count' }, `${stats.active} ${t('active')}`)
-          : (stats.total > 0 ? el('span', { class: 'projectCard__count' }, t('done')) : null),
-        hasTodos ? el('span', { class: 'projectCard__progressText' }, `${progress}%`) : null
-      ),
+    el('div', { class: 'projectCard__row1' },
+      el('span', { class: 'projectCard__name' }, project.name),
       el('div', { class: 'projectCard__icons' },
         project.protected ? el('span', { class: 'icon-protected', 'aria-label': t('protect') }, '🔒') : null,
         project.showInInbox ? el('span', { class: 'icon-protected', style: { opacity: 0.6 }, 'aria-label': t('linkToInbox') }, '🔗') : null,
@@ -41,6 +35,15 @@ export function renderProjectCard({
           }
         }, '⋯')
       )
-    )
+    ),
+    el('div', { class: 'projectCard__row2' },
+      stats.active > 0
+        ? el('span', { class: 'projectCard__count' }, `${stats.active} ${t('active')}`)
+        : (stats.total > 0 ? el('span', { class: 'projectCard__count' }, t('done')) : null),
+      hasTodos ? el('span', { class: 'projectCard__progressText' }, `${progress}%`) : null
+    ),
+    hasTodos ? el('div', { class: 'projectCard__progressBar' },
+      el('div', { class: 'projectCard__progressFill', style: `width: ${progress}%` })
+    ) : null
   );
 }

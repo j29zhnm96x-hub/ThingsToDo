@@ -1,6 +1,7 @@
 import { maxOrderFor } from './sorting.js';
 import { compressAttachmentsForArchive } from './attachments.js';
 import { createNextRecurringInstance } from './recurrence.js';
+import { isDueNowOrPast } from './recurrence.js';
 
 // Shared operations that must keep ordering rules consistent.
 // Default sorting:
@@ -173,4 +174,20 @@ export async function uncompleteTodo(db, todo) {
   };
   
   await db.todos.put(activeTodo);
+}
+
+export async function getAllTodosForProject(projectId, db, projectsById) {
+  const todos = await db.todos.listByProject(projectId);
+  const nonArchived = todos
+    .filter((t) => !t.archived)
+    .filter((t) => {
+      if (t.isRecurringInstance && t.dueDate && !isDueNowOrPast(t.dueDate)) return false;
+      return true;
+    });
+  const subprojects = Array.from(projectsById.values()).filter(p => p.parentId === projectId);
+  for (const sub of subprojects) {
+    const subTodos = await getAllTodosForProject(sub.id, db, projectsById);
+    nonArchived.push(...subTodos);
+  }
+  return nonArchived;
 }
