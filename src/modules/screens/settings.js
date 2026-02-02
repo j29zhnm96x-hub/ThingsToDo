@@ -1,7 +1,7 @@
 import { el, clear } from '../ui/dom.js';
 import { openModal } from '../ui/modal.js';
 import { confirm } from '../ui/confirm.js';
-import { applyTheme } from '../ui/theme.js';
+import { applyTheme, applyPalette } from '../ui/theme.js';
 import { openBinModal } from '../ui/binModal.js';
 import { showToast } from '../ui/toast.js';
 import { t, getLang, setLang, languageNames, getAvailableLanguages } from '../utils/i18n.js';
@@ -26,6 +26,7 @@ export async function renderSettings(ctx) {
 
   const settings = await db.settings.get();
   const isLight = settings.theme === 'light';
+  const themePalette = settings.themePalette || 'default';
   const compressImages = settings.compressImages !== false; // Default to true
   const compressArchivedImages = settings.compressArchivedImages !== false; // Default to true
   const voiceQuality = settings.voiceQuality || 'low'; // Default to low
@@ -38,9 +39,40 @@ export async function renderSettings(ctx) {
 
   themeToggle.addEventListener('change', async () => {
     const nextTheme = themeToggle.checked ? 'light' : 'dark';
-    await db.settings.put({ ...settings, theme: nextTheme });
+    const nextSettings = { ...await db.settings.get(), theme: nextTheme };
+    await db.settings.put(nextSettings);
     applyTheme(nextTheme);
+    applyPalette(nextSettings.themePalette || 'default');
   });
+
+  const paletteOptions = [
+    { id: 'default', label: t('paletteDefault') },
+    { id: 'purple', label: t('palettePurple') },
+    { id: 'orange', label: t('paletteOrange') },
+    { id: 'red', label: t('paletteRed') },
+    { id: 'blue', label: t('paletteBlue') }
+  ];
+
+  const paletteSwatches = el('div', { class: 'theme-swatches', role: 'group', 'aria-label': t('theme') },
+    ...paletteOptions.map((p) => {
+      const isSelected = p.id === themePalette;
+      return el('button', {
+        type: 'button',
+        class: `theme-swatch${isSelected ? ' is-selected' : ''}`,
+        dataset: { palette: p.id },
+        'aria-label': p.label,
+        title: p.label,
+        'aria-pressed': isSelected ? 'true' : 'false',
+        onClick: async () => {
+          if (p.id === themePalette) return;
+          const nextSettings = { ...await db.settings.get(), themePalette: p.id };
+          await db.settings.put(nextSettings);
+          applyPalette(p.id);
+          await renderSettings(ctx);
+        }
+      }, isSelected ? '✓' : '');
+    })
+  );
 
   const compressToggle = el('input', {
     type: 'checkbox',
@@ -120,14 +152,7 @@ export async function renderSettings(ctx) {
         el('div', { class: 'small' }, t('themeLight')),
         themeToggle
       ),
-      el('div', { class: 'row' },
-        el('div', { class: 'small' }, t('compressImages')),
-        compressToggle
-      ),
-      el('div', { class: 'row' },
-        el('div', { class: 'small' }, t('extraCompressArchive')),
-        compressArchiveToggle
-      )
+      paletteSwatches
     ),
     el('div', { class: 'card stack' },
       el('div', { style: { fontWeight: '700' } }, t('help')),
@@ -136,6 +161,14 @@ export async function renderSettings(ctx) {
     el('div', { class: 'card stack' },
       el('div', { style: { fontWeight: '700' } }, t('dataManagement')),
       el('div', { class: 'small' }, t('dataStoredLocally')),
+      el('div', { class: 'row' },
+        el('div', { class: 'small' }, t('compressImages')),
+        compressToggle
+      ),
+      el('div', { class: 'row' },
+        el('div', { class: 'small' }, t('extraCompressArchive')),
+        compressArchiveToggle
+      ),
       exportBtn,
       importBtn,
       binBtn,

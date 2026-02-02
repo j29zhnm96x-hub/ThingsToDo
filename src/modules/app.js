@@ -8,7 +8,7 @@ import { renderSettings } from './screens/settings.js';
 import { renderHelp } from './screens/help.js';
 import { openTodoEditor } from './ui/todoEditor.js';
 import { el } from './ui/dom.js';
-import { applyTheme } from './ui/theme.js';
+import { applyTheme, applyPalette } from './ui/theme.js';
 import { autoArchiveCompleted, autoEmptyBin } from './logic/todoOps.js';
 import { hapticLight } from './ui/haptic.js';
 import { t } from './utils/i18n.js';
@@ -78,9 +78,10 @@ export function initApp(root) {
       // Empty bin items older than 24h
       await autoEmptyBin(db);
 
-      // Apply persisted theme (default: dark).
+      // Apply persisted theme and palette (default: dark + default palette).
       const settings = await db.settings.get();
       applyTheme(settings.theme || 'dark');
+      applyPalette(settings.themePalette || 'default');
 
       // Update tab labels with translations
       tabButtons.forEach((btn) => {
