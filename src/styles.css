@@ -1081,16 +1081,18 @@ html[data-theme='light'] .checklist__item {
 
 /* Pages that contain at least one active (unchecked) item */
 .checklist-pill--has-active {
+  /* Use a single 1px outline drawn slightly inset so it's not clipped by the scroll container */
   outline: 1px solid var(--danger);
-  outline-offset: 1px;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--danger) 80%, transparent);
+  outline-offset: -1px;
+  box-shadow: none;
 }
 
 /* Keep the red outline visible even when the pill is active */
 .checklist-pill--active.checklist-pill--has-active {
   outline: 1px solid var(--danger);
-  outline-offset: 1px;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--danger) 80%, transparent), 0 2px 12px var(--glow);
+  outline-offset: -1px;
+  /* preserve glow but avoid duplicating the 1px ring */
+  box-shadow: 0 2px 12px var(--glow);
 }
 
 html[data-theme='light'] .checklist-pill--active {
