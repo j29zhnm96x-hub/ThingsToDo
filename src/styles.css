@@ -1079,6 +1079,20 @@ html[data-theme='light'] .checklist__item {
   color: white;
 }
 
+/* Pages that contain at least one active (unchecked) item */
+.checklist-pill--has-active {
+  outline: 1px solid var(--danger);
+  outline-offset: 1px;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--danger) 80%, transparent);
+}
+
+/* Keep the red outline visible even when the pill is active */
+.checklist-pill--active.checklist-pill--has-active {
+  outline: 1px solid var(--danger);
+  outline-offset: 1px;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--danger) 80%, transparent), 0 2px 12px var(--glow);
+}
+
 html[data-theme='light'] .checklist-pill--active {
   background: #6366f1;
   border-color: #6366f1;

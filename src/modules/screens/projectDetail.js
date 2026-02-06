@@ -396,6 +396,15 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
       return false;
     }).sort((a, b) => (a.order || 0) - (b.order || 0));
     
+    // Compute which pages have active (unchecked) items.
+    const pageHasActive = new Map(pages.map((p) => [p.id, false]));
+    if (firstPageId) {
+      for (const todo of todos) {
+        const normalizedPageId = (todo.pageId && validPageIds.has(todo.pageId)) ? todo.pageId : firstPageId;
+        if (!todo.completed) pageHasActive.set(normalizedPageId, true);
+      }
+    }
+
     // --- Page Pill Bar (only show if 2+ pages) ---
     let pillBar = null;
     if (pages.length >= 2) {
@@ -403,12 +412,23 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
         class: 'checklist-pills',
         style: 'overflow-x: auto; overflow-y: hidden; white-space: nowrap;'
       });
-      
-      pages.forEach(page => {
+
+      // Auto-prioritize pages with active items (left), keep user order within each group.
+      const sortedPages = [...pages].sort((a, b) => {
+        const aKey = pageHasActive.get(a.id) ? 0 : 1;
+        const bKey = pageHasActive.get(b.id) ? 0 : 1;
+        if (aKey !== bKey) return aKey - bKey;
+        const aOrder = Number.isFinite(a.order) ? a.order : 0;
+        const bOrder = Number.isFinite(b.order) ? b.order : 0;
+        return aOrder - bOrder;
+      });
+
+      sortedPages.forEach(page => {
         const isActive = page.id === currentPageId;
+        const hasActiveItems = pageHasActive.get(page.id) === true;
         const pill = el('button', { 
           type: 'button',
-          class: `checklist-pill pill ${isActive ? 'checklist-pill--active' : ''}`,
+          class: `checklist-pill pill ${isActive ? 'checklist-pill--active' : ''} ${hasActiveItems ? 'checklist-pill--has-active' : ''}`,
           role: 'button',
           dataset: {
             pageId: page.id,
