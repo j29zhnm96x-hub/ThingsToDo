@@ -705,81 +705,87 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
           });
         };
 
-        const moveChecklistItem = async () => {
-          // 1) Offer moving within the same checklist project first (to another page)
-          openModal(modalHost, {
-            title: t('move') || 'Move',
-            content: el('div', { class: 'small' }, todo.title),
-            actions: [
-              {
-                label: t('moveToPage') || 'Move to page',
-                class: 'btn',
-                onClick: async () => {
-                  const pageId = await pickChecklistPage(modalHost, {
-                    title: t('moveToPage') || 'Move to page',
-                    pages,
-                    initial: todo.pageId || currentPageId,
-                    confirmLabel: t('move') || 'Move'
-                  });
-                  if (pageId === undefined) return true;
-                  if (!pageId) return true;
-                  await moveTodo(db, todo, projectId, { pageId });
-                  await renderProjectDetail(ctx, projectId, 0);
-                  return true;
-                }
-              },
-              {
-                label: t('moveToProject') || 'Move to Project',
-                class: 'btn',
-                onClick: async () => {
-                  const dest = await pickProject(modalHost, {
-                    title: t('moveToProject') || 'Move to Project',
-                    projects,
-                    includeInbox: true,
-                    initial: todo.projectId ?? null,
-                    confirmLabel: t('move') || 'Move'
-                  });
-                  if (dest === undefined) return true;
-
-                  // Inbox or normal project => convert to regular task by clearing pageId
-                  if (dest == null) {
-                    await moveTodo(db, todo, null, { pageId: null });
-                    await renderProjectDetail(ctx, projectId, 0);
+        const moveChecklistItem = () => {
+          // Important: open the next modal *after* the current one closes.
+          // Otherwise, closing the current modal will clear modalHost and the
+          // newly opened modal disappears immediately.
+          setTimeout(() => {
+            openModal(modalHost, {
+              title: t('move') || 'Move',
+              content: el('div', { class: 'small' }, todo.title),
+              actions: [
+                {
+                  label: t('moveToPage') || 'Move to page',
+                  class: 'btn',
+                  onClick: () => {
+                    setTimeout(async () => {
+                      const pageId = await pickChecklistPage(modalHost, {
+                        title: t('moveToPage') || 'Move to page',
+                        pages,
+                        initial: todo.pageId || currentPageId,
+                        confirmLabel: t('move') || 'Move'
+                      });
+                      if (pageId === undefined || !pageId) return;
+                      await moveTodo(db, todo, projectId, { pageId });
+                      await renderProjectDetail(ctx, projectId, 0);
+                    }, 0);
                     return true;
                   }
+                },
+                {
+                  label: t('moveToProject') || 'Move to Project',
+                  class: 'btn',
+                  onClick: () => {
+                    setTimeout(async () => {
+                      const dest = await pickProject(modalHost, {
+                        title: t('moveToProject') || 'Move to Project',
+                        projects,
+                        includeInbox: true,
+                        initial: todo.projectId ?? null,
+                        confirmLabel: t('move') || 'Move'
+                      });
+                      if (dest === undefined) return;
 
-                  const destProject = await db.projects.get(dest);
-                  const destIsChecklist = (destProject?.type === 'checklist');
-                  if (!destIsChecklist) {
-                    await moveTodo(db, todo, dest, { pageId: null });
-                    await renderProjectDetail(ctx, projectId, 0);
+                      // Inbox or normal project => convert to regular task by clearing pageId
+                      if (dest == null) {
+                        await moveTodo(db, todo, null, { pageId: null });
+                        await renderProjectDetail(ctx, projectId, 0);
+                        return;
+                      }
+
+                      const destProject = await db.projects.get(dest);
+                      const destIsChecklist = (destProject?.type === 'checklist');
+                      if (!destIsChecklist) {
+                        await moveTodo(db, todo, dest, { pageId: null });
+                        await renderProjectDetail(ctx, projectId, 0);
+                        return;
+                      }
+
+                      let destPages = await db.checklistPages.listByProject(dest);
+                      destPages.sort(sortPagesByOrder);
+                      if (destPages.length === 0) {
+                        const defaultPage = newChecklistPage({ projectId: dest, name: '' });
+                        defaultPage.order = 0;
+                        await db.checklistPages.put(defaultPage);
+                        destPages = [defaultPage];
+                      }
+                      const destPageId = await pickChecklistPage(modalHost, {
+                        title: t('moveToPage') || 'Move to page',
+                        pages: destPages,
+                        initial: destPages[0]?.id,
+                        confirmLabel: t('move') || 'Move'
+                      });
+                      if (destPageId === undefined || !destPageId) return;
+                      await moveTodo(db, todo, dest, { pageId: destPageId });
+                      await renderProjectDetail(ctx, projectId, 0);
+                    }, 0);
                     return true;
                   }
-
-                  let destPages = await db.checklistPages.listByProject(dest);
-                  destPages.sort(sortPagesByOrder);
-                  if (destPages.length === 0) {
-                    const defaultPage = newChecklistPage({ projectId: dest, name: '' });
-                    defaultPage.order = 0;
-                    await db.checklistPages.put(defaultPage);
-                    destPages = [defaultPage];
-                  }
-                  const destPageId = await pickChecklistPage(modalHost, {
-                    title: t('moveToPage') || 'Move to page',
-                    pages: destPages,
-                    initial: destPages[0]?.id,
-                    confirmLabel: t('move') || 'Move'
-                  });
-                  if (destPageId === undefined) return true;
-                  if (!destPageId) return true;
-                  await moveTodo(db, todo, dest, { pageId: destPageId });
-                  await renderProjectDetail(ctx, projectId, 0);
-                  return true;
-                }
-              },
-              { label: t('cancel') || 'Cancel', class: 'btn btn--ghost', onClick: () => true }
-            ]
-          });
+                },
+                { label: t('cancel') || 'Cancel', class: 'btn btn--ghost', onClick: () => true }
+              ]
+            });
+          }, 0);
         };
 
         openModal(modalHost, {
@@ -790,7 +796,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
               setTimeout(() => openEditChecklistItem({ modalHost, db, todo, onSaved: () => renderProjectDetail(ctx, projectId, 0) }), 50);
               return true; 
             } },
-            { label: t('move'), class: 'btn', onClick: async () => (moveChecklistItem(), true) },
+            { label: t('move'), class: 'btn', onClick: () => (moveChecklistItem(), true) },
             { label: t('close'), class: 'btn btn--primary', onClick: () => true }
           ]
         });
