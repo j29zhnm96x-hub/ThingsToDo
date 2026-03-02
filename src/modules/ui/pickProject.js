@@ -1,12 +1,13 @@
 import { el } from './dom.js';
 import { openModal } from './modal.js';
+import { t } from '../utils/i18n.js';
 
 export async function pickProject(modalHost, { title, projects, includeInbox = true, initial = null, confirmLabel = 'Choose' }) {
   return new Promise((resolve) => {
-    const select = el('select', { class: 'select', 'aria-label': 'Destination' });
+    const select = el('select', { class: 'select', 'aria-label': t('destination') || 'Destination' });
 
     if (includeInbox) {
-      select.appendChild(el('option', { value: '' }, 'Inbox'));
+      select.appendChild(el('option', { value: '' }, t('inbox') || 'Inbox'));
     }
 
     for (const p of projects) {
@@ -17,7 +18,7 @@ export async function pickProject(modalHost, { title, projects, includeInbox = t
 
     const content = el('div', { class: 'stack' },
       el('label', { class: 'label' },
-        el('span', {}, 'Destination'),
+        el('span', {}, t('destination') || 'Destination'),
         select
       )
     );
@@ -28,7 +29,7 @@ export async function pickProject(modalHost, { title, projects, includeInbox = t
       actions: [
         // Important: return `undefined` for Cancel so callers can distinguish
         // between Cancel and choosing Inbox (which is `null`).
-        { label: 'Cancel', class: 'btn btn--ghost', onClick: () => (resolve(undefined), true) },
+        { label: t('cancel') || 'Cancel', class: 'btn btn--ghost', onClick: () => (resolve(undefined), true) },
         {
           label: confirmLabel,
           class: 'btn btn--primary',

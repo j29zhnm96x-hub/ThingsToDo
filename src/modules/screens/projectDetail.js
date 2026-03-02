@@ -672,6 +672,116 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
         await renderProjectDetail(ctx, projectId, 0);
       },
       onTap: (todo) => {
+        const pickChecklistPage = (modalHost, { title, pages, initial = null, confirmLabel }) => {
+          return new Promise((resolve) => {
+            const select = el('select', { class: 'select', 'aria-label': 'Page' });
+            for (const p of pages) {
+              select.appendChild(el('option', { value: p.id }, p.name || t('untitled') || 'Untitled'));
+            }
+            if (initial != null) select.value = initial;
+
+            const content = el('div', { class: 'stack' },
+              el('label', { class: 'label' },
+                el('span', {}, t('page') || 'Page'),
+                select
+              )
+            );
+
+            openModal(modalHost, {
+              title,
+              content,
+              actions: [
+                { label: t('cancel') || 'Cancel', class: 'btn btn--ghost', onClick: () => (resolve(undefined), true) },
+                {
+                  label: confirmLabel,
+                  class: 'btn btn--primary',
+                  onClick: () => {
+                    resolve(select.value || null);
+                    return true;
+                  }
+                }
+              ]
+            });
+          });
+        };
+
+        const moveChecklistItem = async () => {
+          // 1) Offer moving within the same checklist project first (to another page)
+          openModal(modalHost, {
+            title: t('move') || 'Move',
+            content: el('div', { class: 'small' }, todo.title),
+            actions: [
+              {
+                label: t('moveToPage') || 'Move to page',
+                class: 'btn',
+                onClick: async () => {
+                  const pageId = await pickChecklistPage(modalHost, {
+                    title: t('moveToPage') || 'Move to page',
+                    pages,
+                    initial: todo.pageId || currentPageId,
+                    confirmLabel: t('move') || 'Move'
+                  });
+                  if (pageId === undefined) return true;
+                  if (!pageId) return true;
+                  await moveTodo(db, todo, projectId, { pageId });
+                  await renderProjectDetail(ctx, projectId, 0);
+                  return true;
+                }
+              },
+              {
+                label: t('moveToProject') || 'Move to Project',
+                class: 'btn',
+                onClick: async () => {
+                  const dest = await pickProject(modalHost, {
+                    title: t('moveToProject') || 'Move to Project',
+                    projects,
+                    includeInbox: true,
+                    initial: todo.projectId ?? null,
+                    confirmLabel: t('move') || 'Move'
+                  });
+                  if (dest === undefined) return true;
+
+                  // Inbox or normal project => convert to regular task by clearing pageId
+                  if (dest == null) {
+                    await moveTodo(db, todo, null, { pageId: null });
+                    await renderProjectDetail(ctx, projectId, 0);
+                    return true;
+                  }
+
+                  const destProject = await db.projects.get(dest);
+                  const destIsChecklist = (destProject?.type === 'checklist');
+                  if (!destIsChecklist) {
+                    await moveTodo(db, todo, dest, { pageId: null });
+                    await renderProjectDetail(ctx, projectId, 0);
+                    return true;
+                  }
+
+                  let destPages = await db.checklistPages.listByProject(dest);
+                  destPages.sort(sortPagesByOrder);
+                  if (destPages.length === 0) {
+                    const defaultPage = newChecklistPage({ projectId: dest, name: '' });
+                    defaultPage.order = 0;
+                    await db.checklistPages.put(defaultPage);
+                    destPages = [defaultPage];
+                  }
+                  const destPageId = await pickChecklistPage(modalHost, {
+                    title: t('moveToPage') || 'Move to page',
+                    pages: destPages,
+                    initial: destPages[0]?.id,
+                    confirmLabel: t('move') || 'Move'
+                  });
+                  if (destPageId === undefined) return true;
+                  if (!destPageId) return true;
+                  await moveTodo(db, todo, dest, { pageId: destPageId });
+                  await renderProjectDetail(ctx, projectId, 0);
+                  return true;
+                }
+              },
+              { label: t('cancel') || 'Cancel', class: 'btn btn--ghost', onClick: () => true }
+            ]
+          });
+        };
+
         openModal(modalHost, {
           title: t('itemDetails') || 'Item Details',
           content: el('div', { style: 'word-wrap: break-word; white-space: pre-wrap;' }, todo.title),
@@ -680,6 +790,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
               setTimeout(() => openEditChecklistItem({ modalHost, db, todo, onSaved: () => renderProjectDetail(ctx, projectId, 0) }), 50);
               return true; 
             } },
+            { label: t('move'), class: 'btn', onClick: async () => (moveChecklistItem(), true) },
             { label: t('close'), class: 'btn btn--primary', onClick: () => true }
           ]
         });

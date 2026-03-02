@@ -15,8 +15,31 @@ async function placeAtEndOfBucket(db, todo, projectId) {
   return { ...todo, projectId: projectId ?? null, order: (Number.isFinite(max) ? max : -1) + 1 };
 }
 
-export async function moveTodo(db, todo, projectId) {
-  const updated = await placeAtEndOfBucket(db, todo, projectId);
+async function placeAtEndOfChecklistPage(db, todo, projectId, pageId) {
+  const dest = (await db.todos.listByProject(projectId))
+    .filter((t) => !t.archived)
+    .filter((t) => (t.pageId ?? null) === (pageId ?? null));
+
+  let max = -1;
+  for (const t of dest) {
+    if (Number.isFinite(t.order)) max = Math.max(max, t.order);
+  }
+
+  return {
+    ...todo,
+    projectId: projectId ?? null,
+    pageId: pageId ?? null,
+    order: max + 1
+  };
+}
+
+export async function moveTodo(db, todo, projectId, { pageId = null } = {}) {
+  // If a destination pageId is provided, treat the destination as a checklist page move.
+  // Otherwise, treat it as a normal project/Inbox move and clear checklist-only fields.
+  const updated = pageId != null
+    ? await placeAtEndOfChecklistPage(db, { ...todo }, projectId, pageId)
+    : await placeAtEndOfBucket(db, { ...todo, pageId: null }, projectId);
+
   await db.todos.put(updated);
 }
 
