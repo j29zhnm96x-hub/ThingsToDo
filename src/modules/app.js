@@ -15,6 +15,22 @@ import { t } from './utils/i18n.js';
 import { openModal } from './ui/modal.js';
 import { openRecordingModal } from './ui/voiceMemo.js';
 
+let topbarDateIntervalId = null;
+
+function getCurrentDayKey(now = new Date()) {
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function clearTopbarDateInterval() {
+  if (topbarDateIntervalId !== null) {
+    clearInterval(topbarDateIntervalId);
+    topbarDateIntervalId = null;
+  }
+}
+
 function getCurrentDateString() {
   const now = new Date();
   const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -25,10 +41,11 @@ function getCurrentDateString() {
 }
 
 function appendDateToTopbar(topbarActions) {
+  clearTopbarDateInterval();
   const dateEl = el('div', { class: 'topbar__date', 'aria-label': 'Current date' }, getCurrentDateString());
   topbarActions.append(dateEl);
   // Update every minute
-  setInterval(() => {
+  topbarDateIntervalId = setInterval(() => {
     dateEl.textContent = getCurrentDateString();
   }, 60000);
 }
@@ -39,6 +56,42 @@ export function initApp(root) {
   const topbarActions = document.getElementById('topbarActions');
   const modalHost = document.getElementById('modalHost');
   const tabButtons = Array.from(document.querySelectorAll('.tabbar__tab'));
+  let lastDayKey = getCurrentDayKey();
+  let dayRefreshTimeoutId = null;
+
+  function clearDayRefreshTimeout() {
+    if (dayRefreshTimeoutId !== null) {
+      clearTimeout(dayRefreshTimeoutId);
+      dayRefreshTimeoutId = null;
+    }
+  }
+
+  function scheduleDayRefreshCheck() {
+    clearDayRefreshTimeout();
+    const now = new Date();
+    const nextMidnight = new Date(now);
+    nextMidnight.setHours(24, 0, 1, 0);
+    const delay = Math.max(1000, nextMidnight.getTime() - now.getTime());
+    dayRefreshTimeoutId = setTimeout(() => {
+      void refreshIfDayChanged();
+    }, delay);
+  }
+
+  async function refreshIfDayChanged() {
+    const nextDayKey = getCurrentDayKey();
+    if (nextDayKey === lastDayKey) {
+      scheduleDayRefreshCheck();
+      return;
+    }
+    lastDayKey = nextDayKey;
+    await router.refresh();
+    scheduleDayRefreshCheck();
+  }
+
+  function handleAppVisible() {
+    if (document.visibilityState === 'hidden') return;
+    void refreshIfDayChanged();
+  }
 
   const ctx = {
     root,
@@ -66,12 +119,20 @@ export function initApp(root) {
     history.replaceState(null, '', `${location.pathname}${location.search}#inbox`);
   }
 
+  document.addEventListener('visibilitychange', handleAppVisible);
+  window.addEventListener('focus', handleAppVisible);
+  window.addEventListener('pageshow', handleAppVisible);
+  scheduleDayRefreshCheck();
+
   router.init({
     async onRoute(route) {
       // Ensure DB is ready once at startup.
       await db.ready();
+      lastDayKey = getCurrentDayKey();
+      scheduleDayRefreshCheck();
 
       document.body.classList.remove('focus-mode');
+      clearTopbarDateInterval();
 
       // Auto-archive completed todos older than 24h (runs on each navigation, but fast)
       await autoArchiveCompleted(db);
