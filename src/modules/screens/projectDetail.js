@@ -788,9 +788,25 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
           }, 0);
         };
 
+        const detailTextEl = el('div', { style: 'word-wrap: break-word; white-space: pre-wrap; cursor: default; user-select: none; -webkit-user-select: none;' }, todo.title);
+        let _lpTimer = null;
+        detailTextEl.addEventListener('pointerdown', (e) => {
+          if (e.button > 0) return;
+          _lpTimer = setTimeout(async () => {
+            _lpTimer = null;
+            const text = todo.title;
+            try { await navigator.clipboard.writeText(text); } catch (_) {}
+            showToast(t('textCopied') || 'Copied');
+          }, 650);
+        });
+        const _lpCancel = () => { if (_lpTimer) { clearTimeout(_lpTimer); _lpTimer = null; } };
+        detailTextEl.addEventListener('pointerup', _lpCancel);
+        detailTextEl.addEventListener('pointercancel', _lpCancel);
+        detailTextEl.addEventListener('pointermove', _lpCancel);
+        detailTextEl.addEventListener('contextmenu', (e) => e.preventDefault());
         openModal(modalHost, {
           title: t('itemDetails') || 'Item Details',
-          content: el('div', { style: 'word-wrap: break-word; white-space: pre-wrap;' }, todo.title),
+          content: detailTextEl,
           actions: [
             { label: t('edit'), class: 'btn', onClick: () => { 
               setTimeout(() => openEditChecklistItem({ modalHost, db, todo, onSaved: () => renderProjectDetail(ctx, projectId, 0) }), 50);
@@ -1506,13 +1522,14 @@ function renderChecklist({ todos, modalHost, onToggleCompleted, onDelete, onDele
 }
 
 function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated, useSuggestions = false, enableQtyUnits = false }) {
-  const input = el('input', { 
-    class: 'input', 
+  const input = el('textarea', { 
+    class: 'input input--title', 
     placeholder: t('itemName') || 'Item name', 
     'aria-label': t('itemName') || 'Item name', 
     autocomplete: 'off'
   });
-  input.autofocus = true; // Set property directly
+  const autosizeAdd = () => { input.style.height = 'auto'; input.style.height = input.scrollHeight + 'px'; };
+  input.addEventListener('input', autosizeAdd);
 
   const dropdown = el('ul', { class: 'suggestion-dropdown', style: 'display:none;' });
   let container = el('div', { style: 'position: relative;' }, input, dropdown);
@@ -1640,6 +1657,7 @@ function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated, useSug
   setTimeout(focusInput, 10);  // 2. Very shortly after (allow DOM to settle)
   setTimeout(focusInput, 100); // 3. Slightly delayed
   setTimeout(focusInput, 400); // 4. Safety delay for slow renders
+  setTimeout(autosizeAdd, 0);
 }
 
 function openAddPageModal({ modalHost, db, projectId, pages, onCreated }) {
@@ -2002,7 +2020,9 @@ function renderChecklistWithDrag({ todos, modalHost, db, projectId, currentPageI
 }
 
 function openEditChecklistItem({ modalHost, db, todo, onSaved }) {
-  const input = el('input', { class: 'input', value: todo.title, 'aria-label': 'Item name' });
+  const input = el('textarea', { class: 'input input--title', 'aria-label': 'Item name' }, todo.title);
+  const autosizeEdit = () => { input.style.height = 'auto'; input.style.height = input.scrollHeight + 'px'; };
+  input.addEventListener('input', autosizeEdit);
 
   const saveItem = async () => {
     const title = input.value.trim();
@@ -2033,5 +2053,6 @@ function openEditChecklistItem({ modalHost, db, todo, onSaved }) {
   });
 
   // Focus immediately (synchronously) to trigger mobile keyboard during the user gesture.
-  try { input.focus(); input.select?.(); } catch (e) { /* ignore */ }
+  try { input.focus(); } catch (e) { /* ignore */ }
+  setTimeout(autosizeEdit, 0);
 }

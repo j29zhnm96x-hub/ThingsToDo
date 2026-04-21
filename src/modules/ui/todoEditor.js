@@ -50,7 +50,12 @@ export async function openTodoEditor({
   // Track URLs for cleanup
   const objectUrls = [];
 
-  const titleInput = el('input', { class: 'input', required: 'required', value: todo.title, placeholder: t('taskTitle'), 'aria-label': t('title') });
+  const titleInput = el('textarea', { class: 'input input--title', required: 'required', placeholder: t('taskTitle'), 'aria-label': t('title') }, todo.title);
+  function autosizeTitleInput() {
+    titleInput.style.height = 'auto';
+    titleInput.style.height = titleInput.scrollHeight + 'px';
+  }
+  titleInput.addEventListener('input', autosizeTitleInput);
   const notesInput = el('textarea', { class: 'textarea', placeholder: t('taskNotes'), 'aria-label': t('notes') }, todo.notes || '');
   const prioritySelect = el('select', { class: 'select', 'aria-label': t('priority') });
   priorityOptions(prioritySelect, todo.priority);
@@ -484,6 +489,8 @@ export async function openTodoEditor({
 
   // Focus title for fast entry (synchronously to trigger keyboard on mobile)
   try { titleInput.focus(); } catch (e) { /* ignore */ }
+  // Autosize the textarea to fit existing content once rendered
+  setTimeout(autosizeTitleInput, 0);
 
   return modal;
 }

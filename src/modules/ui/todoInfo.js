@@ -1,5 +1,31 @@
 import { el } from './dom.js';
 import { openModal } from './modal.js';
+import { showToast } from './toast.js';
+import { t } from '../utils/i18n.js';
+
+const LONG_PRESS_MS = 650;
+function attachLongPressCopy(target, getText) {
+  let timer = null;
+  function start(e) {
+    if (e.button > 0) return;
+    timer = setTimeout(async () => {
+      timer = null;
+      const text = getText();
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (_) { /* clipboard may be unavailable */ }
+      showToast(t('textCopied') || 'Copied');
+    }, LONG_PRESS_MS);
+  }
+  function cancel() {
+    if (timer) { clearTimeout(timer); timer = null; }
+  }
+  target.addEventListener('pointerdown', start);
+  target.addEventListener('pointerup', cancel);
+  target.addEventListener('pointercancel', cancel);
+  target.addEventListener('pointermove', cancel);
+  target.addEventListener('contextmenu', (e) => e.preventDefault());
+}
 
 const PRIORITY_LABELS = {
   P0: 'Highest',
@@ -70,6 +96,7 @@ export async function openTodoInfo({ todo, db, modalHost, onEdit }) {
     todo.title
   );
   if (todo.completed) titleEl.style.textDecoration = 'line-through';
+  attachLongPressCopy(titleEl, () => [todo.title, todo.notes].filter(Boolean).join('\n\n'));
 
   // Priority badge
   const priorityEl = el('div', { class: 'todoInfo__row' },
@@ -89,12 +116,15 @@ export async function openTodoInfo({ todo, db, modalHost, onEdit }) {
     : null;
 
   // Notes
-  const notesEl = todo.notes
-    ? el('div', { class: 'todoInfo__section' },
-        el('div', { class: 'todoInfo__label' }, 'Notes'),
-        el('div', { class: 'todoInfo__notes' }, todo.notes)
-      )
-    : null;
+  let notesEl = null;
+  if (todo.notes) {
+    const notesTextEl = el('div', { class: 'todoInfo__notes' }, todo.notes);
+    attachLongPressCopy(notesTextEl, () => [todo.title, todo.notes].filter(Boolean).join('\n\n'));
+    notesEl = el('div', { class: 'todoInfo__section' },
+      el('div', { class: 'todoInfo__label' }, 'Notes'),
+      notesTextEl
+    );
+  }
 
   // Images
   let imagesEl = null;

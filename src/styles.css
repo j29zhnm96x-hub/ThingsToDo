@@ -752,6 +752,7 @@ html[data-theme='dark'] .topbar__addBtn {
 }
 
 .textarea { min-height: 96px; resize: vertical; }
+.input--title { height: auto; min-height: var(--tap); resize: none; overflow: hidden; line-height: 1.5; }
 .input:focus-visible, .select:focus-visible, .textarea:focus-visible {
   outline: none;
   border-color: var(--accent);
