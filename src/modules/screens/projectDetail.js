@@ -788,7 +788,45 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
           }, 0);
         };
 
-        const detailTextEl = el('div', { class: 'modalSelectableText' }, todo.title);
+        const detailTextEl = el('textarea', {
+          class: 'modalSelectableField',
+          readonly: 'readonly',
+          rows: '1',
+          'aria-label': t('itemDetails') || 'Item Details',
+          spellcheck: 'false'
+        }, todo.title);
+        const autosizeDetailText = () => {
+          detailTextEl.style.height = 'auto';
+          detailTextEl.style.height = detailTextEl.scrollHeight + 'px';
+        };
+        const selectAllDetailText = () => {
+          try {
+            detailTextEl.focus();
+            detailTextEl.select();
+            detailTextEl.setSelectionRange(0, detailTextEl.value.length);
+          } catch (e) { /* ignore */ }
+        };
+        let detailHoldTimer = null;
+        const startDetailHold = () => {
+          if (detailHoldTimer) clearTimeout(detailHoldTimer);
+          detailHoldTimer = setTimeout(() => {
+            detailHoldTimer = null;
+            selectAllDetailText();
+          }, 500);
+        };
+        const cancelDetailHold = () => {
+          if (!detailHoldTimer) return;
+          clearTimeout(detailHoldTimer);
+          detailHoldTimer = null;
+        };
+        detailTextEl.addEventListener('pointerdown', startDetailHold);
+        detailTextEl.addEventListener('pointerup', cancelDetailHold);
+        detailTextEl.addEventListener('pointercancel', cancelDetailHold);
+        detailTextEl.addEventListener('pointermove', cancelDetailHold);
+        detailTextEl.addEventListener('touchstart', startDetailHold, { passive: true });
+        detailTextEl.addEventListener('touchend', cancelDetailHold, { passive: true });
+        detailTextEl.addEventListener('touchcancel', cancelDetailHold, { passive: true });
+        detailTextEl.addEventListener('input', autosizeDetailText);
         openModal(modalHost, {
           title: t('itemDetails') || 'Item Details',
           content: detailTextEl,
@@ -801,6 +839,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
             { label: t('close'), class: 'btn btn--primary', onClick: () => true }
           ]
         });
+        setTimeout(autosizeDetailText, 0);
       },
       onEdit: (todo) => {
         openEditChecklistItem({ modalHost, db, todo, onSaved: () => renderProjectDetail(ctx, projectId, 0) });
