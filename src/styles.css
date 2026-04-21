@@ -445,6 +445,17 @@ input, textarea, select {
   -webkit-user-select: text;
   user-select: text;
 }
+
+.modalSelectableText {
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  cursor: text;
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+  touch-action: auto;
+}
+
 button { -webkit-tap-highlight-color: transparent; }
 
 .skip-link {

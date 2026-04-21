@@ -788,31 +788,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
           }, 0);
         };
 
-        const detailTextEl = el('div', { style: 'word-wrap: break-word; white-space: pre-wrap; cursor: default; user-select: none; -webkit-user-select: none;' }, todo.title);
-        let _lpTimer = null;
-        detailTextEl.addEventListener('pointerdown', (e) => {
-          if (e.button > 0) return;
-          _lpTimer = setTimeout(() => {
-            _lpTimer = null;
-            const text = todo.title;
-            // execCommand fallback works reliably on iOS PWA where Clipboard API
-            // is blocked because setTimeout breaks the user-gesture chain.
-            const ta = document.createElement('textarea');
-            ta.value = text;
-            ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
-            document.body.appendChild(ta);
-            ta.focus();
-            ta.select();
-            try { document.execCommand('copy'); } catch (_) {}
-            document.body.removeChild(ta);
-            showToast(t('textCopied') || 'Copied');
-          }, 650);
-        });
-        const _lpCancel = () => { if (_lpTimer) { clearTimeout(_lpTimer); _lpTimer = null; } };
-        detailTextEl.addEventListener('pointerup', _lpCancel);
-        detailTextEl.addEventListener('pointercancel', _lpCancel);
-        detailTextEl.addEventListener('pointermove', _lpCancel);
-        detailTextEl.addEventListener('contextmenu', (e) => e.preventDefault());
+        const detailTextEl = el('div', { class: 'modalSelectableText' }, todo.title);
         openModal(modalHost, {
           title: t('itemDetails') || 'Item Details',
           content: detailTextEl,

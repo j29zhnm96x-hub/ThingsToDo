@@ -5,23 +5,44 @@ import { t } from '../utils/i18n.js';
 
 const LONG_PRESS_MS = 650;
 function attachLongPressCopy(target, getText) {
+  function copyText(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', 'readonly');
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none;';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    ta.setSelectionRange(0, ta.value.length);
+    let copied = false;
+    try { copied = document.execCommand('copy'); } catch (_) {}
+    document.body.removeChild(ta);
+    if (!copied && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).catch(() => {});
+    }
+  }
+
   let timer = null;
+  let ready = false;
   function start(e) {
     if (e.button > 0) return;
-    timer = setTimeout(async () => {
+    ready = false;
+    timer = setTimeout(() => {
       timer = null;
-      const text = getText();
-      try {
-        await navigator.clipboard.writeText(text);
-      } catch (_) { /* clipboard may be unavailable */ }
-      showToast(t('textCopied') || 'Copied');
+      ready = true;
     }, LONG_PRESS_MS);
   }
-  function cancel() {
-    if (timer) { clearTimeout(timer); timer = null; }
+  function finish() {
+    if (timer) { clearTimeout(timer); timer = null; ready = false; return; }
+    if (!ready) return;
+    ready = false;
+    const text = getText();
+    copyText(text);
+    showToast(t('textCopied') || 'Copied');
   }
+  function cancel() { if (timer) { clearTimeout(timer); timer = null; } ready = false; }
   target.addEventListener('pointerdown', start);
-  target.addEventListener('pointerup', cancel);
+  target.addEventListener('pointerup', finish);
   target.addEventListener('pointercancel', cancel);
   target.addEventListener('pointermove', cancel);
   target.addEventListener('contextmenu', (e) => e.preventDefault());
