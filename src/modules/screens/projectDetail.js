@@ -792,10 +792,19 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
         let _lpTimer = null;
         detailTextEl.addEventListener('pointerdown', (e) => {
           if (e.button > 0) return;
-          _lpTimer = setTimeout(async () => {
+          _lpTimer = setTimeout(() => {
             _lpTimer = null;
             const text = todo.title;
-            try { await navigator.clipboard.writeText(text); } catch (_) {}
+            // execCommand fallback works reliably on iOS PWA where Clipboard API
+            // is blocked because setTimeout breaks the user-gesture chain.
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            try { document.execCommand('copy'); } catch (_) {}
+            document.body.removeChild(ta);
             showToast(t('textCopied') || 'Copied');
           }, 650);
         });
