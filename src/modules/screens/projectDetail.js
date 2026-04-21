@@ -799,34 +799,25 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
           detailTextEl.style.height = 'auto';
           detailTextEl.style.height = detailTextEl.scrollHeight + 'px';
         };
-        const selectAllDetailText = () => {
-          try {
-            detailTextEl.focus();
-            detailTextEl.select();
-            detailTextEl.setSelectionRange(0, detailTextEl.value.length);
-          } catch (e) { /* ignore */ }
+        // When iOS does its native long-press word selection, selectionchange fires.
+        // We intercept it and extend to full text — iOS treats this as part of
+        // the same user gesture and keeps the native Copy toolbar visible.
+        const onSelectionChange = () => {
+          if (document.activeElement !== detailTextEl) return;
+          const len = detailTextEl.value.length;
+          const start = detailTextEl.selectionStart;
+          const end = detailTextEl.selectionEnd;
+          if (start !== end && (start !== 0 || end !== len)) {
+            detailTextEl.setSelectionRange(0, len);
+          }
         };
-        let detailHoldTimer = null;
-        const startDetailHold = () => {
-          if (detailHoldTimer) clearTimeout(detailHoldTimer);
-          detailHoldTimer = setTimeout(() => {
-            detailHoldTimer = null;
-            selectAllDetailText();
-          }, 500);
-        };
-        const cancelDetailHold = () => {
-          if (!detailHoldTimer) return;
-          clearTimeout(detailHoldTimer);
-          detailHoldTimer = null;
-        };
-        detailTextEl.addEventListener('pointerdown', startDetailHold);
-        detailTextEl.addEventListener('pointerup', cancelDetailHold);
-        detailTextEl.addEventListener('pointercancel', cancelDetailHold);
-        detailTextEl.addEventListener('pointermove', cancelDetailHold);
-        detailTextEl.addEventListener('touchstart', startDetailHold, { passive: true });
-        detailTextEl.addEventListener('touchend', cancelDetailHold, { passive: true });
-        detailTextEl.addEventListener('touchcancel', cancelDetailHold, { passive: true });
         detailTextEl.addEventListener('input', autosizeDetailText);
+        detailTextEl.addEventListener('focus', () => {
+          document.addEventListener('selectionchange', onSelectionChange);
+        });
+        detailTextEl.addEventListener('blur', () => {
+          document.removeEventListener('selectionchange', onSelectionChange);
+        });
         openModal(modalHost, {
           title: t('itemDetails') || 'Item Details',
           content: detailTextEl,
