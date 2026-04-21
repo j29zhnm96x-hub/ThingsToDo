@@ -795,29 +795,21 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
           'aria-label': t('itemDetails') || 'Item Details',
           spellcheck: 'false'
         }, todo.title);
+
         const autosizeDetailText = () => {
           detailTextEl.style.height = 'auto';
           detailTextEl.style.height = detailTextEl.scrollHeight + 'px';
         };
-        // When iOS does its native long-press word selection, selectionchange fires.
-        // We intercept it and extend to full text — iOS treats this as part of
-        // the same user gesture and keeps the native Copy toolbar visible.
-        const onSelectionChange = () => {
-          if (document.activeElement !== detailTextEl) return;
-          const len = detailTextEl.value.length;
-          const start = detailTextEl.selectionStart;
-          const end = detailTextEl.selectionEnd;
-          if (start !== end && (start !== 0 || end !== len)) {
-            detailTextEl.setSelectionRange(0, len);
-          }
+
+        // When the element is focused (tapped), select all text.
+        const selectAllText = () => {
+          detailTextEl.select();
         };
+
         detailTextEl.addEventListener('input', autosizeDetailText);
-        detailTextEl.addEventListener('focus', () => {
-          document.addEventListener('selectionchange', onSelectionChange);
-        });
-        detailTextEl.addEventListener('blur', () => {
-          document.removeEventListener('selectionchange', onSelectionChange);
-        });
+        detailTextEl.addEventListener('focus', selectAllText);
+        detailTextEl.addEventListener('pointerdown', selectAllText); // Also try on pointerdown
+
         openModal(modalHost, {
           title: t('itemDetails') || 'Item Details',
           content: detailTextEl,
@@ -1317,10 +1309,6 @@ function renderChecklist({ todos, modalHost, onToggleCompleted, onDelete, onDele
   let isCollapsed = localStorage.getItem(storageKey) === 'true';
 
   const makeRow = (todo, completed) => {
-    let pressTimer = null;
-    const LONG_PRESS_DURATION = 500; // 0.5 seconds
-
-    // Swipe tracking
     let startX = 0;
     let currentX = 0;
     let swiping = false;
