@@ -35,6 +35,84 @@ async function buildProjectsById(db) {
   return { projects, map };
 }
 
+function openChecklistAddMenu(ctx, {
+  project,
+  currentPageId,
+  firstPageId,
+  onRefresh
+}) {
+  const { modalHost, db } = ctx;
+  let closeModal = null;
+
+  const openBulkAddForChecklist = () => {
+    closeModal?.();
+    openBulkAddModal(modalHost, {
+      title: t('addMultiple') || 'Add Multiple',
+      label: t('checklistItems') || 'Checklist items',
+      placeholder: t('bulkAddExampleItems') || 'milk\nbananas\nbread',
+      submitLabel: t('addItems') || 'Add Items',
+      onSubmit: async (items) => {
+        const currentTodosForProject = await db.todos.listByProject(project.id);
+        const pageItems = currentTodosForProject.filter((item) => {
+          if (item.pageId === currentPageId) return true;
+          return currentPageId === firstPageId && !item.pageId;
+        });
+        const nextOrder = pageItems.reduce((maxOrder, item) => {
+          const order = Number.isFinite(item.order) ? item.order : -1;
+          return Math.max(maxOrder, order);
+        }, -1) + 1;
+
+        const todosToCreate = items.map((title, index) => {
+          const todo = newTodo({ title, projectId: project.id, pageId: currentPageId });
+          todo.order = nextOrder + index;
+          return todo;
+        });
+
+        await Promise.all(todosToCreate.map((todo) => db.todos.put(todo)));
+        if (project.useSuggestions === true) {
+          await db.checklistSuggestions.remember(items);
+        }
+        await onRefresh();
+      }
+    });
+  };
+
+  const content = el('div', { class: 'stack' },
+    el('button', {
+      class: 'btn btn--primary',
+      style: { justifyContent: 'flex-start', padding: '16px' },
+      onClick: () => {
+        closeModal?.();
+        quickAddChecklist({
+          modalHost,
+          db,
+          projectId: project.id,
+          pageId: currentPageId,
+          useSuggestions: project.useSuggestions === true,
+          enableQtyUnits: project.enableQtyUnits === true,
+          onCreated: onRefresh
+        });
+      }
+    }, '📄 ' + (t('addItem') || 'Add item')),
+    el('button', {
+      class: 'btn',
+      style: { justifyContent: 'flex-start', padding: '16px' },
+      onClick: openBulkAddForChecklist
+    }, '📋 ' + (t('addMultiple') || 'Add Multiple'))
+  );
+
+  const modalRef = openModal(modalHost, {
+    title: t('addToChecklist') || 'Add to Checklist',
+    align: 'bottom',
+    content,
+    actions: [
+      { label: t('cancel') || 'Cancel', class: 'btn btn--ghost', onClick: () => true }
+    ]
+  });
+
+  closeModal = modalRef.close;
+}
+
 function clamp01(v) {
   if (Number.isNaN(v)) return 0;
   return Math.min(1, Math.max(0, v));
@@ -607,47 +685,14 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
       'aria-label': t('addItem') || 'Add item',
       onClick: () => {
         hapticLight();
-        quickAddChecklist({ modalHost, db, projectId, pageId: currentPageId, useSuggestions: project.useSuggestions === true, enableQtyUnits: project.enableQtyUnits === true, onCreated: () => renderProjectDetail(ctx, projectId) });
-      }
-    }, '+');
-
-    const addMultipleBtn = el('button', {
-      type: 'button',
-      class: 'checklist-addMultiple-btn',
-      'aria-label': 'Add Multiple',
-      onClick: () => {
-        hapticLight();
-        openBulkAddModal(modalHost, {
-          title: 'Add Multiple',
-          label: 'Checklist items',
-          placeholder: 'milk\nbananas\nbread',
-          submitLabel: 'Add Items',
-          onSubmit: async (items) => {
-            const currentTodosForProject = await db.todos.listByProject(projectId);
-            const pageItems = currentTodosForProject.filter((item) => {
-              if (item.pageId === currentPageId) return true;
-              return currentPageId === firstPageId && !item.pageId;
-            });
-            const nextOrder = pageItems.reduce((maxOrder, item) => {
-              const order = Number.isFinite(item.order) ? item.order : -1;
-              return Math.max(maxOrder, order);
-            }, -1) + 1;
-
-            const todosToCreate = items.map((title, index) => {
-              const todo = newTodo({ title, projectId, pageId: currentPageId });
-              todo.order = nextOrder + index;
-              return todo;
-            });
-
-            await Promise.all(todosToCreate.map((todo) => db.todos.put(todo)));
-            if (project.useSuggestions === true) {
-              await db.checklistSuggestions.remember(items);
-            }
-            await renderProjectDetail(ctx, projectId, 0);
-          }
+        openChecklistAddMenu(ctx, {
+          project,
+          currentPageId,
+          firstPageId,
+          onRefresh: () => renderProjectDetail(ctx, projectId)
         });
       }
-    }, ('Add Multiple').split(' ').map((word) => el('div', {}, word)));
+    }, '+');
     
     // --- Clear Page Button (floating, above add item) ---
     const clearPageBtn = el('button', {
@@ -971,7 +1016,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
     const container = el('div', { 
       class: 'checklist-container',
       style: 'min-height: calc(100vh - 44px - var(--safe-top) - 74px - var(--safe-bottom) - 28px); position: relative;'
-    }, contentStack, clearPageBtn, addMultipleBtn, addItemBtn, addPageBtn, focusBtn);
+    }, contentStack, clearPageBtn, addItemBtn, addPageBtn, focusBtn);
 
     main.append(container);
 
@@ -1281,6 +1326,23 @@ export function openProjectAddMenu(ctx, project) {
                ctx.openTodoEditor({ mode: 'create', projectId: project.id });
             }
         }, '📄 ' + t('newTask')),
+          el('button', {
+            class: 'btn',
+            style: { justifyContent: 'flex-start', padding: '16px' },
+            onClick: () => {
+              closeModal?.();
+              openBulkAddModal(modalHost, {
+                title: t('addMultipleTasks') || 'Add Multiple Tasks',
+                label: t('tasks') || 'Tasks',
+                placeholder: t('bulkAddExampleTasks') || 'Call plumber\nPlan trip\nPay rent',
+                submitLabel: t('addTasks') || 'Add Tasks',
+                onSubmit: async (items) => {
+                 await Promise.all(items.map((title) => db.todos.put(newTodo({ title, projectId: project.id }))));
+                 await renderProjectDetail(ctx, project.id);
+                }
+              });
+            }
+          }, '📋 ' + (t('addMultipleTasks') || 'Add Multiple Tasks')),
          el('button', { 
             class: 'btn', 
             style: { justifyContent: 'flex-start', padding: '16px' }, 

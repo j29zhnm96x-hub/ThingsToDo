@@ -1,5 +1,6 @@
 import { el } from './dom.js';
 import { openModal } from './modal.js';
+import { t } from '../utils/i18n.js';
 
 function focusInput(input) {
   try {
@@ -26,10 +27,10 @@ export function parseBulkAddText(raw = '') {
 }
 
 export function openBulkAddModal(modalHost, {
-  title = 'Add Multiple',
+  title = t('addMultiple') || 'Add Multiple',
   label = 'Items',
-  placeholder = 'milk\nbananas\nbread',
-  submitLabel = 'Add Items',
+  placeholder = t('bulkAddExampleItems') || 'milk\nbananas\nbread',
+  submitLabel = t('addItems') || 'Add Items',
   onSubmit
 }) {
   const input = el('textarea', {
@@ -41,7 +42,7 @@ export function openBulkAddModal(modalHost, {
     spellcheck: 'false'
   });
 
-  const hint = el('div', { class: 'small' }, 'Use one line per item, or commas in a single line.');
+  const hint = el('div', { class: 'small' }, t('bulkAddHint') || 'Use one line per item, or commas in a single line.');
   const content = el('div', { class: 'stack' },
     el('label', { class: 'label' },
       el('span', {}, label),
@@ -68,7 +69,7 @@ export function openBulkAddModal(modalHost, {
       { label: submitLabel, class: 'btn btn--primary', onClick: submit }
     ],
     actions: [
-      { label: 'Cancel', class: 'btn btn--ghost', onClick: () => true },
+      { label: t('cancel') || 'Cancel', class: 'btn btn--ghost', onClick: () => true },
       { label: submitLabel, class: 'btn btn--primary', onClick: submit }
     ]
   });

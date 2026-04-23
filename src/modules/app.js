@@ -262,17 +262,17 @@ function openInboxAddMenu(ctx, modalHost) {
       onClick: () => {
         closeModal?.();
         openBulkAddModal(modalHost, {
-          title: 'Add Multiple Tasks',
-          label: 'Tasks',
-          placeholder: 'Call plumber\nPlan trip\nPay rent',
-          submitLabel: 'Add Tasks',
+          title: t('addMultipleTasks') || 'Add Multiple Tasks',
+          label: t('tasks') || 'Tasks',
+          placeholder: t('bulkAddExampleTasks') || 'Call plumber\nPlan trip\nPay rent',
+          submitLabel: t('addTasks') || 'Add Tasks',
           onSubmit: async (items) => {
             await Promise.all(items.map((title) => db.todos.put(newTodo({ title, projectId: null }))));
             await router.refresh();
           }
         });
       }
-    }, '📋 Add Multiple Tasks'),
+    }, '📋 ' + (t('addMultipleTasks') || 'Add Multiple Tasks')),
     el('button', {
       class: 'btn',
       style: { justifyContent: 'flex-start', padding: '16px' },
