@@ -14,6 +14,8 @@ import { hapticLight } from './ui/haptic.js';
 import { t } from './utils/i18n.js';
 import { openModal } from './ui/modal.js';
 import { openRecordingModal } from './ui/voiceMemo.js';
+import { openBulkAddModal } from './ui/bulkAdd.js';
+import { newTodo } from './data/models.js';
 
 let topbarDateIntervalId = null;
 
@@ -243,34 +245,57 @@ export function initApp(root) {
 }
 // Inbox add menu (task or voice memo)
 function openInboxAddMenu(ctx, modalHost) {
-  openModal(modalHost, {
+  let closeModal = null;
+
+  const content = el('div', { class: 'stack' },
+    el('button', {
+      class: 'btn btn--primary',
+      style: { justifyContent: 'flex-start', padding: '16px' },
+      onClick: () => {
+        closeModal?.();
+        ctx.openTodoEditor({ mode: 'create', projectId: null });
+      }
+    }, '📄 ' + t('newTask')),
+    el('button', {
+      class: 'btn',
+      style: { justifyContent: 'flex-start', padding: '16px' },
+      onClick: () => {
+        closeModal?.();
+        openBulkAddModal(modalHost, {
+          title: 'Add Multiple Tasks',
+          label: 'Tasks',
+          placeholder: 'Call plumber\nPlan trip\nPay rent',
+          submitLabel: 'Add Tasks',
+          onSubmit: async (items) => {
+            await Promise.all(items.map((title) => db.todos.put(newTodo({ title, projectId: null }))));
+            await router.refresh();
+          }
+        });
+      }
+    }, '📋 Add Multiple Tasks'),
+    el('button', {
+      class: 'btn',
+      style: { justifyContent: 'flex-start', padding: '16px' },
+      onClick: () => {
+        closeModal?.();
+        openRecordingModal({
+          modalHost,
+          db,
+          projectId: null,
+          onSaved: () => router.refresh()
+        });
+      }
+    }, '🎤 ' + t('voiceMemo'))
+  );
+
+  const modalRef = openModal(modalHost, {
     title: t('addToInbox') || 'Add to Inbox',
     align: 'bottom',
-    content: el('div', { class: 'stack' }, 
-      el('button', { 
-        class: 'btn btn--primary',
-        style: { justifyContent: 'flex-start', padding: '16px' }, 
-        onClick: () => {
-          ctx.openTodoEditor({ mode: 'create', projectId: null });
-          return true;
-        }
-      }, '📄 ' + t('newTask')),
-      el('button', { 
-        class: 'btn', 
-        style: { justifyContent: 'flex-start', padding: '16px' }, 
-        onClick: () => {
-          openRecordingModal({
-            modalHost,
-            db,
-            projectId: null,
-            onSaved: () => router.refresh()
-          });
-          return true;
-        }
-      }, '🎤 ' + t('voiceMemo'))
-    ),
+    content,
     actions: [
       { label: t('cancel'), class: 'btn btn--ghost', onClick: () => true }
     ]
   });
+
+  closeModal = modalRef.close;
 }

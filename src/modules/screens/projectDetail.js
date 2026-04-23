@@ -14,6 +14,7 @@ import { renderProjectCard } from '../ui/projectCard.js';
 import { enablePillReorder } from '../ui/pillReorder.js';
 import { Priority } from '../data/models.js';
 import { showToast } from '../ui/toast.js';
+import { openBulkAddModal } from '../ui/bulkAdd.js';
 import { t } from '../utils/i18n.js';
 import { renderVoiceMemoList, openRecordingModal } from '../ui/voiceMemo.js';
 import { isDueNowOrPast } from '../logic/recurrence.js';
@@ -609,6 +610,44 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
         quickAddChecklist({ modalHost, db, projectId, pageId: currentPageId, useSuggestions: project.useSuggestions === true, enableQtyUnits: project.enableQtyUnits === true, onCreated: () => renderProjectDetail(ctx, projectId) });
       }
     }, '+');
+
+    const addMultipleBtn = el('button', {
+      type: 'button',
+      class: 'checklist-addMultiple-btn',
+      'aria-label': 'Add Multiple',
+      onClick: () => {
+        hapticLight();
+        openBulkAddModal(modalHost, {
+          title: 'Add Multiple',
+          label: 'Checklist items',
+          placeholder: 'milk\nbananas\nbread',
+          submitLabel: 'Add Items',
+          onSubmit: async (items) => {
+            const currentTodosForProject = await db.todos.listByProject(projectId);
+            const pageItems = currentTodosForProject.filter((item) => {
+              if (item.pageId === currentPageId) return true;
+              return currentPageId === firstPageId && !item.pageId;
+            });
+            const nextOrder = pageItems.reduce((maxOrder, item) => {
+              const order = Number.isFinite(item.order) ? item.order : -1;
+              return Math.max(maxOrder, order);
+            }, -1) + 1;
+
+            const todosToCreate = items.map((title, index) => {
+              const todo = newTodo({ title, projectId, pageId: currentPageId });
+              todo.order = nextOrder + index;
+              return todo;
+            });
+
+            await Promise.all(todosToCreate.map((todo) => db.todos.put(todo)));
+            if (project.useSuggestions === true) {
+              await db.checklistSuggestions.remember(items);
+            }
+            await renderProjectDetail(ctx, projectId, 0);
+          }
+        });
+      }
+    }, ('Add Multiple').split(' ').map((word) => el('div', {}, word)));
     
     // --- Clear Page Button (floating, above add item) ---
     const clearPageBtn = el('button', {
@@ -932,7 +971,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
     const container = el('div', { 
       class: 'checklist-container',
       style: 'min-height: calc(100vh - 44px - var(--safe-top) - 74px - var(--safe-bottom) - 28px); position: relative;'
-    }, contentStack, clearPageBtn, addItemBtn, addPageBtn, focusBtn);
+    }, contentStack, clearPageBtn, addMultipleBtn, addItemBtn, addPageBtn, focusBtn);
 
     main.append(container);
 
