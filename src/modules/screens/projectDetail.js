@@ -885,14 +885,25 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
           detailTextEl.style.height = detailTextEl.scrollHeight + 'px';
         };
 
-        // When the element is focused (tapped), select all text.
-        const selectAllText = () => {
-          detailTextEl.select();
+        let holdTimer = null;
+        const startHold = () => {
+          holdTimer = setTimeout(() => {
+            holdTimer = null;
+            detailTextEl.select();
+          }, 500);
+        };
+        const cancelHold = () => {
+          if (holdTimer !== null) {
+            clearTimeout(holdTimer);
+            holdTimer = null;
+          }
         };
 
         detailTextEl.addEventListener('input', autosizeDetailText);
-        detailTextEl.addEventListener('focus', selectAllText);
-        detailTextEl.addEventListener('pointerdown', selectAllText); // Also try on pointerdown
+        detailTextEl.addEventListener('pointerdown', startHold);
+        detailTextEl.addEventListener('pointerup', cancelHold);
+        detailTextEl.addEventListener('pointercancel', cancelHold);
+        detailTextEl.addEventListener('pointermove', cancelHold);
 
         openModal(modalHost, {
           title: t('itemDetails') || 'Item Details',
