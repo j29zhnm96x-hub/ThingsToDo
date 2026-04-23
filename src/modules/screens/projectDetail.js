@@ -639,7 +639,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
         actions: [
           { label: t('rename'), class: 'btn', onClick: () => {
             openRenamePageModal({ modalHost, db, page, onSaved: () => renderProjectDetail(ctx, projectId, 0) });
-            return true;
+            return false;
           }},
           !isOnlyPage ? { label: t('delete'), class: 'btn btn--danger', onClick: async () => {
             const pageItemCount = pageTodos.length;
