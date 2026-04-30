@@ -850,7 +850,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
         content,
         actions: [
           { label: t('cancel') || 'Cancel', class: 'btn btn--ghost', onClick: () => true },
-          { label: t('next') || 'Next', class: 'btn btn--primary', onClick: proceedToDestination }
+          { label: 'Next', class: 'btn btn--primary', onClick: proceedToDestination }
         ]
       });
     };
