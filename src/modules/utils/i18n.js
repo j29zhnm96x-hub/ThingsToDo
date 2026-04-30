@@ -189,9 +189,9 @@ const translations = {
     helpTaskEditor: 'Task Editor, Notes & Images',
     helpTaskEditorContent: '<b>Task editing</b> supports more than just a title. Add notes, due dates, priorities, repeating schedules, protection, and image attachments from the create/edit modal.<br><br><b>Notes:</b> Use the notes field for longer context, mini checklists, or follow-up details. Task details open in a read-friendly modal for quick review.<br><br><b>Repeating tasks:</b> Set tasks to repeat daily, weekly, monthly, or yearly. When you complete one, the next instance is created automatically based on your schedule.<br><br><b>Images:</b> Attach photos or screenshots directly from your device. Images are stored locally, shown as thumbnails, and compressed to save space.<br><br><b>Protection:</b> Turn on "Protect task" for important items that should not be deleted or archived by mistake.',
     helpChecklists: 'Checklists & Pages',
-    helpChecklistsContent: '<b>Checklists</b> are specialized projects for step-by-step lists like shopping, packing, or recipes. They support quantities/units and have unique navigation features.<br><br><b>Pages:</b> Organize checklists into multiple pages using the pills at the top. Scroll horizontally for many pages. Tap a pill to switch, double-tap for rename/delete options, long-press and drag to reorder pages. The page bar remembers your scroll position.<br><br><b>Floating Buttons:</b> On the right edge:<br>• <b>Green +</b>: Opens an add menu for a single item or bulk paste into the current page<br>• <b>Red Clear</b>: Remove all items on current page (with confirmation)<br>• <b>Blue Add Page</b>: Create new pages<br><br><b>Quick Add:</b> Double-tap empty areas or use the green + menu to add items fast. Bulk add accepts one item per line or a comma-separated list. Single-item entry still remembers recent quantities/units for faster input.<br><br><b>Focus Mode:</b> Tap the ⛶ icon to hide navigation for distraction-free checklist use, perfect for shopping or travel.',
+    helpChecklistsContent: '<b>Checklists</b> are specialized projects for step-by-step lists like shopping, packing, or recipes. They support quantities/units and have unique navigation features.<br><br><b>Pages:</b> Organize checklists into multiple pages using the pills at the top. Scroll horizontally for many pages. Tap a pill to switch, double-tap for rename/delete options, long-press and drag to reorder pages. The page bar remembers your scroll position.<br><br><b>Move items:</b> Double-tap a page pill to open Page actions (Rename, Delete). The new <b>Move items</b> option opens a dialog listing all items on that page with checkboxes so you can select one, several, or <b>Select all</b>, then choose a destination page. If there are no other pages, you will be prompted to create a new page. Moved items are appended to the end of the destination page.<br><br><b>Floating Buttons:</b> On the right edge:<br>• <b>Green +</b>: Opens an add menu for a single item or bulk paste into the current page<br>• <b>Red Clear</b>: Remove all items on current page (with confirmation)<br>• <b>Blue Add Page</b>: Create new pages<br><br><b>Quick Add:</b> Double-tap empty areas or use the green + menu to add items fast. Bulk add accepts one item per line or a comma-separated list. Single-item entry still remembers recent quantities/units for faster input.<br><br><b>Focus Mode:</b> Tap the ⛶ icon to hide navigation for distraction-free checklist use, perfect for shopping or travel.',
     helpBulkAdd: 'Bulk Add',
-    helpBulkAddContent: '<b>Bulk Add</b> is the fastest way to turn a pasted list into tasks or checklist items.<br><br><b>Inbox:</b> Open the <b>+</b> menu and choose <b>Add Multiple Tasks</b>. Each line becomes a separate task card in Inbox.<br><br><b>Checklists:</b> In checklist projects, tap the <b>Add Multiple</b> button under the green <b>+</b>. Every line is added as a new checkable item in the current page.<br><br><b>Input formats:</b> Paste one item per line, or paste a single comma-separated line such as <i>milk, bananas, bread</i>. Empty lines are ignored automatically.<br><br><b>Best for:</b> Shopping lists, meeting action items, packing lists, and quick brain dumps.',
+    helpBulkAddContent: '<b>Bulk Add</b> is the fastest way to turn a pasted list into tasks or checklist items.<br><br><b>Inbox:</b> Open the <b>+</b> menu and choose <b>Add Multiple Tasks</b>. Each line becomes a separate task card in Inbox.<br><br><b>Checklists:</b> In checklist projects, tap the <b>Add Multiple</b> button under the green <b>+</b>. Every line is added as a new checkable item in the current page.<br><br><b>Input formats:</b> Paste one item per line, or paste a single comma-separated line such as <i>milk, bananas, bread</i>. Empty lines are ignored automatically.<br><br><b>Page headers:</b> You can optionally specify a target page by placing the page name on the first line followed by a colon, or by quoting it on the first line (e.g. <i>Lidl:\nitem1\nitem2</i> or <i>"Lidl"\nitem1\nitem2</i>). If a page with that name exists it will be used (case-insensitive); otherwise a new page will be created and items will be added there.<br><br><b>Normalization:</b> Item titles are normalized by capitalizing the first letter of each item automatically.<br><br><b>Best for:</b> Shopping lists, meeting action items, packing lists, and quick brain dumps.',
     helpSuggestions: 'Smart Suggestions for Checklist Items',
     helpSuggestionsContent: '<b>Smart Suggestions</b> learn from your checklist entries to speed up repetitive tasks.<br><br><b>How it Works:</b> As you type item names, autocomplete shows up to 5 recent matches from your history. Tap any suggestion to fill the field instantly.<br><br><b>Learning:</b> Every new item you add is automatically saved for future suggestions. No manual setup needed.<br><br><b>Perfect For:</b> Shopping lists, packing lists, recipes, maintenance checklists, or any repetitive item entry. Enable suggestions in project settings for checklist projects.',
     helpFocusMode: 'Focus Mode (Zen)',
@@ -380,6 +380,81 @@ const translations = {
     endSeries: 'End entire series',
     deleteArchivedTodo: 'Delete archived todo?',
     deleteArchivedTodoMsg: 'This will permanently delete the todo and its images.',
+  },
+  es: {
+    // Navigation
+    inbox: 'Bandeja',
+    projects: 'Proyectos',
+    archive: 'Archivo',
+    settings: 'Ajustes',
+    help: 'Ayuda',
+
+    // Common actions
+    save: 'Guardar',
+    cancel: 'Cancelar',
+    delete: 'Eliminar',
+    edit: 'Editar',
+    create: 'Crear',
+    done: 'Hecho',
+    close: 'Cerrar',
+    confirm: 'Confirmar',
+    yes: 'Sí',
+    no: 'No',
+    ok: 'OK',
+
+    // Tasks
+    task: 'Tarea',
+    tasks: 'Tareas',
+    newTask: 'Nueva tarea',
+    addTask: 'Agregar tarea',
+    addTasks: 'Agregar tareas',
+    addMultiple: 'Agregar múltiples',
+    addMultipleTasks: 'Agregar múltiples tareas',
+    addToChecklist: 'Agregar a la lista',
+    editTask: 'Editar tarea',
+    addItems: 'Agregar elementos',
+    checklistItems: 'Elementos de la lista',
+    bulkAddHint: 'Usa una línea por elemento, o comas en una sola línea.',
+    bulkAddExampleItems: 'leche
+plátanos
+pan',
+
+    // Projects
+    project: 'Proyecto',
+    newProject: 'Nuevo proyecto',
+    createProject: 'Crear proyecto',
+    editProject: 'Editar proyecto',
+    projectName: 'Nombre del proyecto',
+    projectType: 'Tipo de proyecto',
+    default: 'Predeterminado',
+    checklist: 'Lista',
+
+    // Checklist pages
+    page: 'Página',
+    addPage: 'Agregar página',
+    moveToPage: 'Mover a página',
+    pageName: 'Nombre de página',
+    untitled: 'Sin título',
+    renamePage: 'Renombrar página',
+    deletePage: '¿Eliminar página?',
+    deletePageConfirm: '¿Eliminar esta página?',
+    deletePageConfirmEmpty: '¿Eliminar esta página vacía?',
+    pageActions: 'Acciones de página',
+
+    // Help texts
+    howToUse: 'Cómo usar',
+    masterProductivity: 'Domina tu productividad',
+    helpChecklists: 'Listas & Páginas',
+    helpChecklistsContent: '<b>Listas</b> son proyectos para listas paso a paso como compras o recetas. Usa las pestañas (píldoras) en la parte superior para organizar por páginas.<br><br><b>Mover elementos:</b> Al tocar dos veces una píldora de página se abre el menú de Página (Renombrar, Eliminar). La nueva opción <b>Mover elementos</b> muestra un diálogo con casillas para seleccionar uno o varios elementos (o <b>Select all</b>) y moverlos a otra página. Si no hay otras páginas, se te pedirá crear una nueva página.',
+
+    helpBulkAdd: 'Agregar múltiples',
+    helpBulkAddContent: '<b>Agregar múltiples</b> convierte una lista pegada en tareas o elementos de lista. Pega una línea por elemento o una línea separada con comas. Puedes indicar una página objetivo poniendo el nombre de la página en la primera línea seguido de dos puntos o entre comillas. Los nombres de página se comparan sin distinguir mayúsculas/minúsculas; si no existe, se crea una nueva página.',
+
+    // Misc
+    loading: 'Cargando...',
+    error: 'Error',
+    success: 'Éxito',
+    warning: 'Advertencia'
   },
   
   hr: {
@@ -1487,7 +1562,8 @@ export const languageNames = {
   en: 'English',
   hr: 'Hrvatski',
   it: 'Italiano',
-  de: 'Deutsch'
+  de: 'Deutsch',
+  es: 'Español'
 };
 
 // Current language (default to English, can be overridden from localStorage)
