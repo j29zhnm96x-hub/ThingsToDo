@@ -415,9 +415,7 @@ const translations = {
     addItems: 'Agregar elementos',
     checklistItems: 'Elementos de la lista',
     bulkAddHint: 'Usa una línea por elemento, o comas en una sola línea.',
-    bulkAddExampleItems: 'leche
-plátanos
-pan',
+    bulkAddExampleItems: 'leche\nplátanos\npan',
 
     // Projects
     project: 'Proyecto',
