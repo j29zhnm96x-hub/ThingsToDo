@@ -681,7 +681,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
             openRenamePageModal({ modalHost, db, page, onSaved: () => renderProjectDetail(ctx, projectId, 0) });
             return false;
           }},
-          { label: t('moveItems') || 'Move items', class: 'btn', onClick: () => {
+          { label: 'Move items', class: 'btn', onClick: () => {
             movePageItems(page);
             return false;
           }},
@@ -781,7 +781,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
               selectedIds.add(input.id.replace('item-', ''));
             });
           }
-        }, t('selectAll') || 'Select all')
+        }, 'Select all')
       );
 
       const proceedToDestination = async () => {
@@ -846,7 +846,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
       };
 
       openModal(modalHost, {
-        title: t('selectItemsToMove') || 'Select items to move',
+        title: 'Select items to move',
         content,
         actions: [
           { label: t('cancel') || 'Cancel', class: 'btn btn--ghost', onClick: () => true },
