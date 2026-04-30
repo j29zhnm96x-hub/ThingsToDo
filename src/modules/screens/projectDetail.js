@@ -670,7 +670,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
       enablePillReorder(pillBar, { onPersistOrder: persistPageOrder }).attach();
     }
     
-    // Page menu for rename/delete
+    // Page menu for rename/delete/move items
     const openPageMenu = (page) => {
       const isOnlyPage = pages.length === 1;
       openModal(modalHost, {
@@ -681,18 +681,22 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
             openRenamePageModal({ modalHost, db, page, onSaved: () => renderProjectDetail(ctx, projectId, 0) });
             return false;
           }},
+          { label: t('moveItems') || 'Move items', class: 'btn', onClick: () => {
+            movePageItems(page);
+            return false;
+          }},
           !isOnlyPage ? { label: t('delete'), class: 'btn btn--danger', onClick: async () => {
             const pageItemCount = pageTodos.length;
             const ok = await confirm(modalHost, {
               title: t('deletePage') || 'Delete page?',
-              message: pageItemCount > 0 
+              message: pageItemCount > 0
                 ? `${t('deletePageConfirm') || 'Delete this page?'} ${pageItemCount} ${t('itemsWillBeDeleted') || 'items will be deleted.'}`
                 : t('deletePageConfirmEmpty') || 'Delete this empty page?',
               confirmLabel: t('delete'),
               danger: true
             });
             if (!ok) return true;
-            
+
             // Delete all todos in this page
             for (const todo of pageTodos) {
               await db.todos.delete(todo.id);
@@ -706,7 +710,151 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
         ].filter(Boolean)
       });
     };
-    
+
+    const pickChecklistPage = (modalHost, { title, pages, initial = null, confirmLabel }) => {
+      return new Promise((resolve) => {
+        const select = el('select', { class: 'select', 'aria-label': 'Page' });
+        for (const p of pages) {
+          select.appendChild(el('option', { value: p.id }, p.name || t('untitled') || 'Untitled'));
+        }
+        if (initial != null) select.value = initial;
+
+        const content = el('div', { class: 'stack' },
+          el('label', { class: 'label' },
+            el('span', {}, t('page') || 'Page'),
+            select
+          )
+        );
+
+        openModal(modalHost, {
+          title,
+          content,
+          actions: [
+            { label: t('cancel') || 'Cancel', class: 'btn btn--ghost', onClick: () => (resolve(undefined), true) },
+            {
+              label: confirmLabel,
+              class: 'btn btn--primary',
+              onClick: () => {
+                resolve(select.value || null);
+                return true;
+              }
+            }
+          ]
+        });
+      });
+    };
+
+    const movePageItems = async (page) => {
+      const items = pageTodos;
+      if (items.length === 0) {
+        showToast(t('noItemsToMove') || 'No items to move');
+        return;
+      }
+
+      const selectedIds = new Set();
+
+      const checkboxes = items.map(item => {
+        const cb = el('input', {
+          type: 'checkbox',
+          id: `item-${item.id}`,
+          onChange: (e) => {
+            if (e.target.checked) selectedIds.add(item.id);
+            else selectedIds.delete(item.id);
+          }
+        });
+        const label = el('label', {
+          for: `item-${item.id}`,
+          style: 'display: flex; align-items: center; padding: 8px;'
+        }, cb, el('span', { style: 'margin-left: 8px;' }, item.title));
+        return label;
+      });
+
+      const content = el('div', { class: 'stack' },
+        el('div', { style: 'max-height: 300px; overflow-y: auto;' }, ...checkboxes),
+        el('button', {
+          class: 'btn',
+          style: 'margin-top: 16px;',
+          onClick: () => {
+            checkboxes.forEach(label => {
+              const input = label.querySelector('input');
+              input.checked = true;
+              selectedIds.add(input.id.replace('item-', ''));
+            });
+          }
+        }, t('selectAll') || 'Select all')
+      );
+
+      const proceedToDestination = async () => {
+        if (selectedIds.size === 0) {
+          showToast(t('selectAtLeastOne') || 'Select at least one item');
+          return false;
+        }
+
+        // Load current pages excluding the current one
+        let currentPages = await db.checklistPages.listByProject(projectId);
+        currentPages.sort(sortPagesByOrder);
+        currentPages = currentPages.filter(p => p.id !== page.id);
+
+        if (currentPages.length === 0) {
+          // No other pages, must create new
+          openAddPageModal({
+            modalHost,
+            db,
+            projectId,
+            pages: currentPages,
+            onCreated: async (newPageId) => {
+              // Move selected items to the new page
+              const destPage = await db.checklistPages.get(newPageId);
+              const destItems = await db.todos.listByProject(projectId);
+              const filteredDest = destItems.filter(t => t.pageId === newPageId || (!t.pageId && currentPages.length === 0 && destPage.order === 0));
+              const nextOrder = filteredDest.reduce((max, t) => Math.max(max, Number.isFinite(t.order) ? t.order : -1), -1) + 1;
+
+              const updates = Array.from(selectedIds).map((id, index) => {
+                const todo = items.find(i => i.id === id);
+                return db.todos.put({ ...todo, pageId: newPageId, order: nextOrder + index });
+              });
+              await Promise.all(updates);
+              await renderProjectDetail(ctx, projectId, 0);
+              showToast(t('itemsMoved') || 'Items moved');
+            }
+          });
+        } else {
+          // Pick from existing pages
+          const destPageId = await pickChecklistPage(modalHost, {
+            title: t('moveToPage') || 'Move to page',
+            pages: currentPages,
+            initial: null,
+            confirmLabel: t('move') || 'Move'
+          });
+
+          if (destPageId !== undefined && destPageId !== null) {
+            // Move selected items to the chosen page
+            const destItems = await db.todos.listByProject(projectId);
+            const filteredDest = destItems.filter(t => t.pageId === destPageId);
+            const nextOrder = filteredDest.reduce((max, t) => Math.max(max, Number.isFinite(t.order) ? t.order : -1), -1) + 1;
+
+            const updates = Array.from(selectedIds).map((id, index) => {
+              const todo = items.find(i => i.id === id);
+              return db.todos.put({ ...todo, pageId: destPageId, order: nextOrder + index });
+            });
+            await Promise.all(updates);
+            await renderProjectDetail(ctx, projectId, 0);
+            showToast(t('itemsMoved') || 'Items moved');
+          }
+        }
+        return true;
+      };
+
+      openModal(modalHost, {
+        title: t('selectItemsToMove') || 'Select items to move',
+        content,
+        actions: [
+          { label: t('cancel') || 'Cancel', class: 'btn btn--ghost', onClick: () => true },
+          { label: t('next') || 'Next', class: 'btn btn--primary', onClick: proceedToDestination }
+        ]
+      });
+    };
+
     // --- Add Page Button (floating) ---
     const addPageBtn = el('button', {
       type: 'button',
