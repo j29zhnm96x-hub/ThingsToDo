@@ -1142,6 +1142,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
              showToast(message);
              return true;
         } },
+        { label: 'Share…', class: 'btn', onClick: async () => { const { exportTodoToFile } = await import('../utils/share.js'); await exportTodoToFile(db, todo); return true; } },
         { label: 'Move', class: 'btn', onClick: async () => {
           const dest = await pickProject(modalHost, { title: 'Move to…', projects, includeInbox: true, initial: todo.projectId ?? null, confirmLabel: 'Move' });
           if (dest !== undefined) {

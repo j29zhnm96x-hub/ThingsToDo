@@ -124,6 +124,7 @@ export async function renderSettings(ctx) {
 
   const exportBtn = el('button', { class: 'btn btn--primary', type: 'button', onClick: exportData }, t('exportData'));
   const importBtn = el('button', { class: 'btn', type: 'button', onClick: importData }, t('importData'));
+  const pasteSharedBtn = el('button', { class: 'btn', type: 'button', onClick: openPasteSharedModal }, 'Paste a task/project');
   const binBtn = el('button', { class: 'btn', type: 'button', onClick: () => openBinModal(ctx) }, t('bin'));
   const helpBtn = el('button', { class: 'btn', type: 'button', onClick: () => location.hash = '#help' }, t('help'));
   const resetBtn = el('button', { class: 'btn btn--danger', type: 'button', onClick: resetData }, t('clearAllData'));
@@ -158,8 +159,8 @@ export async function renderSettings(ctx) {
       el('div', { style: { fontWeight: '700' } }, t('help')),
       helpBtn
     ),
-    el('div', { class: 'card stack' },
-      el('div', { style: { fontWeight: '700' } }, t('dataManagement')),
+      el('div', { class: 'card stack' },
+        el('div', { style: { fontWeight: '700' } }, t('dataManagement')),
       el('div', { class: 'small' }, t('dataStoredLocally')),
       el('div', { class: 'row' },
         el('div', { class: 'small' }, t('compressImages')),
@@ -171,10 +172,44 @@ export async function renderSettings(ctx) {
       ),
       exportBtn,
       importBtn,
+      pasteSharedBtn,
       binBtn,
       resetBtn
     )
   ));
+
+  async function openPasteSharedModal() {
+    const ta = el('textarea', { rows: 10, class: 'input', placeholder: 'Paste shared JSON here' });
+    openModal(modalHost, {
+      title: 'Paste shared task or project',
+      content: el('div', { class: 'stack' }, el('div', { class: 'small' }, 'Paste the JSON blob shared from another user.'), ta),
+      actions: [
+        { label: 'Cancel', class: 'btn btn--ghost', onClick: () => true },
+        { label: 'Import', class: 'btn btn--primary', onClick: async () => {
+          const text = (ta.value || '').trim();
+          if (!text) return false;
+          let parsed;
+          try { parsed = JSON.parse(text); } catch (e) {
+            openModal(modalHost, { title: 'Invalid JSON', content: el('div', { class: 'small' }, 'The pasted text is not valid JSON.'), actions: [{ label: 'OK', class: 'btn btn--primary', onClick: () => true }] });
+            return false;
+          }
+          try {
+            const { importShared } = await import('../utils/share.js');
+            const res = await importShared(parsed, db);
+            showToast('Imported ' + res.type);
+            // Navigate to appropriate page
+            if (res.type === 'todo') location.hash = '#inbox';
+            if (res.type === 'project') location.hash = '#projects';
+            return true;
+          } catch (err) {
+            console.error('Import failed', err);
+            openModal(modalHost, { title: 'Import failed', content: el('div', { class: 'small' }, String(err)), actions: [{ label: 'OK', class: 'btn btn--primary', onClick: () => true }] });
+            return false;
+          }
+        } }
+      ]
+    });
+  }
 
   async function openSuggestionHistoryModal() {
     let suggestions = [];

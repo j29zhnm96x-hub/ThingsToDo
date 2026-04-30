@@ -260,6 +260,7 @@ export async function renderArchive(ctx) {
         title: todo.title || 'Todo',
         actions: [
           { label: 'Edit', class: 'btn', onClick: () => (ctx.openTodoEditor({ mode: 'edit', todoId: todo.id, projectId: todo.projectId, db }), true) },
+          { label: 'Share…', class: 'btn', onClick: async () => { const { exportTodoToFile } = await import('../utils/share.js'); await exportTodoToFile(db, todo); return true; } },
           { label: 'Restore', class: 'btn', onClick: async () => {
             const initial = todo.archivedFromProjectId && projectsById.has(todo.archivedFromProjectId)
               ? todo.archivedFromProjectId

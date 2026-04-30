@@ -147,16 +147,15 @@ export async function renderInbox(ctx) {
           label: 'Unlink from Inbox', 
           class: 'btn', 
           onClick: async () => {
-             // Use the passed onLinkToggle or the one in scope (they are effectively the same logic but let's use the passed one for correctness)
              if (onLinkToggle) await onLinkToggle(todo);
              else {
-                 // Fallback if not passed (though it should be)
                  await db.todos.put({ ...todo, showInInbox: !todo.showInInbox });
                  await renderInbox(ctx);
              }
              return true;
           }
         }] : []),
+        { label: 'Share…', class: 'btn', onClick: async () => { const { exportTodoToFile } = await import('../utils/share.js'); await exportTodoToFile(db, todo); return true; } },
         { label: 'Move', class: 'btn', onClick: async () => {
           const dest = await pickProject(modalHost, { title: 'Move to…', projects, includeInbox: true, initial: todo.projectId ?? null, confirmLabel: 'Move' });
           if (dest === undefined) return false;
