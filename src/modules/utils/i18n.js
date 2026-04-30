@@ -1,5 +1,5 @@
 // Internationalization module
-// Supported languages: en (English), hr (Croatian), it (Italian), de (German)
+// Supported languages: en (English), hr (Croatian), it (Italian), de (German), es (Spanish)
 
 const translations = {
   en: {
@@ -383,7 +383,7 @@ const translations = {
   },
   es: {
     // Navigation
-    inbox: 'Bandeja',
+    inbox: 'Bandeja de entrada',
     projects: 'Proyectos',
     archive: 'Archivo',
     settings: 'Ajustes',
@@ -406,16 +406,25 @@ const translations = {
     task: 'Tarea',
     tasks: 'Tareas',
     newTask: 'Nueva tarea',
-    addTask: 'Agregar tarea',
-    addTasks: 'Agregar tareas',
-    addMultiple: 'Agregar múltiples',
-    addMultipleTasks: 'Agregar múltiples tareas',
-    addToChecklist: 'Agregar a la lista',
+    addTask: 'Añadir tarea',
+    addTasks: 'Añadir tareas',
+    addMultiple: 'Añadir varias',
+    addMultipleTasks: 'Añadir varias tareas',
+    addToChecklist: 'Añadir a la lista',
     editTask: 'Editar tarea',
-    addItems: 'Agregar elementos',
+    addItems: 'Añadir elementos',
     checklistItems: 'Elementos de la lista',
     bulkAddHint: 'Usa una línea por elemento, o comas en una sola línea.',
     bulkAddExampleItems: 'leche\nplátanos\npan',
+    bulkAddExampleTasks: 'Llamar al fontanero\nPlanear viaje\nPagar alquiler',
+    taskTitle: 'Título de la tarea',
+    taskNotes: 'Notas',
+    noTasks: 'Todavía no hay tareas',
+    noTasksHint: 'Toca el botón + para añadir tu primera tarea',
+    completed: 'Completadas',
+    active: 'activas',
+    markCompleted: 'Marcar como completada',
+    markIncomplete: 'Marcar como no completada',
 
     // Projects
     project: 'Proyecto',
@@ -426,33 +435,315 @@ const translations = {
     projectType: 'Tipo de proyecto',
     default: 'Predeterminado',
     checklist: 'Lista',
+    noProjects: 'Todavía no hay proyectos',
+    noProjectsHint: 'Toca el botón + de arriba para crear tu primer proyecto',
+    subProject: 'Subproyecto',
+    newSubProject: 'Nuevo subproyecto',
 
-    // Checklist pages
-    page: 'Página',
-    addPage: 'Agregar página',
-    moveToPage: 'Mover a página',
-    pageName: 'Nombre de página',
-    untitled: 'Sin título',
-    renamePage: 'Renombrar página',
-    deletePage: '¿Eliminar página?',
-    deletePageConfirm: '¿Eliminar esta página?',
-    deletePageConfirmEmpty: '¿Eliminar esta página vacía?',
-    pageActions: 'Acciones de página',
+    // Priority
+    priority: 'Prioridad',
+    urgent: '¡Urgente!',
+    highest: 'Máxima',
+    high: 'Alta',
+    medium: 'Media',
+    low: 'Baja',
 
-    // Help texts
+    // Due dates
+    dueDate: 'Fecha límite',
+    noDueDate: 'Sin fecha límite',
+    overdue: 'Atrasada',
+    today: 'Hoy',
+    tomorrow: 'Mañana',
+    daysLeft: 'quedan {n} días',
+
+    // Todo editor
+    editTodo: 'Editar tarea',
+    newTodo: 'Nueva tarea',
+    title: 'Título',
+    titleRequired: 'Título *',
+    textCopied: 'Copiado',
+    copyText: 'Copiar',
+    notes: 'Notas',
+    protectTask: 'Proteger tarea',
+    protectedTasksInfo: 'Las tareas protegidas no se pueden eliminar fácilmente y permanecen en la lista de completadas.',
+    addImages: 'Añadir imágenes',
+    imagesStoredInfo: 'Las imágenes se guardan localmente en IndexedDB y persistirán sin conexión.',
+    removeImage: 'Eliminar imagen',
+    removeImageHint: 'Eliminar',
+    noFilesSelected: 'ningún archivo seleccionado',
+    chooseFile: 'Elegir archivo',
+    fileSelected: '{n} archivo seleccionado',
+    filesSelected: '{n} archivos seleccionados',
+    importJSON: 'Importar JSON',
+    importWarning: 'La importación reemplazará todos los datos locales actuales.',
+    confirmImport: 'Confirmar importación',
+    confirmImportMsg: 'Esto borrará tus datos actuales y los reemplazará por el archivo importado.',
+    invalidJSON: 'JSON no válido',
+    invalidJSONMsg: 'No se pudo leer el archivo. Elige un JSON de exportación válido.',
+    taskProtected: 'Tarea protegida',
+    taskProtectedMsg: 'Esta tarea está protegida. Desmarca "Proteger tarea" en el editor para eliminarla.',
+    deleteConfirmTitle: '¿Eliminar tarea?',
+    deleteConfirmMsg: 'Esto eliminará permanentemente la tarea y sus imágenes.',
+
+    // Menu options
+    menu: 'Menú',
+    moveToProject: 'Mover al proyecto',
+    linkToInbox: 'Vincular a Bandeja de entrada',
+    unlinkFromInbox: 'Desvincular de Bandeja de entrada',
+    taskLinkedToInbox: 'Listo: tarea vinculada a Bandeja de entrada',
+    taskUnlinkedFromInbox: 'Tarea desvinculada de Bandeja de entrada',
+    projectLinkedToInbox: 'Listo: proyecto vinculado a Bandeja de entrada',
+    projectUnlinkedFromInbox: 'Proyecto desvinculado de Bandeja de entrada',
+    projectMoved: 'Proyecto movido',
+    protect: 'Proteger',
+    unprotect: 'Quitar protección',
+    archiveItem: 'Archivar',
+    restoreItem: 'Restaurar',
+    deleteItem: 'Eliminar',
+    deletePermanently: 'Eliminar definitivamente',
+
+    // Settings
+    theme: 'Tema',
+    themeDark: 'Oscuro',
+    themeLight: 'Claro',
+    themeSystem: 'Sistema',
+    paletteDefault: 'Predeterminado',
+    palettePurple: 'Morado',
+    paletteOrange: 'Naranja',
+    paletteRed: 'Rojo',
+    paletteBlue: 'Azul',
+    language: 'Idioma',
+    compressImages: 'Comprimir imágenes (ahorrar espacio)',
+    extraCompressArchive: 'Compresión extra de imágenes archivadas',
+    dataManagement: 'Gestión de datos',
+    dataStoredLocally: 'Todo se guarda localmente en este dispositivo (IndexedDB).',
+    notifications: 'Notificaciones',
+    enableNotifications: 'Activar notificaciones',
+    notificationsEnabled: 'Notificaciones activadas',
+    notificationsBlocked: 'Notificaciones bloqueadas por el navegador',
+    bin: 'Papelera',
+    emptyBin: 'Vaciar papelera',
+    binEmpty: 'La papelera está vacía',
+    itemsInBin: '{n} elementos en la papelera',
+    clearAllData: 'Borrar todos los datos',
+    clearDataWarning: 'Esto eliminará todas tus tareas, proyectos y ajustes. No se puede deshacer.',
+    exportData: 'Exportar datos',
+    importData: 'Importar datos',
+
+    // Bin modal
+    binIsEmpty: 'La papelera está vacía',
+    deletedItemsInfo: 'Los elementos eliminados se quedan aquí durante 24 horas.',
+    deletedLabel: 'Eliminado',
+    restore: 'Restaurar',
+    recentlyDeleted: 'Eliminados recientemente',
+
+    // Confirmations
+    confirmDelete: '¿Seguro que quieres eliminar esto?',
+    confirmArchive: '¿Archivar este elemento?',
+    confirmEmptyBin: '¿Vaciar la papelera? No se puede deshacer.',
+    confirmClearData: '¿Borrar todos los datos? No se puede deshacer.',
+    protectedWarning: 'Este elemento está protegido. Primero quita la protección.',
+
+    // Help page
     howToUse: 'Cómo usar',
     masterProductivity: 'Domina tu productividad',
-    helpChecklists: 'Listas & Páginas',
-    helpChecklistsContent: '<b>Listas</b> son proyectos para listas paso a paso como compras o recetas. Usa las pestañas (píldoras) en la parte superior para organizar por páginas.<br><br><b>Mover elementos:</b> Al tocar dos veces una píldora de página se abre el menú de Página (Renombrar, Eliminar). La nueva opción <b>Mover elementos</b> muestra un diálogo con casillas para seleccionar uno o varios elementos (o <b>Select all</b>) y moverlos a otra página. Si no hay otras páginas, se te pedirá crear una nueva página.',
 
-    helpBulkAdd: 'Agregar múltiples',
-    helpBulkAddContent: '<b>Agregar múltiples</b> convierte una lista pegada en tareas o elementos de lista. Pega una línea por elemento o una línea separada con comas. Puedes indicar una página objetivo poniendo el nombre de la página en la primera línea seguido de dos puntos o entre comillas. Los nombres de página se comparan sin distinguir mayúsculas/minúsculas; si no existe, se crea una nueva página.',
+    // Empty states
+    nothingHere: 'Aquí no hay nada',
+    allCaughtUp: '¡Todo al día!',
+
+    // Help sections
+    helpInbox: 'Bandeja de entrada y captura rápida',
+    helpInboxContent: 'La <b>Bandeja de entrada</b> es tu centro para capturar ideas y gestionar tareas sin organizar. Es perfecta para notas rápidas, recordatorios y tareas que todavía no pertenecen a un proyecto.<br><br><b>Añadir tareas:</b> Toca el botón <b>+</b> para crear tareas al instante. Puedes añadir título, notas, prioridad, fecha límite e incluso adjuntar imágenes o notas de voz.<br><br><b>Completar tareas:</b> Marca tareas al terminarlas. Las completadas bajan al final y se archivan automáticamente después de 24 horas.<br><br><b>Vincular a Bandeja:</b> Para tareas dentro de proyectos que necesitan atención, usa el menú de la tarea (tres puntos "...") para <b>Vincular a Bandeja de entrada</b>. Esto crea un acceso directo en la Bandeja manteniendo la tarea en su proyecto. El icono de enlace (🔗) te lleva al proyecto.<br><br><b>Organizar después:</b> Captura primero en Bandeja y luego mueve tareas a proyectos con "Mover al proyecto".',
+    helpProjects: 'Proyectos y progreso',
+    helpProjectsContent: '<b>Proyectos</b> ayudan a organizar tareas relacionadas en grupos manejables. La pantalla principal muestra proyectos de primer nivel con indicadores de progreso.<br><br><b>Barras de progreso:</b> Las barras amarillas muestran progreso de tareas y las moradas progreso de listas. Toca para ver detalles.<br><br><b>Crear proyectos:</b> Toca <b>+</b> para crear un proyecto. Elige <b>Predeterminado</b> o <b>Lista</b>.<br><br><b>Subproyectos:</b> Dentro de un proyecto, crea subproyectos para dividir trabajo. Se pueden reordenar arrastrando.<br><br><b>Mover proyectos:</b> Usa el menú del proyecto para moverlo dentro de la jerarquía y reorganizar tu trabajo.',
+    helpTaskEditor: 'Editor de tareas, notas e imágenes',
+    helpTaskEditorContent: 'La <b>edición de tareas</b> incluye más que el título: notas, fechas límite, prioridades, repetición, protección e imágenes.<br><br><b>Notas:</b> Usa notas para contexto, mini listas o detalles. Los detalles se abren en un modal fácil de leer.<br><br><b>Tareas repetitivas:</b> Configura repetición diaria/semanal/mensual/anual. Al completar una, se crea la siguiente instancia automáticamente.<br><br><b>Imágenes:</b> Adjunta fotos o capturas. Se guardan localmente, se muestran como miniaturas y se comprimen para ahorrar espacio.<br><br><b>Protección:</b> Activa "Proteger tarea" para evitar borrados accidentales.',
+    helpChecklists: 'Listas y páginas',
+    helpChecklistsContent: '<b>Listas</b> son proyectos para listas paso a paso como compras, equipaje o recetas. Soportan cantidad/unidad y tienen navegación por páginas.<br><br><b>Páginas:</b> Organiza la lista en varias páginas con las píldoras de arriba. Desliza horizontalmente si hay muchas. Toca una píldora para cambiar de página, toca dos veces para abrir acciones (renombrar, eliminar) y mantén pulsado para reordenar páginas. La barra recuerda la posición de scroll.<br><br><b>Mover elementos:</b> En Acciones de página, <b>Mover elementos</b> abre un diálogo con casillas para seleccionar uno, varios o <b>Seleccionar todo</b>, y luego elegir página de destino. Si no hay otras páginas, tendrás que crear una nueva. Los elementos se añaden al final de la página destino.<br><br><b>Botones flotantes:</b> En el borde derecho:<br>• <b>+</b> verde: añade un elemento o pega varios en la página actual<br>• <b>Borrar</b> rojo: elimina todos los elementos de la página actual (con confirmación)<br>• <b>Añadir página</b> azul: crea nuevas páginas<br><br><b>Añadir rápido:</b> Toca dos veces un área vacía para añadir. "Añadir varias" acepta una línea por elemento o una lista separada por comas.',
+    helpBulkAdd: 'Añadir varias',
+    helpBulkAddContent: '<b>Añadir varias</b> es la forma más rápida de convertir una lista pegada en tareas o elementos de lista.<br><br><b>Bandeja:</b> Abre el menú <b>+</b> y elige <b>Añadir varias tareas</b>. Cada línea se convierte en una tarea.<br><br><b>Listas:</b> En proyectos de tipo lista, toca <b>Añadir varias</b> y pega contenido: cada línea se añade como elemento en la página actual.<br><br><b>Formatos:</b> Una línea por elemento, o una sola línea separada por comas (por ejemplo <i>leche, plátanos, pan</i>). Las líneas vacías se ignoran.<br><br><b>Encabezados de página:</b> Puedes indicar la página destino poniendo el nombre de la página en la primera línea con dos puntos, o entre comillas (por ejemplo <i>Supermercado:\nleche\npan</i> o <i>"Supermercado"\nleche\npan</i>). Si existe una página con ese nombre (sin distinguir mayúsculas/minúsculas), se usará; si no, se creará una nueva.<br><br><b>Normalización:</b> Los títulos de los elementos se normalizan poniendo en mayúscula la primera letra automáticamente.',
+    helpSuggestions: 'Sugerencias inteligentes para listas',
+    helpSuggestionsContent: 'Las <b>sugerencias</b> aprenden de tus elementos para acelerar entradas repetitivas.<br><br><b>Cómo funciona:</b> Al escribir, aparece autocompletar con hasta 5 coincidencias recientes. Toca una sugerencia para completarla.<br><br><b>Aprendizaje:</b> Cada elemento nuevo se guarda para futuras sugerencias. Actívalo en la configuración del proyecto.',
+    helpFocusMode: 'Modo de enfoque (Zen)',
+    helpFocusModeContent: 'El <b>modo de enfoque</b> convierte las listas en una interfaz sin distracciones.<br><br><b>Activar:</b> En una lista, toca el icono <b>⛶</b> para ocultar navegación.<br><br><b>Salir:</b> Usa el botón de salida para volver a la vista normal.',
+    helpProtected: 'Elementos protegidos',
+    helpProtectedContent: 'Los elementos <b>protegidos</b> evitan pérdidas accidentales.<br><br><b>Cómo proteger:</b> En el editor, activa "Proteger". Aparece un icono de candado (🔒).<br><br><b>Qué evita:</b> No se pueden eliminar/archivar sin quitar protección.',
+    helpPriorities: 'Prioridades',
+    helpPrioritiesContent: '<b>Prioridades</b> te ayudan a enfocarte.<br><br><b>Niveles:</b><br>• <b>¡Urgente!</b>: crítico<br>• <b>Máxima</b>: muy importante<br>• <b>Alta/Media/Baja</b>: indicadores visuales para ordenar el trabajo.<br><br><b>Uso:</b> Selecciona la prioridad al crear/editar.',
+    helpCompletion: 'Completado y automatización',
+    helpCompletionContent: 'Al completar, las tareas bajan al final con marca de tiempo. Tras <b>24 horas</b> se archivan automáticamente.<br><br><b>Papelera:</b> Los elementos eliminados permanecen 24 horas antes de borrarse definitivamente.',
+    helpGestures: 'Gestos y atajos',
+    helpGesturesContent: '<b>Gestos</b> para ir rápido.<br><br><b>Doble toque:</b> En listas, doble toque en un área vacía para añadir un elemento.<br><br><b>Arrastrar y soltar:</b> Mantén pulsado y arrastra para reordenar tareas, proyectos y subproyectos. La pulsación larga ayuda a evitar arrastres accidentales al hacer scroll.<br><br><b>Botones flotantes:</b> En listas, el botón verde <b>+</b> permite añadir desde cualquier punto sin desplazarte.',
+    helpVoiceMemos: 'Notas de voz',
+    helpVoiceMemosContent: 'Las <b>notas de voz</b> permiten capturar ideas sin usar las manos.<br><br><b>Grabar:</b> Toca el icono de micrófono para grabar y luego detener. Se guarda localmente.<br><br><b>Reproducción:</b> Aparecen controles de audio en los detalles.<br><br><b>Compartir:</b> Usa el botón de compartir y elige "Guardar en Archivos".',
+    helpSettings: 'Ajustes y personalización',
+    helpSettingsContent: 'Los <b>ajustes</b> permiten personalizar la app.<br><br><b>Tema:</b> Claro, oscuro o sistema.<br><br><b>Idioma:</b> Cambia el idioma desde Ajustes.<br><br><b>Gestión de datos:</b> Exporta/importa JSON para copias de seguridad.<br><br><b>Almacenamiento:</b> Todo se guarda localmente y funciona sin cuenta.',
+    helpDataManagement: 'Copia de seguridad y sincronización',
+    helpDataManagementContent: '<b>Exportar:</b> En Ajustes, toca "Exportar datos" para descargar un JSON con tus datos.<br><br><b>Importar:</b> Importa un JSON exportado anteriormente. Reemplaza los datos actuales.<br><br><b>Automático:</b> Se guarda localmente mientras usas la app.',
+
+    // Time
+    justNow: 'Ahora mismo',
+    minutesAgo: 'hace {n} minutos',
+    hoursAgo: 'hace {n} horas',
+    yesterday: 'Ayer',
+    daysAgo: 'hace {n} días',
 
     // Misc
     loading: 'Cargando...',
     error: 'Error',
     success: 'Éxito',
-    warning: 'Advertencia'
+    warning: 'Advertencia',
+    info: 'Info',
+    version: 'Versión',
+
+    // Focus mode
+    focusMode: 'Modo de enfoque',
+    exitFocusMode: 'Salir del modo de enfoque',
+
+    // Voice memos
+    voiceMemo: 'Nota de voz',
+    voiceMemos: 'Notas de voz',
+    recordVoiceMemo: 'Grabar nota de voz',
+    saveVoiceMemo: 'Guardar nota de voz',
+    voiceRecordingQuality: 'Calidad de grabación',
+    lowQuality: 'Baja calidad (archivos más pequeños)',
+    highQuality: 'Alta calidad',
+    voiceMemoSaved: 'Nota de voz guardada',
+    voiceMemoDeleted: 'Nota de voz eliminada',
+    voiceMemoMoved: 'Nota de voz movida',
+    qty: 'Cant.',
+    unitPcs: 'uds',
+    unitKg: 'kg',
+    unitLit: 'l',
+    enableQtyUnits: 'Habilitar cantidad y unidades para elementos',
+    memoLinkedToInbox: 'Nota vinculada a Bandeja de entrada',
+    memoUnlinkedFromInbox: 'Nota desvinculada de Bandeja de entrada',
+    deleteVoiceMemo: 'Eliminar nota de voz',
+    deleteVoiceMemoConfirm: '¿Seguro que quieres eliminar esta nota de voz?',
+    voiceMemoActions: 'Elige una acción',
+    memoTitle: 'Título de la nota',
+    tapToRecord: 'Toca para grabar',
+    recording: 'Grabando...',
+    paused: 'Pausado',
+    record: 'Grabar',
+    pause: 'Pausar',
+    stop: 'Detener',
+    play: 'Reproducir',
+    reRecord: 'Volver a grabar',
+    reRecordConfirm: 'Esto eliminará la grabación actual e iniciará una nueva. ¿Continuar?',
+    duration: 'Duración',
+    discard: 'Descartar',
+    discardRecording: 'Descartar grabación',
+    discardRecordingConfirm: '¿Seguro que quieres descartar esta grabación? No se puede deshacer.',
+    microphoneAccessDenied: 'Acceso al micrófono denegado. Permite el acceso en los ajustes del navegador.',
+    microphoneNotSupported: 'Micrófono no compatible en este dispositivo',
+    microphoneNotFound: 'No se encontró micrófono',
+    microphoneInUse: 'El micrófono está en uso por otra app',
+    microphoneError: 'Error del micrófono',
+    requestingMicAccess: 'Solicitando acceso al micrófono...',
+
+    // Misc UI
+    rename: 'Renombrar',
+    move: 'Mover',
+    destination: 'Destino',
+    linkedToInbox: 'Vinculado a Bandeja de entrada',
+    addToInbox: 'Añadir a Bandeja de entrada',
+    addToProject: 'Añadir al proyecto',
+    topLevel: 'Página principal de Proyectos',
+
+    // Checklist pages
+    page: 'Página',
+    addPage: 'Añadir página',
+    moveToPage: 'Mover a página',
+    pageName: 'Nombre de la página',
+    untitled: 'Sin título',
+    renamePage: 'Renombrar página',
+    deletePage: '¿Eliminar página?',
+    deletePageConfirm: '¿Eliminar esta página?',
+    deletePageConfirmEmpty: '¿Eliminar esta página vacía?',
+    itemsWillBeDeleted: 'se eliminarán elementos.',
+    pageActions: 'Acciones de página',
+    reorderPagesFailed: 'No se pudo reordenar las páginas.',
+    itemName: 'Nombre del elemento',
+    addItem: 'Añadir elemento',
+    doubleTapToAdd: 'Doble toque en un área vacía para añadir',
+    itemDetails: 'Detalles del elemento',
+    useSuggestions: 'Usar sugerencias',
+    enableSuggestionsQuick: 'Habilitar sugerencias para entradas rápidas',
+    clearSuggestionHistory: 'Borrar historial de sugerencias',
+    checklistOptions: 'Opciones de listas',
+    manageSuggestionHistory: 'Gestionar sugerencias guardadas',
+    noSuggestionsYet: 'Todavía no hay sugerencias guardadas',
+    clearAll: 'Borrar todo',
+    clearAllItems: '¿Borrar todos los elementos?',
+    clearAllItemsConfirm: 'Esto eliminará todos los elementos de esta página. ¿Seguro?',
+    noItemsToClear: 'No hay elementos para borrar',
+    clearPage: 'Borrar\nPágina',
+    confirmClearSuggestions: '¿Borrar todas las sugerencias guardadas?',
+    deleteSuggestionConfirm: '¿Eliminar esta sugerencia?',
+    suggestionDeleted: 'Sugerencia eliminada',
+    suggestionHistoryCleared: 'Historial de sugerencias borrado',
+    taskProtectedMessage: 'Esta tarea está protegida. Desmárcala en el editor para eliminarla.',
+    allProtected: 'Todo protegido',
+    allProtectedMessage: 'Todos los elementos completados están protegidos y no se pueden eliminar.',
+    deleteCompletedCount: 'Eliminar',
+    completedItems: 'elementos completados',
+    protectedKept: 'los protegidos se conservarán',
+    deleteAllCompleted: 'Eliminar todo',
+    deleteCompleted: '¿Eliminar completados?',
+    deleteAll: 'Eliminar todo',
+    add: 'Añadir',
+
+    // Recurrence
+    repeat: 'Repetir',
+    none: 'Ninguno',
+    daily: 'Diario',
+    weekly: 'Semanal',
+    monthly: 'Mensual',
+    yearly: 'Anual',
+    recurring: 'Recurrente',
+    repeatsDaily: 'Se repite a diario',
+    repeatsWeekly: 'Se repite semanalmente',
+    repeatsWeeklyOn: 'Se repite semanalmente el',
+    repeatsMonthly: 'Se repite mensualmente',
+    repeatsMonthlyOnThe: 'Se repite mensualmente el',
+    repeatsYearly: 'Se repite anualmente',
+    sameDate: 'La misma fecha cada mes',
+    nthWeekday: 'N-ésimo día de la semana (p. ej. 2º martes)',
+    ends: 'Termina',
+    never: 'Nunca',
+    onDate: 'En la fecha',
+    afterTimes: 'Después de X veces',
+    until: 'hasta',
+    timesRemaining: 'veces restantes',
+    first: '1º',
+    second: '2º',
+    third: '3º',
+    fourth: '4º',
+    fifth: '5º',
+    sun: 'D',
+    mon: 'L',
+    tue: 'M',
+    wed: 'X',
+    thu: 'J',
+    fri: 'V',
+    sat: 'S',
+    sunday: 'Domingo',
+    monday: 'Lunes',
+    tuesday: 'Martes',
+    wednesday: 'Miércoles',
+    thursday: 'Jueves',
+    friday: 'Viernes',
+    saturday: 'Sábado',
+    dueDateRequired: 'Fecha límite requerida',
+    recurringNeedsDueDate: 'Las tareas recurrentes necesitan una fecha límite para calcular la siguiente ocurrencia.',
+    deleteRecurringTask: 'Eliminar tarea recurrente',
+    deleteRecurringTaskMsg: 'Esto es parte de una serie repetitiva. ¿Qué quieres hacer?',
+    deleteJustThis: 'Eliminar solo esta',
+    endSeries: 'Finalizar toda la serie',
+    deleteArchivedTodo: '¿Eliminar tarea archivada?',
+    deleteArchivedTodoMsg: 'Esto eliminará permanentemente la tarea y sus imágenes.'
   },
   
   hr: {
@@ -1565,7 +1856,13 @@ export const languageNames = {
 };
 
 // Current language (default to English, can be overridden from localStorage)
-let currentLang = localStorage.getItem('app-language') || 'en';
+let currentLang = 'en';
+try {
+  currentLang = localStorage.getItem('app-language') || 'en';
+} catch {
+  // Some environments block localStorage access; fall back to English.
+  currentLang = 'en';
+}
 
 /**
  * Get the current language code
@@ -1580,9 +1877,17 @@ export function getLang() {
 export function setLang(lang) {
   if (translations[lang]) {
     currentLang = lang;
-    localStorage.setItem('app-language', lang);
+    try {
+      localStorage.setItem('app-language', lang);
+    } catch {
+      // ignore
+    }
     // Dispatch event so the app can re-render
-    window.dispatchEvent(new CustomEvent('language-changed', { detail: { lang } }));
+    try {
+      window.dispatchEvent(new CustomEvent('language-changed', { detail: { lang } }));
+    } catch {
+      // ignore
+    }
   }
 }
 
