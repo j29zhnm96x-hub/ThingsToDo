@@ -14,7 +14,7 @@ import { renderProjectCard } from '../ui/projectCard.js';
 import { enablePillReorder } from '../ui/pillReorder.js';
 import { Priority } from '../data/models.js';
 import { showToast } from '../ui/toast.js';
-import { openBulkAddModal } from '../ui/bulkAdd.js';
+import { openBulkAddModal, parseBulkAddTextWithPage } from '../ui/bulkAdd.js';
 import { t } from '../utils/i18n.js';
 import { renderVoiceMemoList, openRecordingModal } from '../ui/voiceMemo.js';
 import { isDueNowOrPast } from '../logic/recurrence.js';
@@ -44,38 +44,78 @@ function openChecklistAddMenu(ctx, {
   const { modalHost, db } = ctx;
   let closeModal = null;
 
-  const openBulkAddForChecklist = () => {
-    closeModal?.();
-    openBulkAddModal(modalHost, {
-      title: t('addMultiple') || 'Add Multiple',
-      label: t('checklistItems') || 'Checklist items',
-      placeholder: t('bulkAddExampleItems') || 'milk\nbananas\nbread',
-      submitLabel: t('addItems') || 'Add Items',
-      onSubmit: async (items) => {
-        const currentTodosForProject = await db.todos.listByProject(project.id);
-        const pageItems = currentTodosForProject.filter((item) => {
-          if (item.pageId === currentPageId) return true;
-          return currentPageId === firstPageId && !item.pageId;
-        });
-        const nextOrder = pageItems.reduce((maxOrder, item) => {
-          const order = Number.isFinite(item.order) ? item.order : -1;
-          return Math.max(maxOrder, order);
-        }, -1) + 1;
+    const openBulkAddForChecklist = () => {
+      closeModal?.();
+      // We will use the enhanced parser in bulkAdd that can return a page name
+      openBulkAddModal(modalHost, {
+        title: t('addMultiple') || 'Add Multiple',
+        label: t('checklistItems') || 'Checklist items',
+        placeholder: t('bulkAddExampleItems') || 'milk\nbananas\nbread',
+        passRaw: true,
+        submitLabel: t('addItems') || 'Add Items',
+        // Instead of receiving items[], receive raw text so we can parse page name
+        onSubmit: async (raw) => {
+          try {
+            const { pageName, items } = parseBulkAddTextWithPage(raw);
+            console.debug('bulkAdd raw:', raw, 'parsed pageName:', pageName, 'items:', items);
+            if (!items.length) return;
 
-        const todosToCreate = items.map((title, index) => {
-          const todo = newTodo({ title, projectId: project.id, pageId: currentPageId });
-          todo.order = nextOrder + index;
-          return todo;
-        });
+            // Capitalize items: first letter uppercase, rest unchanged
+            const normalizeTitle = (s) => {
+              if (!s) return s;
+              const trimmed = s.trim();
+              return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+            };
 
-        await Promise.all(todosToCreate.map((todo) => db.todos.put(todo)));
-        if (project.useSuggestions === true) {
-          await db.checklistSuggestions.remember(items);
+            // Determine target page id: if pageName provided, find or create page (case-insensitive)
+            let targetPageId = currentPageId;
+            if (pageName) {
+              // Load current pages for this project (don't rely on outer-scope `pages` variable)
+              let pagesLocal = await db.checklistPages.listByProject(project.id);
+              pagesLocal.sort(sortPagesByOrder);
+              const existing = pagesLocal.find(p => (p.name || '').toLowerCase() === pageName.toLowerCase());
+              if (existing) {
+                targetPageId = existing.id;
+              } else {
+                // Create new page with provided name and append at end
+                const newPage = newChecklistPage({ projectId: project.id, name: pageName });
+                newPage.order = pagesLocal.length;
+                await db.checklistPages.put(newPage);
+                // update local list
+                pagesLocal.push(newPage);
+                pagesLocal.sort(sortPagesByOrder);
+                targetPageId = newPage.id;
+              }
+            }
+
+            const currentTodosForProject = await db.todos.listByProject(project.id);
+            const pageItems = currentTodosForProject.filter((item) => {
+              if (item.pageId === targetPageId) return true;
+              return targetPageId === firstPageId && !item.pageId;
+            });
+            const nextOrder = pageItems.reduce((maxOrder, item) => {
+              const order = Number.isFinite(item.order) ? item.order : -1;
+              return Math.max(maxOrder, order);
+            }, -1) + 1;
+
+            const todosToCreate = items.map((title, index) => {
+              const todo = newTodo({ title: normalizeTitle(title), projectId: project.id, pageId: targetPageId });
+              todo.order = nextOrder + index;
+              return todo;
+            });
+
+            await Promise.all(todosToCreate.map((todo) => db.todos.put(todo)));
+            if (project.useSuggestions === true) {
+              await db.checklistSuggestions.remember(items.map(normalizeTitle));
+            }
+            await onRefresh();
+          } catch (err) {
+            console.error('Error in bulk add for checklist:', err);
+            showToast(t('addMultipleFailed') || 'Unable to add items.');
+          }
         }
-        await onRefresh();
-      }
-    });
-  };
+      });
+    };
 
   const content = el('div', { class: 'stack' },
     el('button', {
