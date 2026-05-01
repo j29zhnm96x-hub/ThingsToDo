@@ -1320,6 +1320,31 @@ html[data-theme='light'] .checklist-clearPage-btn {
   text-overflow: ellipsis;
 }
 
+/* Grouped card styles */
+.todo--group {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 8px;
+  background: var(--surface);
+}
+
+.todo--group .todo__title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Marquee animation for long titles */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.todo__title.marquee {
+  display: inline-block;
+  will-change: transform;
+}
+
 .todo__dueInline {
   white-space: nowrap;
   margin-right: 2px;

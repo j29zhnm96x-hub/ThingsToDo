@@ -25,6 +25,12 @@ export async function renderInbox(ctx) {
   const { main, db, modalHost } = ctx;
   clear(main);
 
+  // Clear any existing group timers created by prior renders
+  if (renderInbox._groupTimers) {
+    for (const t of renderInbox._groupTimers) clearInterval(t);
+  }
+  renderInbox._groupTimers = [];
+
   const allTodos = await db.todos.listActive();
   // Filter for inbox items and exclude future recurring instances
   const todos = allTodos.filter(t => {
@@ -50,6 +56,8 @@ export async function renderInbox(ctx) {
     return true;
   });
   const { projects, map: projectsById } = await buildProjectsById(db);
+  const settings = await db.settings.get();
+  const groupedLevels = (settings?.taskGrouping?.groupedLevels || []).slice();
 
   // Projects linked to Inbox
   const linkedProjects = projects.filter((p) => p.showInInbox);
@@ -72,7 +80,107 @@ export async function renderInbox(ctx) {
   // Voice memos in inbox
   const voiceMemos = await db.voiceMemos.listForInbox();
 
-  const list = renderTodoList({
+  // If grouping is enabled (levels selected), create grouped cards for those priorities first
+  let list = null;
+  if (groupedLevels && groupedLevels.length) {
+    // Build grouped section manually, then append remaining todos via renderTodoList
+    const container = el('div', { class: 'list' });
+
+    // Helper to render a grouped card for a priority
+    const renderGroupCard = (priority, items) => {
+      let idx = 0;
+      const card = el('div', { class: 'todo todo--group', 'data-priority': priority },
+        el('div', { class: 'todo__row1' },
+          el('div', { class: 'todo__checkWrap' }, el('div', { style: { width: '12px' } })),
+          el('div', { class: 'todo__titleArea' }, el('div', { class: 'todo__title' }, items[0]?.title || '')),
+          el('div', { class: 'todo__icons' }, el('button', { class: 'todo__menuBtn', onClick: (e) => { e.stopPropagation(); openTodoMenu(modalHost, { title: 'Group', actions: [{ label: 'Expand', class: 'btn', onClick: () => expand() }, { label: 'Close', class: 'btn btn--ghost', onClick: () => true }] }); } }, '⋯'))
+        )
+      );
+
+      const titleArea = card.querySelector('.todo__title');
+
+      // Cycling
+      const cycle = () => {
+        idx = (idx + 1) % items.length;
+        titleArea.textContent = items[idx].title;
+        // Auto-scroll if overflow
+        setTimeout(() => {
+          if (titleArea.scrollWidth > titleArea.clientWidth) {
+            titleArea.style.transition = 'transform 6s linear';
+            titleArea.style.transform = `translateX(-${titleArea.scrollWidth - titleArea.clientWidth}px)`;
+            setTimeout(() => { titleArea.style.transition = ''; titleArea.style.transform = ''; }, 6000);
+          }
+        }, 50);
+      };
+
+      if (items.length > 1) {
+        const timer = setInterval(cycle, 2500);
+        renderInbox._groupTimers.push(timer);
+      }
+
+      const expand = () => {
+        // Replace card content with expanded list of tasks
+        const expanded = el('div', { class: 'card stack' }, ...items.map((it) => {
+          const color = (it.priority === Priority.URGENT) ? 'var(--pUrgent)' : (it.priority === 'P0' ? 'var(--p0)' : (it.priority === 'P1' ? 'var(--p1)' : (it.priority === 'P2' ? 'var(--p2)' : 'var(--p3)')));
+          const cb = el('input', { type: 'checkbox', checked: it.completed ? 'checked' : null, onChange: async (e) => {
+            if (e.target.checked) await completeTodo(db, { ...it, priority: Priority.P3 }); else await uncompleteTodo(db, it);
+            await renderInbox(ctx);
+          } });
+          return el('div', { class: 'row', style: { alignItems: 'center', gap: '8px' } },
+            cb,
+            el('span', { style: { width: '12px', height: '12px', borderRadius: '50%', background: color, display: 'inline-block' } }),
+            el('span', {}, it.title)
+          );
+        }));
+        openModal(modalHost, { title: t('group') || 'Group', content: expanded, actions: [{ label: t('close') || 'Close', class: 'btn btn--primary', onClick: () => true }] });
+      };
+
+      card.addEventListener('click', (e) => {
+        e.stopPropagation();
+        expand();
+      });
+
+      return card;
+    };
+
+    // Clone todos array to mutate
+    const todosCopy = todos.slice();
+    for (const lvl of groupedLevels) {
+      const groupItems = todosCopy.filter(t => t.priority === lvl);
+      if (groupItems.length === 0) continue;
+      // Remove from todosCopy
+      for (const it of groupItems) {
+        const i = todosCopy.indexOf(it);
+        if (i !== -1) todosCopy.splice(i, 1);
+      }
+      container.appendChild(renderGroupCard(lvl, groupItems));
+    }
+
+    // Render remaining todos using the normal list renderer
+    list = container;
+    if (todosCopy.length) {
+      list.appendChild(renderTodoList({
+        todos: todosCopy,
+        projectsById,
+        mode: 'active',
+        onTap: (todo) => {
+          if (todo.projectId && (todo.showInInbox || todo.isVirtualLink)) { location.hash = '#project/' + todo.projectId; return; }
+          openTodoInfo({ todo, db, modalHost, onEdit: () => ctx.openTodoEditor({ mode: 'edit', todoId: todo.id, projectId: todo.projectId, db }) });
+        },
+        onToggleCompleted: async (todo, checked) => {
+          if (checked) { await completeTodo(db, { ...todo, priority: Priority.P3 }); } else { await uncompleteTodo(db, todo); }
+          await renderInbox(ctx);
+        },
+        onEdit: (todo) => { if (todo.isVirtualLink) return; ctx.openTodoEditor({ mode: 'edit', todoId: todo.id, projectId: todo.projectId, db }); },
+        onMove: async (todo) => { const dest = await pickProject(modalHost, { title: 'Move to…', projects, includeInbox: true, initial: todo.projectId ?? null, confirmLabel: 'Move' }); if (dest === undefined) return; await moveTodo(db, todo, dest); await renderInbox(ctx); },
+        onLinkToggle: async (todo) => { await db.todos.put({ ...todo, showInInbox: !todo.showInInbox }); await renderInbox(ctx); },
+        onArchive: async (todo) => { if (todo.protected) { openModal(modalHost, { title: 'Task Protected', content: el('div', {}, 'This task is protected.'), actions: [{ label: 'OK', class: 'btn btn--primary', onClick: () => true }] }); return; } const ok = await confirm(modalHost, { title: 'Archive todo?', message: 'You can restore it later from Archive.', confirmLabel: 'Archive' }); if (!ok) return; await db.todos.put({ ...todo, archived: true, archivedAt: new Date().toISOString(), archivedFromProjectId: todo.projectId, priority: Priority.P3 }); await compressAttachmentsForArchive(db, todo.id); await renderInbox(ctx); },
+        onMenu: (todo, opts) => openTodoMenu(modalHost, { title: todo.title || 'Todo', actions: [ { label: 'Edit', class: 'btn', onClick: () => (ctx.openTodoEditor({ mode: 'edit', todoId: todo.id, projectId: todo.projectId, db }), true) }, { label: 'Share…', class: 'btn', onClick: async () => { const { exportTodoToFile } = await import('../utils/share.js'); await exportTodoToFile(db, todo); return true; } }, { label: 'Move', class: 'btn', onClick: async () => { const dest = await pickProject(modalHost, { title: 'Move to…', projects, includeInbox: true, initial: todo.projectId ?? null, confirmLabel: 'Move' }); if (dest === undefined) return false; await moveTodo(db, todo, dest); await renderInbox(ctx); return true; } }, { label: 'Archive', class: 'btn btn--danger', onClick: async () => { const ok = await confirm(modalHost, { title: 'Archive todo?', message: 'You can restore it later from Archive.', confirmLabel: 'Archive' }); if (ok) { await db.todos.put({ ...todo, archived: true, archivedAt: new Date().toISOString(), archivedFromProjectId: todo.projectId }); await compressAttachmentsForArchive(db, todo.id); await renderInbox(ctx); } return true; } } ] }),
+        onReorder: async ({ priority, projectId: containerId, orderedIds }) => { await reorderBucket(db, { priority, projectId: containerId, orderedIds }); await renderInbox(ctx); }
+      }));
+    }
+  } else {
+    list = renderTodoList({
     todos,
     projectsById,
     mode: 'active',
@@ -195,7 +303,7 @@ export async function renderInbox(ctx) {
       await renderInbox(ctx);
     }
   });
-
+  }
   const linkedProjectsList = linkedProjects.length
     ? el('div', { class: 'list' },
         ...linkedProjects.map((p) => renderProjectCard({

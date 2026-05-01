@@ -15,7 +15,7 @@ import { t } from './utils/i18n.js';
 import { openModal } from './ui/modal.js';
 import { openRecordingModal } from './ui/voiceMemo.js';
 import { openBulkAddModal } from './ui/bulkAdd.js';
-import { newTodo } from './data/models.js';
+import { newTodo, Priority } from './data/models.js';
 
 let topbarDateIntervalId = null;
 
@@ -178,6 +178,77 @@ export function initApp(root) {
             openInboxAddMenu(ctx, modalHost);
           } }, '+')
         );
+
+        // Show Group button if allowed in settings
+        if (settings?.taskGrouping?.enabled === true) {
+          topbarActions.append(
+            el('button', { class: 'topbar__addBtn', type: 'button', style: { marginLeft: '8px' }, 'aria-label': 'Group', onClick: async () => {
+              hapticLight();
+              // Open grouping modal
+              const groupingOptions = el('div', { class: 'stack' },
+                el('button', { class: 'btn', style: { justifyContent: 'flex-start' }, onClick: async () => {
+                  // Group All selected
+                  const s = await db.settings.get();
+                  const next = { ...s, taskGrouping: { ...(s.taskGrouping || {}), groupedLevels: [Priority.URGENT, Priority.P0, Priority.P1, Priority.P2, Priority.P3] } };
+                  await db.settings.put(next);
+                  renderInbox(ctx);
+                  return true;
+                } }, 'Group All'),
+                el('button', { class: 'btn', style: { justifyContent: 'flex-start' }, onClick: async () => {
+                  // Select which to group -> open picker
+                  setTimeout(async () => {
+                    // Build picker content
+                    const levels = [Priority.URGENT, Priority.P0, Priority.P1, Priority.P2, Priority.P3];
+                    const labels = {
+                      [Priority.URGENT]: t('urgent') || 'Urgent!',
+                      [Priority.P0]: t('highest') || 'Highest',
+                      [Priority.P1]: t('high') || 'High',
+                      [Priority.P2]: t('medium') || 'Medium',
+                      [Priority.P3]: t('low') || 'Low'
+                    };
+                    const container = el('div', { class: 'stack' });
+                    const checkMap = new Map();
+                    for (const lv of levels) {
+                      const cb = el('input', { type: 'checkbox' });
+                      checkMap.set(lv, cb);
+                      const color = (lv === Priority.URGENT) ? 'var(--pUrgent)' : (lv === Priority.P0 ? 'var(--p0)' : (lv === Priority.P1 ? 'var(--p1)' : (lv === Priority.P2 ? 'var(--p2)' : 'var(--p3)')));
+                      const row = el('label', { class: 'row', style: { alignItems: 'center', gap: '8px' } },
+                        cb,
+                        el('span', { style: { width: '12px', height: '12px', borderRadius: '50%', background: color, display: 'inline-block' } }),
+                        el('span', {}, labels[lv])
+                      );
+                      container.appendChild(row);
+                    }
+
+                    openModal(modalHost, {
+                      title: 'Select priorities to group',
+                      content: container,
+                      actions: [
+                        { label: t('cancel') || 'Cancel', class: 'btn btn--ghost', onClick: () => true },
+                        { label: t('save') || 'Save', class: 'btn btn--primary', onClick: async () => {
+                          const selected = [];
+                          for (const [lv, cb] of checkMap.entries()) if (cb.checked) selected.push(lv);
+                          const s = await db.settings.get();
+                          const next = { ...s, taskGrouping: { ...(s.taskGrouping || {}), groupedLevels: selected } };
+                          await db.settings.put(next);
+                          await renderInbox(ctx);
+                          return true;
+                        } }
+                      ]
+                    });
+                  }, 0);
+                  return true;
+                } }, 'Select which to group')
+              );
+
+              openModal(modalHost, {
+                title: 'Group tasks',
+                content: groupingOptions,
+                actions: [ { label: t('cancel') || 'Cancel', class: 'btn btn--ghost', onClick: () => true } ]
+              });
+            } }, 'Group')
+          );
+        }
         await renderInbox(ctx);
       } else if (route.name === 'projects') {
         topbarTitle.textContent = t('projects');

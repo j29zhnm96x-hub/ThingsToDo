@@ -37,6 +37,20 @@ export async function renderSettings(ctx) {
     'aria-label': 'Light mode'
   });
 
+  // Task grouping setting
+  const allowGrouping = !!(settings.taskGrouping && settings.taskGrouping.enabled === true);
+  const allowGroupingToggle = el('input', {
+    type: 'checkbox',
+    checked: allowGrouping ? 'checked' : null,
+    'aria-label': 'Allow Task Grouping'
+  });
+  allowGroupingToggle.addEventListener('change', async () => {
+    const current = await db.settings.get();
+    const next = { ...current, taskGrouping: { ...(current.taskGrouping || {}), enabled: allowGroupingToggle.checked } };
+    await db.settings.put(next);
+    await renderSettings(ctx);
+  });
+
   themeToggle.addEventListener('change', async () => {
     const nextTheme = themeToggle.checked ? 'light' : 'dark';
     const nextSettings = { ...await db.settings.get(), theme: nextTheme };
@@ -134,6 +148,14 @@ export async function renderSettings(ctx) {
     el('div', { class: 'card stack' },
       el('div', { style: { fontWeight: '700' } }, t('language')),
       langSelect
+    ),
+    el('div', { class: 'card stack' },
+      el('div', { style: { fontWeight: '700' } }, 'Task Grouping'),
+      el('div', { class: 'row' },
+        el('div', { class: 'small' }, 'Allow Task Grouping'),
+        allowGroupingToggle
+      ),
+      el('div', { class: 'small' }, 'Group Inbox tasks by priority and show grouped cards that cycle through items.')
     ),
     el('div', { class: 'card stack' },
       el('div', { style: { fontWeight: '700' } }, t('voiceMemos')),
