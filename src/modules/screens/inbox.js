@@ -15,6 +15,9 @@ import { renderVoiceMemoList, openPlaybackModal, openVoiceMemoMenu } from '../ui
 import { openModal } from '../ui/modal.js';
 import { isDueNowOrPast } from '../logic/recurrence.js';
 
+const PRIORITY_ORDER = ['URGENT', 'P0', 'P1', 'P2', 'P3'];
+let collapsedPriorities = {};
+
 async function buildProjectsById(db) {
   const projects = await db.projects.list();
   const map = new Map(projects.map((p) => [p.id, p]));
@@ -71,6 +74,11 @@ export async function renderInbox(ctx) {
 
   // Voice memos in inbox
   const voiceMemos = await db.voiceMemos.listForInbox();
+
+  const settings = await db.settings.get();
+  const groupActiveTasks = settings.groupActiveTasks === true;
+
+  const activeTodos = todos.filter(t => !t.completed);
 
   const list = renderTodoList({
     todos,
@@ -193,6 +201,12 @@ export async function renderInbox(ctx) {
     onReorder: async ({ priority, projectId, orderedIds }) => {
       await reorderBucket(db, { priority, projectId, orderedIds });
       await renderInbox(ctx);
+    },
+    groupByPriority: groupActiveTasks,
+    collapsedPriorities,
+    onGroupToggle: (priority) => {
+      collapsedPriorities[priority] = !collapsedPriorities[priority];
+      renderInbox(ctx);
     }
   });
 
@@ -230,6 +244,39 @@ export async function renderInbox(ctx) {
   if (todos.length === 0 && linkedProjects.length === 0 && voiceMemos.length === 0) {
     main.append(emptyState(t('noTasks'), t('noTasksHint')));
   } else {
-    main.append(el('div', { class: 'stack' }, linkedProjectsList, voiceMemosList, todos.length ? list : null));
+    const content = el('div', { class: 'stack' });
+
+    if (linkedProjectsList) content.append(linkedProjectsList);
+    if (voiceMemosList) content.append(voiceMemosList);
+
+    if (todos.length) {
+      if (groupActiveTasks && activeTodos.length > 0) {
+        const hasActive = PRIORITY_ORDER.some(p => activeTodos.some(t => t.priority === p));
+        if (hasActive) {
+          const allCollapsed = PRIORITY_ORDER.every(p => {
+            const has = activeTodos.some(t => t.priority === p);
+            return has ? collapsedPriorities[p] === true : true;
+          });
+
+          const collapseBtn = el('button', {
+            type: 'button',
+            class: 'inbox-collapse-btn',
+            onClick: () => {
+              if (allCollapsed) {
+                PRIORITY_ORDER.forEach(p => { delete collapsedPriorities[p]; });
+              } else {
+                PRIORITY_ORDER.forEach(p => { collapsedPriorities[p] = true; });
+              }
+              renderInbox(ctx);
+            }
+          }, allCollapsed ? t('expandAll') : t('collapseAll'));
+
+          content.append(el('div', { class: 'inbox-collapse-bar' }, collapseBtn));
+        }
+      }
+      content.append(list);
+    }
+
+    main.append(content);
   }
 }

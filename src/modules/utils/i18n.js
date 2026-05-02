@@ -68,6 +68,9 @@ const translations = {
     high: 'High',
     medium: 'Medium',
     low: 'Low',
+    groupActiveTasks: 'Group active tasks by priority',
+    collapseAll: 'Collapse all',
+    expandAll: 'Expand all',
     
     // Due dates
     dueDate: 'Due date',
@@ -447,7 +450,10 @@ const translations = {
     high: 'Alta',
     medium: 'Media',
     low: 'Baja',
-
+    groupActiveTasks: 'Agrupar tareas activas por prioridad',
+    collapseAll: 'Contraer todo',
+    expandAll: 'Expandir todo',
+    
     // Due dates
     dueDate: 'Fecha límite',
     noDueDate: 'Sin fecha límite',
@@ -803,6 +809,9 @@ const translations = {
     high: 'Visoki',
     medium: 'Srednji',
     low: 'Niski',
+    groupActiveTasks: 'Grupiraj aktivne zadatke po prioritetu',
+    collapseAll: 'Sažmi sve',
+    expandAll: 'Proširi sve',
     
     // Due dates
     dueDate: 'Rok',
@@ -1171,6 +1180,9 @@ const translations = {
     high: 'Alta',
     medium: 'Media',
     low: 'Bassa',
+    groupActiveTasks: 'Raggruppa attività attive per priorità',
+    collapseAll: 'Comprimi tutto',
+    expandAll: 'Espandi tutto',
     
     // Due dates
     dueDate: 'Scadenza',
@@ -1539,6 +1551,9 @@ const translations = {
     high: 'Hoch',
     medium: 'Mittel',
     low: 'Niedrig',
+    groupActiveTasks: 'Aktive Aufgaben nach Priorität gruppieren',
+    collapseAll: 'Alle einklappen',
+    expandAll: 'Alle ausklappen',
     
     // Due dates
     dueDate: 'Fälligkeitsdatum',

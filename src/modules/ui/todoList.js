@@ -4,6 +4,9 @@ import { daysLeftText, daysLeftClass } from './todoInfo.js';
 import { hapticLight, hapticSelection } from './haptic.js';
 import { t } from '../utils/i18n.js';
 
+const PRIORITY_LABEL_KEYS = { URGENT: 'urgent', P0: 'highest', P1: 'high', P2: 'medium', P3: 'low' };
+const PRIORITY_ORDER = ['URGENT', 'P0', 'P1', 'P2', 'P3'];
+
 export function renderTodoList({
   todos,
   projectsById,
@@ -17,7 +20,10 @@ export function renderTodoList({
   onLinkToggle,
   onReorder,
   onTap,
-  mode // 'active' | 'archive'
+  mode, // 'active' | 'archive'
+  groupByPriority, // optional: group active tasks by priority
+  collapsedPriorities, // optional: { URGENT: true, ... }
+  onGroupToggle // optional: (priority) => void
 }) {
   const list = el('div', { class: 'list' });
 
@@ -136,9 +142,43 @@ export function renderTodoList({
     return item;
   }
 
-  // Render active todos
-  for (const todo of sortedActive) {
-    list.appendChild(renderCard(todo));
+  // Render active todos (possibly grouped by priority)
+  if (groupByPriority && mode !== 'archive') {
+    for (const p of PRIORITY_ORDER) {
+      const groupTodos = sortedActive.filter(t => t.priority === p);
+      if (groupTodos.length === 0) continue;
+
+      const isCollapsed = collapsedPriorities?.[p] === true;
+      const labelKey = PRIORITY_LABEL_KEYS[p] || 'medium';
+      const label = t(labelKey) || labelKey;
+
+      const pill = el('button', {
+        type: 'button',
+        class: 'priority-pill' + (isCollapsed ? ' priority-pill--collapsed' : ''),
+        'aria-label': label + (isCollapsed ? ' (collapsed)' : ''),
+        onClick: () => {
+          onGroupToggle?.(p);
+        }
+      },
+        el('span', { class: 'priority-pill__arrow' }, isCollapsed ? '▶' : '▼'),
+        el('span', { class: 'priority-pill__label' }, label),
+        el('span', { class: 'priority-pill__count' }, String(groupTodos.length))
+      );
+
+      const header = el('div', { class: 'priority-group-header' }, pill);
+      list.appendChild(header);
+
+      for (const todo of groupTodos) {
+        const card = renderCard(todo);
+        if (isCollapsed) card.style.display = 'none';
+        card.dataset.priorityGroup = p;
+        list.appendChild(card);
+      }
+    }
+  } else {
+    for (const todo of sortedActive) {
+      list.appendChild(renderCard(todo));
+    }
   }
 
   // Add divider and completed section if there are completed todos
@@ -238,7 +278,7 @@ export function renderTodoList({
     }
 
     function cardsInPriority(priority) {
-      return Array.from(list.querySelectorAll(`.todo[data-priority="${priority}"]`));
+      return Array.from(list.querySelectorAll(`.todo[data-priority="${priority}"]:not([style*="display: none"])`));
     }
 
     async function finalize(priority, projectIdOrNull) {

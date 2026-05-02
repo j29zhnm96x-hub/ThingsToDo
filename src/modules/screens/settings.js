@@ -30,6 +30,7 @@ export async function renderSettings(ctx) {
   const compressImages = settings.compressImages !== false; // Default to true
   const compressArchivedImages = settings.compressArchivedImages !== false; // Default to true
   const voiceQuality = settings.voiceQuality || 'low'; // Default to low
+  const groupActiveTasks = settings.groupActiveTasks === true;
 
   const themeToggle = el('input', {
     type: 'checkbox',
@@ -108,6 +109,16 @@ export async function renderSettings(ctx) {
 
   // Language selector
   const currentLang = getLang();
+  const groupingToggle = el('input', {
+    type: 'checkbox',
+    checked: groupActiveTasks ? 'checked' : null,
+    'aria-label': t('groupActiveTasks')
+  });
+
+  groupingToggle.addEventListener('change', async () => {
+    await db.settings.put({ ...await db.settings.get(), groupActiveTasks: groupingToggle.checked });
+  });
+
   const langSelect = el('select', {
     class: 'select',
     'aria-label': t('language'),
@@ -134,6 +145,13 @@ export async function renderSettings(ctx) {
     el('div', { class: 'card stack' },
       el('div', { style: { fontWeight: '700' } }, t('language')),
       langSelect
+    ),
+    el('div', { class: 'card stack' },
+      el('div', { style: { fontWeight: '700' } }, t('inbox')),
+      el('div', { class: 'row' },
+        el('div', { class: 'small' }, t('groupActiveTasks')),
+        groupingToggle
+      )
     ),
     el('div', { class: 'card stack' },
       el('div', { style: { fontWeight: '700' } }, t('voiceMemos')),
