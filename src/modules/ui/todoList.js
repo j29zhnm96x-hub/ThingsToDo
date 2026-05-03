@@ -144,35 +144,46 @@ export function renderTodoList({
 
   // Render active todos (possibly grouped by priority)
   if (groupByPriority && mode !== 'archive') {
+    // Only priorities with 2+ tasks get a collapsible group header
+    const multiPriorities = new Set();
+    for (const p of PRIORITY_ORDER) {
+      const count = sortedActive.filter(t => t.priority === p).length;
+      if (count >= 2) multiPriorities.add(p);
+    }
+
     for (const p of PRIORITY_ORDER) {
       const groupTodos = sortedActive.filter(t => t.priority === p);
       if (groupTodos.length === 0) continue;
 
-      const isCollapsed = collapsedPriorities?.[p] === true;
-      const labelKey = PRIORITY_LABEL_KEYS[p] || 'medium';
-      const label = t(labelKey) || labelKey;
+      if (multiPriorities.has(p)) {
+        const isCollapsed = collapsedPriorities?.[p] === true;
+        const labelKey = PRIORITY_LABEL_KEYS[p] || 'medium';
+        const label = t(labelKey) || labelKey;
 
-      const pill = el('button', {
-        type: 'button',
-        class: 'priority-pill' + (isCollapsed ? ' priority-pill--collapsed' : ''),
-        'aria-label': label + (isCollapsed ? ' (collapsed)' : ''),
-        onClick: () => {
-          onGroupToggle?.(p);
+        const colorClass = 'priority-pill--' + p.toLowerCase();
+        const pill = el('button', {
+          type: 'button',
+          class: 'priority-pill ' + colorClass + (isCollapsed ? ' priority-pill--collapsed' : ''),
+          'aria-label': label + (isCollapsed ? ' (collapsed)' : ''),
+          onClick: () => { onGroupToggle?.(p); }
+        },
+          el('span', { class: 'priority-pill__arrow' }, isCollapsed ? '▶' : '▼'),
+          el('span', { class: 'priority-pill__label' }, label),
+          el('span', { class: 'priority-pill__count' }, String(groupTodos.length))
+        );
+
+        list.appendChild(el('div', { class: 'priority-group-header' }, pill));
+
+        for (const todo of groupTodos) {
+          const card = renderCard(todo);
+          if (isCollapsed) card.style.display = 'none';
+          card.dataset.priorityGroup = p;
+          list.appendChild(card);
         }
-      },
-        el('span', { class: 'priority-pill__arrow' }, isCollapsed ? '▶' : '▼'),
-        el('span', { class: 'priority-pill__label' }, label),
-        el('span', { class: 'priority-pill__count' }, String(groupTodos.length))
-      );
-
-      const header = el('div', { class: 'priority-group-header' }, pill);
-      list.appendChild(header);
-
-      for (const todo of groupTodos) {
-        const card = renderCard(todo);
-        if (isCollapsed) card.style.display = 'none';
-        card.dataset.priorityGroup = p;
-        list.appendChild(card);
+      } else {
+        for (const todo of groupTodos) {
+          list.appendChild(renderCard(todo));
+        }
       }
     }
   } else {

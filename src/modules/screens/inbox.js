@@ -251,21 +251,22 @@ export async function renderInbox(ctx) {
 
     if (todos.length) {
       if (groupActiveTasks && activeTodos.length > 0) {
-        const hasActive = PRIORITY_ORDER.some(p => activeTodos.some(t => t.priority === p));
-        if (hasActive) {
-          const allCollapsed = PRIORITY_ORDER.every(p => {
-            const has = activeTodos.some(t => t.priority === p);
-            return has ? collapsedPriorities[p] === true : true;
-          });
+        // Only priorities with 2+ tasks get a collapsible group header
+        const collapsiblePriorities = PRIORITY_ORDER.filter(p =>
+          activeTodos.filter(t => t.priority === p).length >= 2
+        );
+
+        if (collapsiblePriorities.length > 0) {
+          const allCollapsed = collapsiblePriorities.every(p => collapsedPriorities[p] === true);
 
           const collapseBtn = el('button', {
             type: 'button',
             class: 'inbox-collapse-btn',
             onClick: () => {
               if (allCollapsed) {
-                PRIORITY_ORDER.forEach(p => { delete collapsedPriorities[p]; });
+                collapsiblePriorities.forEach(p => { delete collapsedPriorities[p]; });
               } else {
-                PRIORITY_ORDER.forEach(p => { collapsedPriorities[p] = true; });
+                collapsiblePriorities.forEach(p => { collapsedPriorities[p] = true; });
               }
               renderInbox(ctx);
             }
