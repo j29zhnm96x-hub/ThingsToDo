@@ -19,7 +19,7 @@ export function nowIso() {
   return new Date().toISOString();
 }
 
-export function newProject({ name, type = 'default', parentId = null, useSuggestions = false, enableQtyUnits = false }) {
+export function newProject({ name, type = 'default', parentId = null, useSuggestions = false, enableQtyUnits = false, keepCompletedItems = false }) {
   const t = nowIso();
   return {
     id: uuid(),
@@ -29,6 +29,7 @@ export function newProject({ name, type = 'default', parentId = null, useSuggest
     showInInbox: false,
     useSuggestions: !!useSuggestions,
     enableQtyUnits: !!enableQtyUnits,
+    keepCompletedItems: !!keepCompletedItems,
     createdAt: t,
     updatedAt: t,
     sortOrder: t // default: by created time

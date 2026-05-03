@@ -26,18 +26,21 @@ function openEditProject(modalHost, { db, project, onChange }) {
   const protectedInput = el('input', { type: 'checkbox', checked: project.protected ? 'checked' : null, 'aria-label': 'Protect project' });
   const suggestionsInput = el('input', { type: 'checkbox', checked: project.useSuggestions ? 'checked' : null, 'aria-label': 'Use suggestions' });
   const qtyUnitsInput = el('input', { type: 'checkbox', checked: project.enableQtyUnits ? 'checked' : null, 'aria-label': 'Enable quantity and units' });
+  const keepCompletedInput = el('input', { type: 'checkbox', checked: project.keepCompletedItems ? 'checked' : null, 'aria-label': t('keepCompletedItems') });
 
   openModal(modalHost, {
     title: 'Edit Project',
     content: el('div', { class: 'stack' },
       el('label', { class: 'label' }, el('span', {}, 'Name'), input),
       el('label', { class: 'label' }, el('span', {}, 'Protect project'), protectedInput),
-      el('div', { class: 'small', style: { marginTop: '-0.5rem', color: 'var(--text-muted)' } }, 'Protected projects cannot be deleted easily.'),
       project.type === 'checklist'
         ? el('label', { class: 'label' }, el('span', {}, 'Enable suggestions for quick item entry'), suggestionsInput)
         : null,
       project.type === 'checklist'
         ? el('label', { class: 'label' }, el('span', {}, t('enableQtyUnits') || 'Enable quantity and units for items'), qtyUnitsInput)
+        : null,
+      project.type === 'checklist'
+        ? el('label', { class: 'label' }, el('span', {}, t('keepCompletedItems')), keepCompletedInput)
         : null
     ),
     actions: [
@@ -48,7 +51,7 @@ function openEditProject(modalHost, { db, project, onChange }) {
         onClick: async () => {
           const name = input.value.trim();
           if (!name) return false;
-          await db.projects.put({ ...project, name, protected: protectedInput.checked, useSuggestions: project.type === 'checklist' ? suggestionsInput.checked : false, enableQtyUnits: project.type === 'checklist' ? qtyUnitsInput.checked : false });
+          await db.projects.put({ ...project, name, protected: protectedInput.checked, useSuggestions: project.type === 'checklist' ? suggestionsInput.checked : false, enableQtyUnits: project.type === 'checklist' ? qtyUnitsInput.checked : false, keepCompletedItems: project.type === 'checklist' ? keepCompletedInput.checked : false });
           onChange?.();
           return true;
         }

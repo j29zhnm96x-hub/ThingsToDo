@@ -264,17 +264,25 @@ export function openCreateProject({ db, modalHost, onCreated, parentId = null })
     enableQtyUnitsToggle
   );
 
+  const keepCompletedToggle = el('input', { type: 'checkbox', 'aria-label': t('keepCompletedItems') });
+  const keepCompletedRow = el('label', { class: 'label', style: 'display:none;' },
+    el('span', {}, t('keepCompletedItems')),
+    keepCompletedToggle
+  );
+
   typeSelect.addEventListener('change', () => {
     const isChecklist = typeSelect.value === 'checklist';
     suggestionsRow.style.display = isChecklist ? '' : 'none';
     qtyUnitsRow.style.display = isChecklist ? '' : 'none';
+    keepCompletedRow.style.display = isChecklist ? '' : 'none';
   });
 
   const content = el('div', { class: 'stack' },
     el('label', { class: 'label' }, el('span', {}, t('projectName')), nameInput),
     el('label', { class: 'label' }, el('span', {}, t('projectType')), typeSelect),
     suggestionsRow,
-    qtyUnitsRow
+    qtyUnitsRow,
+    keepCompletedRow
   );
 
   openModal(modalHost, {
@@ -292,7 +300,7 @@ export function openCreateProject({ db, modalHost, onCreated, parentId = null })
             return false;
           }
           const type = typeSelect.value === 'checklist' ? 'checklist' : 'default';
-          const project = newProject({ name, type, parentId, useSuggestions: type === 'checklist' ? useSuggestionsToggle.checked : false, enableQtyUnits: type === 'checklist' ? enableQtyUnitsToggle.checked : false });
+          const project = newProject({ name, type, parentId, useSuggestions: type === 'checklist' ? useSuggestionsToggle.checked : false, enableQtyUnits: type === 'checklist' ? enableQtyUnitsToggle.checked : false, keepCompletedItems: type === 'checklist' ? keepCompletedToggle.checked : false });
           await db.projects.put(project);
           
           if (type === 'checklist') {

@@ -71,6 +71,7 @@ const translations = {
     groupActiveTasks: 'Group active tasks by priority',
     collapseAll: 'Collapse all',
     expandAll: 'Expand all',
+    keepCompletedItems: 'Disable auto-archive of completed items',
     
     // Due dates
     dueDate: 'Due date',
@@ -453,6 +454,7 @@ const translations = {
     groupActiveTasks: 'Agrupar tareas activas por prioridad',
     collapseAll: 'Contraer todo',
     expandAll: 'Expandir todo',
+    keepCompletedItems: 'Desactivar archivado automático de elementos completados',
     
     // Due dates
     dueDate: 'Fecha límite',
@@ -812,6 +814,7 @@ const translations = {
     groupActiveTasks: 'Grupiraj aktivne zadatke po prioritetu',
     collapseAll: 'Sažmi sve',
     expandAll: 'Proširi sve',
+    keepCompletedItems: 'Onemogući automatsko arhiviranje završenih stavki',
     
     // Due dates
     dueDate: 'Rok',
@@ -1183,6 +1186,7 @@ const translations = {
     groupActiveTasks: 'Raggruppa attività attive per priorità',
     collapseAll: 'Comprimi tutto',
     expandAll: 'Espandi tutto',
+    keepCompletedItems: 'Disabilita l\'archiviazione automatica degli elementi completati',
     
     // Due dates
     dueDate: 'Scadenza',
@@ -1554,6 +1558,7 @@ const translations = {
     groupActiveTasks: 'Aktive Aufgaben nach Priorität gruppieren',
     collapseAll: 'Alle einklappen',
     expandAll: 'Alle ausklappen',
+    keepCompletedItems: 'Automatische Archivierung abgeschlossener Elemente deaktivieren',
     
     // Due dates
     dueDate: 'Fälligkeitsdatum',

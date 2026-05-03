@@ -84,6 +84,13 @@ export async function autoArchiveCompleted(db) {
   const now = Date.now();
   const DAY_MS = 24 * 60 * 60 * 1000;
 
+  // Build a map of projects that want to keep completed items
+  const projects = await db.projects.list();
+  const keepCompletedMap = new Map();
+  for (const p of projects) {
+    if (p.keepCompletedItems) keepCompletedMap.set(p.id, true);
+  }
+
   let archivedCount = 0;
   for (const t of allTodos) {
     if (!t.completed || !t.completedAt) continue;
@@ -97,6 +104,7 @@ export async function autoArchiveCompleted(db) {
       if (!todo) continue;
       if (todo.archived) continue;
       if (todo.protected) continue; // Skip protected tasks
+      if (todo.projectId && keepCompletedMap.has(todo.projectId)) continue; // Skip projects with keepCompletedItems
 
       await db.todos.put({
         ...todo,
