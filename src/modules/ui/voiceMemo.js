@@ -30,6 +30,7 @@ function getSupportedMimeType() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function formatDuration(seconds) {
+  if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   return `${mins}:${secs.toString().padStart(2, '0')}`;
@@ -46,7 +47,7 @@ function formatTime(isoString) {
   } else if (diffDays === 1) {
     return t('yesterday');
   } else if (diffDays < 7) {
-    return `${diffDays} ${t('daysAgo').replace('{n}', diffDays)}`;
+    return t('daysAgo', { n: diffDays });
   }
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
@@ -70,6 +71,7 @@ export async function openRecordingModal({ modalHost, db, projectId = null, onSa
   let elapsed = 0;
   let timerInterval = null;
   let analyser = null;
+  let audioContext = null;
   let animationFrame = null;
   
   // UI elements with inline styles for reliability
@@ -277,7 +279,7 @@ export async function openRecordingModal({ modalHost, db, projectId = null, onSa
       try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         if (AudioContext) {
-          const audioContext = new AudioContext();
+          audioContext = new AudioContext();
           // Resume audio context for iOS Safari
           if (audioContext.state === 'suspended') {
             await audioContext.resume();
@@ -395,6 +397,7 @@ export async function openRecordingModal({ modalHost, db, projectId = null, onSa
   function cleanup() {
     if (timerInterval) clearInterval(timerInterval);
     if (animationFrame) cancelAnimationFrame(animationFrame);
+    if (audioContext) audioContext.close();
     if (stream) stream.getTracks().forEach(track => track.stop());
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
       mediaRecorder.stop();
@@ -705,6 +708,7 @@ export function openPlaybackModal({ modalHost, db, memo, onChange }) {
   });
 
   function cleanup() {
+    document.removeEventListener('visibilitychange', onVisibilityChange);
     if (animationFrame) cancelAnimationFrame(animationFrame);
     if (audio) {
       audio.pause();
@@ -712,6 +716,11 @@ export function openPlaybackModal({ modalHost, db, memo, onChange }) {
     }
     URL.revokeObjectURL(audioUrl);
   }
+
+  const onVisibilityChange = () => {
+    if (document.hidden) cleanup();
+  };
+  document.addEventListener('visibilitychange', onVisibilityChange);
 
   const content = el('div', { style: 'display: flex; flex-direction: column; align-items: center; padding: 16px 8px; gap: 16px;' },
     el('div', { style: 'font-size: 1.125rem; font-weight: 600; color: var(--text); text-align: center;' }, memo.title),

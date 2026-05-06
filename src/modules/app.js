@@ -195,10 +195,15 @@ export function initApp(root) {
                 class: 'topbar__backBtn', 
                 type: 'button', 
                 'aria-label': 'Back', 
-                onClick: () => { 
+                onClick: async () => { 
                     hapticLight(); 
                     if (project.parentId) {
-                        location.hash = '#project/' + project.parentId;
+                        const parent = await db.projects.get(project.parentId);
+                        if (parent) {
+                            location.hash = '#project/' + project.parentId;
+                        } else {
+                            location.hash = '#projects';
+                        }
                     } else {
                         location.hash = '#projects'; 
                     }

@@ -54,7 +54,7 @@ export async function scheduleChecklistReminder(projectId) {
   // Try to use Notification Triggers (experimental, works on some Androids)
   // This allows the notification to fire even if the app is killed.
   try {
-    if ('showTrigger' in Notification.prototype) {
+    if ('showTrigger' in Notification.prototype && typeof TimestampTrigger !== 'undefined') {
       const timestamp = Date.now() + DELAY_MS;
       await registration.showNotification(title, {
         body,

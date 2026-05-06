@@ -12,7 +12,7 @@ export function confirm(modalHost, { title = 'Confirm', message, confirmLabel = 
       content,
       align,
       actions: [
-        { label: 'Cancel', class: 'btn btn--ghost', onClick: () => (resolve(false), true) },
+        { label: 'Cancel', class: 'btn btn--ghost', onClick: () => (resolve(null), true) },
         { label: confirmLabel, class: danger ? 'btn btn--danger' : 'btn btn--primary', onClick: () => (resolve(true), true) }
       ]
     });

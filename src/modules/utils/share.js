@@ -16,7 +16,7 @@ async function dataUrlToBlob(dataUrl) {
 
 function sanitizeName(name) {
   if (!name) return 'item';
-  return String(name).trim().replace(/[^a-z0-9-_\.]/gi, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 80) || 'item';
+  return String(name).trim().replace(/[^a-z0-9-_]/gi, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 80) || 'item';
 }
 
 function dateStamp() {

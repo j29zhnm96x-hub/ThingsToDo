@@ -25,6 +25,7 @@
   --topbar-bg: linear-gradient(180deg, #0d1526 0%, #101828 100%);
   --tabbar-bg: linear-gradient(0deg, #080d16 0%, #0d1526 100%);
   --modal-bg: linear-gradient(145deg, #121c2d 0%, #0f172a 100%);
+}
 
 .notesList {
   margin-top: 16px;
@@ -168,6 +169,7 @@
   vertical-align: middle;
 }
 
+:root {
   /* Surfaces used by inputs/todos so themes can swap them. */
   --field: #0d1526;
   --field-focus: #152033;
@@ -415,7 +417,6 @@ html[data-theme='light'] .modal {
 }
 
 
-
 * {
   box-sizing: border-box;
   touch-action: manipulation;
@@ -442,6 +443,12 @@ body {
 
 /* Allow text selection where it matters */
 input, textarea, select {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Allow text selection on content elements */
+.todo__title, .todo__notes, .projectCard__name, .projectCard__stats {
   -webkit-user-select: text;
   user-select: text;
 }

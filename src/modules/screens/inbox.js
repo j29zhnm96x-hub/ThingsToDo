@@ -99,7 +99,8 @@ export async function renderInbox(ctx) {
     },
     onToggleCompleted: async (todo, checked) => {
       if (checked) {
-        // Use completeTodo for proper recurring task handling
+        // Use completeTodo for proper recurring task handling.
+        // Override to P3 (Low) on completion so completed tasks archive with low priority.
         await completeTodo(db, { ...todo, priority: Priority.P3 });
       } else {
         await uncompleteTodo(db, todo);

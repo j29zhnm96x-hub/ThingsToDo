@@ -6,18 +6,7 @@ import { t } from '../utils/i18n.js';
 const LONG_PRESS_MS = 650;
 function attachLongPressCopy(target, getText) {
   function copyText(text) {
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.setAttribute('readonly', 'readonly');
-    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none;';
-    document.body.appendChild(ta);
-    ta.focus();
-    ta.select();
-    ta.setSelectionRange(0, ta.value.length);
-    let copied = false;
-    try { copied = document.execCommand('copy'); } catch (_) {}
-    document.body.removeChild(ta);
-    if (!copied && navigator.clipboard?.writeText) {
+    if (navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(text).catch(() => {});
     }
   }
@@ -165,7 +154,7 @@ export async function openTodoInfo({ todo, db, modalHost, onEdit }) {
 
       return el('div', { 
         class: 'thumb thumb--clickable',
-        onClick: () => openImageViewer(fullImageUrls, index)
+        onClick: () => openImageViewer([...fullImageUrls], index)
       },
         el('img', { src: thumbUrl, alt: att.name || 'Attachment', loading: 'lazy', decoding: 'async' })
       );
@@ -391,6 +380,8 @@ export async function openTodoInfo({ todo, db, modalHost, onEdit }) {
       if (e.target === overlay && scale === 1) closeViewer();
     });
 
+    const existing = document.querySelector('.imageViewer');
+    if (existing) existing.remove();
     document.body.appendChild(overlay);
   }
 

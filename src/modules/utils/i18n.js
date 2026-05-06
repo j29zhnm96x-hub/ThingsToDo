@@ -1919,11 +1919,11 @@ export function setLang(lang) {
  */
 export function t(key, params = {}) {
   const langStrings = translations[currentLang] || translations.en;
-  let str = langStrings[key] || translations.en[key] || key;
+  let str = langStrings[key] || translations.en[key] || `[missing: ${key}]`;
   
   // Handle parameter interpolation like {n}
   for (const [param, value] of Object.entries(params)) {
-    str = str.replace(new RegExp(`\\{${param}\\}`, 'g'), value);
+    str = str.replace(new RegExp(`\\{${param.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\}`, 'g'), value);
   }
   
   return str;

@@ -79,7 +79,7 @@ function upgrade(db, tx) {
   // Migration (v1 -> v2): replace null projectId with sentinel so it indexes.
   // This fixes Safari/WebKit issues where null values are not indexed and
   // transitions null -> string may not re-index reliably.
-  try {
+  if (upgradeFrom < 2) try {
     if (tx && tx.objectStoreNames.contains('todos')) {
       const store = tx.objectStore('todos');
       const req = store.openCursor();

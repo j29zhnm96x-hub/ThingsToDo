@@ -113,9 +113,10 @@ export function openBulkAddModal(modalHost, {
     hint
   );
 
+  const passRawValue = !!passRaw;
   const submit = async () => {
     // If caller requested raw input handling, pass the full textarea value.
-    if (typeof onSubmit === 'function' && submit.passRaw === true) {
+    if (typeof onSubmit === 'function' && passRawValue) {
       const raw = input.value;
       if (!raw || !raw.trim()) {
         focusInput(input);
@@ -133,8 +134,6 @@ export function openBulkAddModal(modalHost, {
     await onSubmit?.(items);
     return true;
   };
-  // expose flag on submit fn so callers can instruct it to deliver raw text
-  submit.passRaw = !!passRaw;
 
   openModal(modalHost, {
     title,

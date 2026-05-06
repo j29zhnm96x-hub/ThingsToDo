@@ -23,9 +23,7 @@ export async function openBinModal(ctx, { onRestore } = {}) {
       list.append(emptyState(t('binIsEmpty'), t('deletedItemsInfo')));
     }
 
-    // We need a reference to modal for the closure, but it's created after.
-    // We'll use a mutable object to hold the reference.
-    const modalRef = {};
+    let currentModal = null;
 
     for (const item of items) {
       const row = el('div', { class: 'todo', style: 'opacity: 0.7' },
@@ -38,9 +36,8 @@ export async function openBinModal(ctx, { onRestore } = {}) {
             class: 'btn btn--sm', 
             onClick: async () => {
               await restoreFromBin(db, [item]);
-              if (modalRef.current) modalRef.current.close();
+              if (currentModal) currentModal.close();
               await onRestore?.();
-              // Re-open to show updated list (small delay to allow modal close animation if needed, though we are replacing it)
               setTimeout(() => openBinModal(ctx, { onRestore }), 50);
             }
           }, t('restore'))
@@ -49,15 +46,13 @@ export async function openBinModal(ctx, { onRestore } = {}) {
       list.appendChild(row);
     }
 
-    const modal = openModal(modalHost, {
+    currentModal = openModal(modalHost, {
       title: t('recentlyDeleted'),
       content: list,
       actions: [
         { label: t('close'), class: 'btn btn--ghost', onClick: () => true }
       ]
     });
-    
-    modalRef.current = modal;
 
   } catch (err) {
     console.error('Failed to open bin:', err);

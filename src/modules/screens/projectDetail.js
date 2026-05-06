@@ -23,11 +23,11 @@ import { compressAttachmentsForArchive } from '../logic/attachments.js';
 
 // Track pill tap times globally to persist across re-renders
 const pillTapTimes = new Map();
-const sortPagesByOrder = (a, b) => {
+function sortPagesByOrder(a, b) {
   const aOrder = Number.isFinite(a.order) ? a.order : 0;
   const bOrder = Number.isFinite(b.order) ? b.order : 0;
   return aOrder - bOrder;
-};
+}
 
 async function buildProjectsById(db) {
   const projects = await db.projects.list();
@@ -1243,6 +1243,8 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
       if (now - lastTap < 350) {
         e.preventDefault();
         triggerAdd();
+        lastTap = 0;
+        return;
       }
       lastTap = now;
     }, { passive: false });
@@ -1636,6 +1638,7 @@ function renderChecklist({ todos, modalHost, onToggleCompleted, onDelete, onDele
     );
 
     // Long press to show actions menu
+    let pressTimer = null;
     let longPressTriggered = false;
     let pressStartTime = 0;
     let pressStartPos = { x: 0, y: 0 };

@@ -5,6 +5,7 @@ import { applyTheme, applyPalette } from '../ui/theme.js';
 import { openBinModal } from '../ui/binModal.js';
 import { showToast } from '../ui/toast.js';
 import { t, getLang, setLang, languageNames, getAvailableLanguages } from '../utils/i18n.js';
+import { router } from '../router.js';
 
 async function blobToDataUrl(blob) {
   return new Promise((resolve, reject) => {
@@ -124,10 +125,7 @@ export async function renderSettings(ctx) {
     'aria-label': t('language'),
     onChange: (e) => {
       setLang(e.target.value);
-      // Re-render the entire app by triggering a hash change
-      const hash = location.hash;
-      location.hash = '';
-      setTimeout(() => { location.hash = hash || '#settings'; }, 10);
+      router.refresh();
     }
   }, ...getAvailableLanguages().map(code =>
     el('option', { value: code, selected: code === currentLang ? 'selected' : null }, languageNames[code])
