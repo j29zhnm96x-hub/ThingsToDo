@@ -29,32 +29,30 @@ function decodePrivateKey(keyStr) {
   throw new Error('Invalid PKCS8 input');
 }
 
-function derToRaw(der) {
-  // DER-encoded ECDSA signature: SEQUENCE { r INTEGER, s INTEGER }
-  // Extract raw r||s (32 bytes each) for VAPID JWT
-  let offset = 0;
-  if (der[offset++] !== 0x30) throw new Error('Bad SEQUENCE');
-  // Skip length
-  if (der[offset] & 0x80) offset += (der[offset] & 0x7f) + 1;
-  else offset++;
-  // Read r
-  if (der[offset++] !== 0x02) throw new Error('Bad INTEGER tag');
-  let rLen = der[offset++];
-  if (rLen > 33) throw new Error('r too long');
-  let rStart = offset;
-  if (rLen === 33 && der[offset] === 0) { rStart++; rLen--; }
-  offset += (rLen === 33 ? 33 : rLen);
-  // Read s
-  if (der[offset++] !== 0x02) throw new Error('Bad INTEGER tag');
-  let sLen = der[offset++];
-  if (sLen > 33) throw new Error('s too long');
-  let sStart = offset;
-  if (sLen === 33 && der[offset] === 0) { sStart++; sLen--; }
-  // Concatenate r||s (32 bytes each)
-  const raw = new Uint8Array(64);
-  raw.set(der.slice(rStart, rStart + rLen), 32 - rLen);
-  raw.set(der.slice(sStart, sStart + sLen), 64 - sLen);
-  return raw;
+function toRawSig(sig) {
+  // Cloudflare Workers returns ECDSA sig in P1363 format (raw 64-byte r||s)
+  if (sig.length === 64) return sig;
+  // Some implementations return DER-encoded signature
+  if (sig.length > 64 && sig[0] === 0x30) {
+    let offset = 1;
+    if (sig[offset] & 0x80) offset += (sig[offset] & 0x7f) + 1;
+    else offset++;
+    if (sig[offset++] !== 0x02) return sig.slice(0, 64); // fallback
+    let rLen = sig[offset++];
+    let rStart = offset;
+    if (rLen === 33 && sig[offset] === 0) { rStart++; rLen--; }
+    offset += (rLen === 33 ? 33 : rLen);
+    if (sig[offset++] !== 0x02) return sig.slice(0, 64);
+    let sLen = sig[offset++];
+    let sStart = offset;
+    if (sLen === 33 && sig[offset] === 0) { sStart++; sLen--; }
+    const raw = new Uint8Array(64);
+    raw.set(sig.slice(rStart, rStart + rLen), 32 - rLen);
+    raw.set(sig.slice(sStart, sStart + sLen), 64 - sLen);
+    return raw;
+  }
+  // Unknown format, just take first 64 bytes
+  return sig.slice(0, 64);
 }
 
 async function signVapidJWT(privateKeyB64, publicKeyRaw, endpoint) {
@@ -68,8 +66,8 @@ async function signVapidJWT(privateKeyB64, publicKeyRaw, endpoint) {
   const signingInput = `${header}.${payload}`;
   const pkcs8 = decodePrivateKey(privateKeyB64);
   const key = await crypto.subtle.importKey('pkcs8', pkcs8, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
-  const derSig = new Uint8Array(await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, key, new TextEncoder().encode(signingInput)));
-  const rawSig = derToRaw(derSig);
+  const sig = new Uint8Array(await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, key, new TextEncoder().encode(signingInput)));
+  const rawSig = toRawSig(sig);
   return `${signingInput}.${base64url(rawSig)}`;
 }
 
