@@ -4,8 +4,13 @@ function fromBase64url(str) {
   return Uint8Array.from(atob(str), c => c.charCodeAt(0));
 }
 
-function base64url(str) {
-  return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+function base64url(data) {
+  if (typeof data !== 'string') {
+    let s = '';
+    for (let i = 0; i < data.length; i++) s += String.fromCharCode(data[i]);
+    data = s;
+  }
+  return btoa(data).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
 function decodePrivateKey(keyStr) {
