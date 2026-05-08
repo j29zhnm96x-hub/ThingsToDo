@@ -3,6 +3,7 @@
 // - #inbox
 // - #projects
 // - #project/<id>
+// - #goto-task/<taskId>
 // - #archive
 // - #settings
 
@@ -13,6 +14,10 @@ function parseHash(hash) {
 
   if (parts[0] === 'project' && parts[1]) {
     return { name: 'project', group: 'projects', params: { projectId: parts[1] } };
+  }
+
+  if (parts[0] === 'goto-task' && parts[1]) {
+    return { name: 'goto-task', group: '', params: { taskId: parts[1] } };
   }
 
   const name = parts[0];

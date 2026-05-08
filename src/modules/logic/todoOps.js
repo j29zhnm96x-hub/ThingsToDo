@@ -126,10 +126,12 @@ export async function autoArchiveCompleted(db) {
 export async function recycleTodos(db, todos) {
   const now = new Date().toISOString();
   for (const t of todos) {
-    // Store in bin with deletion timestamp
     await db.bin.put({ ...t, deletedAt: now });
-    // Remove from active store
     await db.todos.delete(t.id);
+    try {
+      const { cancelReminder } = await import('../push/push.js');
+      await cancelReminder(t.id);
+    } catch (e) { /* push not available */ }
   }
 }
 
@@ -182,6 +184,12 @@ export async function completeTodo(db, todo) {
   };
   
   await db.todos.put(completedTodo);
+
+  // Cancel any scheduled reminder
+  try {
+    const { cancelReminder } = await import('../push/push.js');
+    await cancelReminder(todo.id);
+  } catch (e) { /* push not available */ }
   
   // If this is a recurring task, create the next instance
   if (todo.recurrenceType) {

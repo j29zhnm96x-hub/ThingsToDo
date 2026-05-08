@@ -55,7 +55,13 @@ function formatDate(isoOrNull) {
   if (!isoOrNull) return null;
   const d = new Date(isoOrNull);
   if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+  const dateStr = d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+  const h = d.getHours(), m = d.getMinutes();
+  if (h !== 0 || m !== 0) {
+    const timeStr = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    return `${dateStr} ${timeStr}`;
+  }
+  return dateStr;
 }
 
 function daysLeft(isoOrNull) {
@@ -63,9 +69,12 @@ function daysLeft(isoOrNull) {
   const due = new Date(isoOrNull);
   if (Number.isNaN(due.getTime())) return null;
   const now = new Date();
-  // Reset time to compare dates only
-  due.setHours(0, 0, 0, 0);
-  now.setHours(0, 0, 0, 0);
+  // If time is set, compare with time; otherwise compare dates only
+  const h = due.getHours(), m = due.getMinutes();
+  if (h === 0 && m === 0) {
+    due.setHours(0, 0, 0, 0);
+    now.setHours(0, 0, 0, 0);
+  }
   const diff = Math.ceil((due - now) / (1000 * 60 * 60 * 24));
   return diff;
 }

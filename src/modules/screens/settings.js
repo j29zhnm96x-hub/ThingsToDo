@@ -6,6 +6,7 @@ import { openBinModal } from '../ui/binModal.js';
 import { showToast } from '../ui/toast.js';
 import { t, getLang, setLang, languageNames, getAvailableLanguages } from '../utils/i18n.js';
 import { router } from '../router.js';
+import { subscribeToPush, unsubscribeFromPush, isSubscribed } from '../push/push.js';
 
 async function blobToDataUrl(blob) {
   return new Promise((resolve, reject) => {
@@ -131,6 +132,44 @@ export async function renderSettings(ctx) {
     el('option', { value: code, selected: code === currentLang ? 'selected' : null }, languageNames[code])
   ));
 
+  let pushSubscribed = false;
+  isSubscribed().then(v => { pushSubscribed = v; if (pushToggle) pushToggle.checked = v; });
+  const pushToggle = el('input', {
+    type: 'checkbox',
+    checked: false,
+    'aria-label': t('enableNotifications')
+  });
+  const pushStatus = el('div', { class: 'small', style: 'margin-top: 4px' }, t('notificationsBlocked'));
+  pushToggle.addEventListener('change', async () => {
+    try {
+      if (pushToggle.checked) {
+        const perm = await Notification.requestPermission();
+        if (perm !== 'granted') { pushToggle.checked = false; pushStatus.textContent = t('notificationsBlocked'); return; }
+        await subscribeToPush();
+        pushSubscribed = true;
+        pushStatus.textContent = t('notificationsEnabled');
+      } else {
+        await unsubscribeFromPush();
+        pushSubscribed = false;
+        pushStatus.textContent = t('enableNotifications');
+      }
+    } catch (e) {
+      pushToggle.checked = pushSubscribed;
+      pushStatus.textContent = 'Error: ' + e.message;
+    }
+  });
+  // Initialize status
+  (async () => {
+    if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+      pushToggle.style.display = 'none';
+      pushStatus.textContent = 'Not supported in this browser';
+      return;
+    }
+    const sub = await isSubscribed();
+    pushToggle.checked = sub;
+    pushStatus.textContent = sub ? t('notificationsEnabled') : t('enableNotifications');
+  })();
+
   const exportBtn = el('button', { class: 'btn btn--primary', type: 'button', onClick: exportData }, t('exportData'));
   const importBtn = el('button', { class: 'btn', type: 'button', onClick: importData }, t('importData'));
   const pasteSharedBtn = el('button', { class: 'btn', type: 'button', onClick: openPasteSharedModal }, 'Paste a task/project');
@@ -157,6 +196,14 @@ export async function renderSettings(ctx) {
         el('span', {}, t('voiceRecordingQuality') || 'Recording quality'),
         voiceQualitySelect
       )
+    ),
+    el('div', { class: 'card stack' },
+      el('div', { style: { fontWeight: '700' } }, t('notifications')),
+      el('div', { class: 'row' },
+        el('div', { class: 'small' }, t('enableNotifications')),
+        pushToggle
+      ),
+      pushStatus
     ),
     el('div', { class: 'card stack' },
       el('div', { style: { fontWeight: '700' } }, t('checklistOptions') || 'Checklists options'),
