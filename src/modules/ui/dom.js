@@ -36,8 +36,6 @@ export function formatDateInput(isoOrNull) {
   const dd = String(d.getDate()).padStart(2, '0');
   const hh = String(d.getHours()).padStart(2, '0');
   const min = String(d.getMinutes()).padStart(2, '0');
-  // Include time only if it's not midnight
-  if (hh === '00' && min === '00') return `${yyyy}-${mm}-${dd}`;
   return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
 }
 
