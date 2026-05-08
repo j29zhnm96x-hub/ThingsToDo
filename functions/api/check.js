@@ -95,16 +95,24 @@ async function sendPush(subData, payload, vapidPrivateKey, vapidPublicKey) {
   const sub = JSON.parse(subData);
   const jwt = await signVapidJWT(vapidPrivateKey, vapidPublicKey, sub.endpoint);
   const encrypted = await encryptPayload(payload, sub);
-  const res = await fetch(sub.endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Encoding': 'aes128gcm',
-      'Content-Type': 'application/octet-stream',
-      TTL: '86400',
-      Authorization: `vapid t=${jwt}, k=${vapidPublicKey}`
-    },
-    body: encrypted
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  let res;
+  try {
+    res = await fetch(sub.endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Encoding': 'aes128gcm',
+        'Content-Type': 'application/octet-stream',
+        TTL: '86400',
+        Authorization: `vapid t=${jwt}, k=${vapidPublicKey}`
+      },
+      body: encrypted,
+      signal: controller.signal
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
   return { ok: res.ok, status: res.status, text: await res.text() };
 }
 
