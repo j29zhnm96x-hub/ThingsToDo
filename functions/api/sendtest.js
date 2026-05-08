@@ -33,34 +33,40 @@ async function signVapidJWT(privateKeyB64, endpoint) {
 }
 
 export async function onRequest(context) {
-  const KV = context.env.PUSH_SCHEDULES;
-  const privKey = context.env.VAPID_PRIVATE_KEY;
-  const pubKey = 'BITp4PXYUt-fqt77OBIt1-T2EWEsd_VR6jSKuj5VF-kUImbyiimU1FrYB0cJHYKbsmUWwAb1fdhf8988kZCuQBc';
+  try {
+    const KV = context.env.PUSH_SCHEDULES;
+    const privKey = context.env.VAPID_PRIVATE_KEY;
+    const pubKey = 'BITp4PXYUt-fqt77OBIt1-T2EWEsd_VR6jSKuj5VF-kUImbyiimU1FrYB0cJHYKbsmUWwAb1fdhf8988kZCuQBc';
 
-  // Get all subscriptions and try sending a blank push
-  const subs = await KV.list({ prefix: 'sub:' });
-  if (subs.keys.length === 0) return new Response('No subscriptions.');
+    if (!KV) return new Response('KV binding missing');
+    if (!privKey) return new Response('VAPID_PRIVATE_KEY missing');
 
-  let results = [];
-  for (const { name } of subs.keys) {
-    const subData = await KV.get(name);
-    if (!subData) continue;
-    const sub = JSON.parse(subData);
-    try {
-      const jwt = await signVapidJWT(privKey, sub.endpoint);
-      const res = await fetch(sub.endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Length': '0',
-          TTL: '86400',
-          Authorization: `vapid t=${jwt}, k=${pubKey}`
-        }
-      });
-      const txt = await res.text();
-      results.push(`[${name}] HTTP ${res.status}: ${txt.slice(0, 100)}`);
-    } catch (e) {
-      results.push(`[${name}] ERROR: ${e.message}`);
+    const subs = await KV.list({ prefix: 'sub:' });
+    if (subs.keys.length === 0) return new Response('No subscriptions.');
+
+    let results = [];
+    for (const { name } of subs.keys) {
+      const subData = await KV.get(name);
+      if (!subData) continue;
+      const sub = JSON.parse(subData);
+      try {
+        const jwt = await signVapidJWT(privKey, sub.endpoint);
+        const res = await fetch(sub.endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Length': '0',
+            TTL: '86400',
+            Authorization: `vapid t=${jwt}, k=${pubKey}`
+          }
+        });
+        const txt = await res.text();
+        results.push(`[${name}] HTTP ${res.status}: ${txt.slice(0, 100)}`);
+      } catch (e) {
+        results.push(`[${name}] ERROR: ${e.message}`);
+      }
     }
+    return new Response(results.join('\n'));
+  } catch (err) {
+    return new Response('FATAL: ' + err.message + '\n' + err.stack, { status: 500 });
   }
-  return new Response(results.join('\n'));
 }
