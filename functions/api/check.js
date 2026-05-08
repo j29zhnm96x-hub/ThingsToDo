@@ -8,7 +8,28 @@ function base64url(str) {
   return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-async function signVapidJWT(privateKeyDerB64, publicKeyRaw, endpoint) {
+function decodePrivateKey(keyStr) {
+  // Try as raw base64url DER first
+  try {
+    const raw = fromBase64url(keyStr);
+    // Check if it looks like DER (PKCS8 starts with byte 0x30, SEQUENCE tag)
+    if (raw.length > 10 && raw[0] === 0x30) return raw;
+  } catch {}
+  // Try as base64url-encoded PEM
+  try {
+    const pem = new TextDecoder().decode(fromBase64url(keyStr));
+    const b64 = pem.replace(/-----BEGIN [\w ]+-----/, '').replace(/-----END [\w ]+-----/, '').replace(/\s/g, '');
+    return fromBase64url(b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''));
+  } catch {}
+  // Try as plain PEM text
+  try {
+    const b64 = keyStr.replace(/-----BEGIN [\w ]+-----/, '').replace(/-----END [\w ]+-----/, '').replace(/\s/g, '');
+    return fromBase64url(b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''));
+  } catch {}
+  throw new Error('Invalid PKCS8 input');
+}
+
+async function signVapidJWT(privateKeyB64, publicKeyRaw, endpoint) {
   const header = base64url(JSON.stringify({ typ: 'JWT', alg: 'ES256' }));
   const now = Math.floor(Date.now() / 1000);
   const payload = base64url(JSON.stringify({
@@ -17,7 +38,7 @@ async function signVapidJWT(privateKeyDerB64, publicKeyRaw, endpoint) {
     sub: 'mailto:push@thingstodo.app'
   }));
   const signingInput = `${header}.${payload}`;
-  const pkcs8 = fromBase64url(privateKeyDerB64);
+  const pkcs8 = decodePrivateKey(privateKeyB64);
   const key = await crypto.subtle.importKey('pkcs8', pkcs8, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
   const sig = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, key, new TextEncoder().encode(signingInput));
   return `${signingInput}.${base64url(new Uint8Array(sig))}`;
