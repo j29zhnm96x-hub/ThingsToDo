@@ -1,38 +1,37 @@
-# ThingsToDo Push Scheduler — Cloudflare Worker
+# ThingsToDo Push Setup — Cloudflare Pages Functions
 
-## Deploy to Cloudflare Dashboard
+## Step 1: Add KV Binding in Pages Dashboard
 
-1. Go to **Cloudflare Dashboard** → **Workers & Pages** → **Create Worker**
-
-2. Give it a name (e.g., `thingstodo-push`)
-
-3. Delete the default code, paste the contents of `push-scheduler.js`
-
-4. Go to the **Settings** tab → **Variables** → add these **secrets**:
-
-   | Name | Value |
-   |------|-------|
-   | `VAPID_PRIVATE_KEY` | (paste the PKCS#8 PEM from `VAPID_PRIVATE_KEY` above) |
-   | `VAPID_PUBLIC_KEY` | `BJRwAeexC9A0eQiykJrQDTRq4WC9uhxeq1wA_vnbJJqfnJ35UJ2yLhYcNMx0aG6OhwrvwAAddVKYXIh0V8Nuv8M` |
-
-5. Go to the **KV** tab → **Add binding**:
+1. Go to **Cloudflare Dashboard** → **Workers & Pages** → **Pages** tab
+2. Click on your **thingstodoapp** project
+3. Go to **Settings** → **Functions** → **KV namespace bindings**
+4. Click **"Add binding"**:
    - Variable name: `PUSH_SCHEDULES`
-   - KV namespace: Create a new one named `push-schedules`
+   - KV namespace: select **push-schedules** (created earlier)
+5. Click **"Save"**
 
-6. Go to the **Triggers** tab → **Cron Triggers** → **Add Cron Trigger** → set to `* * * * *` (every minute)
+## Step 2: Add VAPID Secrets
 
-7. Click **Save and Deploy**
+In the same **Settings** → **Environment variables** (under Functions):
 
-## Update Config in PWA
+Add these two **secrets** (click "Add variable", then check "Encrypt"):
 
-In `src/modules/push/config.js`, replace `YOUR_SUBDOMAIN` with your Worker name:
+| Variable name | Value |
+|--------------|-------|
+| `VAPID_PUBLIC_KEY` | `BJRwAeexC9A0eQiykJrQDTRq4WC9uhxeq1wA_vnbJJqfnJ35UJ2yLhYcNMx0aG6OhwrvwAAddVKYXIh0V8Nuv8M` |
+| `VAPID_PRIVATE_KEY` | `LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JR0hBZ0VBTUJNR0J5cUdTTTQ5QWdFR0NDcUdTTTQ5QXdFSEJHMHdhd0lCQVFRZ1FiOHRNSk4yTmVWMVFoRDkKNk0wWFJvN3FmOXljckRZbUhTTitRdEhhdkRhaFJBTkNBQVNjc0FIbnNRdlFOSGtJc3BDYTBBMDBhdUZndmJvYwpYcXRjQVA3NTJ5U2FuNXlkK1ZDZHNpNFdIRFRNZEdodWpvY0s3OEFBSFhWU21GeUlkRmZEYnIvRAotLS0tLUVORCBQUklWQVRFIEtFWS0tLS0t` |
 
-```js
-workerUrl: 'https://thingstodo-push.YOUR_SUBDOMAIN.workers.dev'
-```
+## Step 3: Set Up Cron Job (for automatic checks)
 
-becomes:
+1. Go to **https://cron-job.org** → create a free account
+2. Click **"Create Cronjob"**
+3. Fill in:
+   - **Title:** `ThingsToDo push check`
+   - **URL:** `POST https://thingstodoapp.pages.dev/api/check`
+   - **Schedule:** Every **1 minute**
+   - Leave other settings as default
+4. Click **"Create"**
 
-```js
-workerUrl: 'https://thingstodo-push.your-username.workers.dev'
-```
+## Step 4: Deploy
+
+Push the code to GitHub — Cloudflare Pages will auto-deploy the Functions alongside your app.

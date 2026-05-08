@@ -112,6 +112,105 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
+// ── Scheduled Reminders ───────────────────────────────────────────
+
+const REMINDER_CACHE = 'thingstodo-reminders';
+
+async function getScheduled() {
+  const cache = await caches.open(REMINDER_CACHE);
+  const req = new Request('/__reminders__');
+  const res = await cache.match(req);
+  if (!res) return {};
+  try { return await res.json(); } catch { return {}; }
+}
+
+async function saveScheduled(reminders) {
+  const cache = await caches.open(REMINDER_CACHE);
+  const body = JSON.stringify(reminders);
+  await cache.put(new Request('/__reminders__'), new Response(body, { headers: { 'Content-Type': 'application/json' } }));
+}
+
+async function checkDueReminders() {
+  const reminders = await getScheduled();
+  const now = Date.now();
+  const due = [];
+  const remaining = {};
+  for (const [id, r] of Object.entries(reminders)) {
+    if (r.remindMs <= now) {
+      due.push(r);
+    } else {
+      remaining[id] = r;
+    }
+  }
+  if (due.length === 0) return;
+  await saveScheduled(remaining);
+  for (const r of due) {
+    self.registration.showNotification(r.title || 'ThingsToDo', {
+      body: r.body || 'This task is due now.',
+      icon: './assets/icon-192.png',
+      badge: './assets/icon-192.png',
+      tag: 'reminder-' + r.taskId,
+      data: { url: r.url || '/' }
+    });
+  }
+}
+
+function scheduleSWTimer(reminders) {
+  const now = Date.now();
+  let nextMs = Infinity;
+  for (const r of Object.values(reminders)) {
+    const ms = r.remindMs - now;
+    if (ms > 0 && ms < nextMs) nextMs = ms;
+  }
+  if (nextMs < Infinity) {
+    setTimeout(async () => {
+      await checkDueReminders();
+      const rem = await getScheduled();
+      const stillHas = Object.keys(rem).length > 0;
+      if (stillHas) scheduleSWTimer(rem);
+    }, Math.min(nextMs, 60000));
+  }
+}
+
+self.addEventListener('message', (event) => {
+  if (!event.data || event.data.type !== 'schedule-reminder') return;
+  event.waitUntil((async () => {
+    const reminders = await getScheduled();
+    reminders[event.data.taskId] = {
+      taskId: event.data.taskId,
+      title: event.data.title,
+      body: event.data.body,
+      remindMs: event.data.remindMs,
+      url: event.data.url
+    };
+    await saveScheduled(reminders);
+    // Clean up old due timers and set new one
+    checkDueReminders();
+    scheduleSWTimer(reminders);
+  })());
+});
+
+self.addEventListener('message', (event) => {
+  if (!event.data || event.data.type !== 'cancel-reminder') return;
+  event.waitUntil((async () => {
+    const reminders = await getScheduled();
+    delete reminders[event.data.taskId];
+    await saveScheduled(reminders);
+  })());
+});
+
+// Check for missed reminders on activate (app was closed for a while)
+self.addEventListener('activate', (event) => {
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.map((key) => (key === CACHE_NAME || key === REMINDER_CACHE) ? null : caches.delete(key)));
+    await self.clients.claim();
+    await checkDueReminders();
+    const rem = await getScheduled();
+    if (Object.keys(rem).length > 0) scheduleSWTimer(rem);
+  })());
+});
+
 self.addEventListener('push', (event) => {
   let data = {};
   try {

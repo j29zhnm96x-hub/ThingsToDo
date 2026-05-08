@@ -39,37 +39,13 @@ export async function subscribeToPush(vapidPublicKey) {
 
 export async function scheduleChecklistReminder(projectId) {
   if (!('serviceWorker' in navigator)) return;
-
   if (Notification.permission !== 'granted') return;
 
-  // Try push-based schedule via Worker (works even when app is closed)
-  try {
-    const { scheduleReminder } = await import('./push/push.js');
-    await scheduleReminder({
-      id: projectId,
-      title: 'Review the last CheckList',
-      dueDate: new Date(Date.now() + 120000).toISOString()
-    });
-    return;
-  } catch (e) {
-    // Fallback to local notification
-  }
-
-  // Fallback: setTimeout
-  const DELAY_MS = 2 * 60 * 1000;
-  const title = 'Review the last CheckList';
-  const body = 'You created a checklist recently. Tap to review it.';
-  const targetUrl = `${location.origin}/#project/${projectId}`;
-
-  const registration = await navigator.serviceWorker.ready;
-  setTimeout(() => {
-    registration.showNotification(title, {
-      body,
-      icon: './assets/icon-192.png',
-      badge: './assets/icon-192.png',
-      vibrate: [100, 50, 100],
-      data: { url: targetUrl }
-    });
-  }, DELAY_MS);
+  const { scheduleReminder } = await import('./push/push.js');
+  await scheduleReminder({
+    id: projectId,
+    title: 'Review the last CheckList',
+    dueDate: new Date(Date.now() + 120000).toISOString()
+  });
 }
 

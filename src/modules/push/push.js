@@ -19,7 +19,20 @@ async function getSubscription() {
   return _currentSubscription;
 }
 
-/** Subscribe to push notifications via the Cloudflare Worker. */
+async function api(path, body) {
+  try {
+    const res = await fetch(`${PUSH_CONFIG.apiBase}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** Subscribe to push notifications. */
 export async function subscribeToPush() {
   if (!('serviceWorker' in navigator) || !('PushManager' in window))
     throw new Error('Push not supported');
@@ -35,14 +48,7 @@ export async function subscribeToPush() {
   }
 
   _currentSubscription = sub;
-
-  // Send subscription to Worker
-  await fetch(`${PUSH_CONFIG.workerUrl}/subscribe`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ subscription: sub.toJSON() })
-  });
-
+  await api('/subscribe', { subscription: sub.toJSON() });
   return true;
 }
 
@@ -50,59 +56,42 @@ export async function subscribeToPush() {
 export async function unsubscribeFromPush() {
   const sub = await getSubscription();
   if (sub) {
-    await fetch(`${PUSH_CONFIG.workerUrl}/unsubscribe`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ endpoint: sub.endpoint })
-    });
+    await api('/unsubscribe', { endpoint: sub.endpoint });
     await sub.unsubscribe();
     _currentSubscription = null;
   }
   return true;
 }
 
-/** Schedule a reminder for a task at its due date */
+/** Schedule a reminder — stores in SW + Cloudflare Pages KV. */
 export async function scheduleReminder(todo) {
   if (!todo.dueDate || !todo.id) return;
-  if (!('serviceWorker' in navigator)) return;
+  const remindMs = new Date(todo.dueDate).getTime();
+  if (remindMs <= Date.now()) return;
 
-  const sub = await getSubscription();
-  if (!sub) return;
-
-  try {
-    await fetch(`${PUSH_CONFIG.workerUrl}/schedule`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        endpoint: sub.endpoint,
-        taskId: todo.id,
-        title: todo.title,
-        dueDate: todo.dueDate,
-        // Remind 15 minutes before due if it has a time, otherwise at start of day
-        remindAt: todo.dueDate,
-        type: 'due_date'
-      })
+  // Store in SW (offline fallback)
+  const reg = await navigator.serviceWorker.ready;
+  if (reg.active) {
+    reg.active.postMessage({
+      type: 'schedule-reminder',
+      taskId: todo.id,
+      title: todo.title,
+      body: 'This task is due now.',
+      remindMs,
+      url: `/#goto-task/${todo.id}`
     });
-  } catch (e) {
-    console.warn('Failed to schedule reminder:', e);
   }
+
+  // Also schedule via Pages Function (for when app is closed)
+  await api('/schedule', { taskId: todo.id, title: todo.title, dueDate: todo.dueDate });
 }
 
 /** Cancel a scheduled reminder */
 export async function cancelReminder(taskId) {
   if (!taskId) return;
-  const sub = await getSubscription();
-  if (!sub) return;
-
-  try {
-    await fetch(`${PUSH_CONFIG.workerUrl}/cancel`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ endpoint: sub.endpoint, taskId })
-    });
-  } catch (e) {
-    console.warn('Failed to cancel reminder:', e);
-  }
+  const reg = await navigator.serviceWorker.ready;
+  if (reg.active) reg.active.postMessage({ type: 'cancel-reminder', taskId });
+  await api('/cancel', { taskId });
 }
 
 /** Check if push is currently subscribed */
