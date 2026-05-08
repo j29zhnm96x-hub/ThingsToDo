@@ -44,29 +44,45 @@ export async function onRequest(context) {
     const subs = await KV.list({ prefix: 'sub:' });
     if (subs.keys.length === 0) return new Response('No subscriptions.');
 
-    let results = [];
-    for (const { name } of subs.keys) {
-      const subData = await KV.get(name);
-      if (!subData) continue;
-      const sub = JSON.parse(subData);
-      try {
-        const jwt = await signVapidJWT(privKey, sub.endpoint);
-        const res = await fetch(sub.endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Length': '0',
-            TTL: '86400',
-            Authorization: `vapid t=${jwt}, k=${pubKey}`
-          }
-        });
-        const txt = await res.text();
-        results.push(`[${name}] HTTP ${res.status}: ${txt.slice(0, 100)}`);
-      } catch (e) {
-        results.push(`[${name}] ERROR: ${e.message}`);
-      }
+    // First test: just generate a JWT and show debug info
+    const testSub = JSON.parse(await KV.get(subs.keys[0].name));
+    const pkcs8 = decodePrivateKey(privKey);
+    const testKey = await crypto.subtle.importKey('pkcs8', pkcs8, { name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign']);
+    const rawKey = new Uint8Array(await crypto.subtle.exportKey('raw', testKey));
+    const header = base64url(JSON.stringify({ typ: 'JWT', alg: 'ES256' }));
+    const payload = base64url(JSON.stringify({ aud: new URL(testSub.endpoint).origin, exp: Math.floor(Date.now() / 1000) + 43200, sub: 'mailto:push@thingstodo.app' }));
+    const signingInput = `${header}.${payload}`;
+    const testSig = new Uint8Array(await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, testKey, new TextEncoder().encode(signingInput)));
+    const rawSig = toRawSig(testSig);
+    const jwt = `${signingInput}.${base64url(rawSig)}`;
+
+    let info = `Pub key from secret: ${base64url(rawKey)}
+Sig length: ${testSig.length}
+Calc length: ${Math.floor(testSig.length / 2) * 2}
+Key importable: yes
+Endpoint: ${testSub.endpoint.slice(0, 60)}...
+Origin: ${new URL(testSub.endpoint).origin}
+Auth header: vapid t=${jwt.slice(0, 30)}..., k=${pubKey.slice(0, 20)}...
+`;
+
+    // Try sending to one
+    try {
+      const res = await fetch(testSub.endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Length': '0',
+          TTL: '86400',
+          Authorization: `vapid t=${jwt}, k=${pubKey}`
+        }
+      });
+      const txt = await res.text();
+      info += `\nSend result: HTTP ${res.status}: ${txt.slice(0, 200)}`;
+    } catch (e) {
+      info += `\nSend error: ${e.message}`;
     }
-    return new Response(results.join('\n'));
+
+    return new Response(info);
   } catch (err) {
-    return new Response('FATAL: ' + err.message + '\n' + err.stack, { status: 500 });
+    return new Response('FATAL: ' + err.message + '\n' + (err.stack || ''), { status: 500 });
   }
 }
