@@ -79,7 +79,7 @@ async function sendPush(subData, payload, vapidPrivateKey, vapidPublicKey) {
   const sub = typeof subData === 'string' ? JSON.parse(subData) : subData;
   const jwt = await signVapidJWT(vapidPrivateKey, vapidPublicKey, sub.endpoint);
   const encrypted = await encryptPayload(payload, sub);
-  await fetch(sub.endpoint, {
+  const res = await fetch(sub.endpoint, {
     method: 'POST',
     headers: {
       'Content-Encoding': 'aes128gcm',
@@ -89,6 +89,7 @@ async function sendPush(subData, payload, vapidPrivateKey, vapidPublicKey) {
     },
     body: encrypted
   });
+  return { ok: res.ok, status: res.status, text: await res.text() };
 }
 
 export async function onRequest(context) {
@@ -96,47 +97,45 @@ export async function onRequest(context) {
   let vapidPrivateKey = context.env.VAPID_PRIVATE_KEY;
   let vapidPublicKey = context.env.VAPID_PUBLIC_KEY;
 
-  // Fallback to hardcoded keys if env vars aren't set
-  // (needed until the user configures them in Dashboard)
   if (!vapidPublicKey) vapidPublicKey = 'BJRwAeexC9A0eQiykJrQDTRq4WC9uhxeq1wA_vnbJJqfnJ35UJ2yLhYcNMx0aG6OhwrvwAAddVKYXIh0V8Nuv8M';
-  if (!vapidPrivateKey) {
-    return new Response('VAPID_PRIVATE_KEY not configured. Add it in Pages Dashboard → Settings → Functions → Environment variables.', { status: 500 });
-  }
+  if (!vapidPrivateKey) return new Response('VAPID_PRIVATE_KEY missing', { status: 500 });
+  if (!KV) return new Response('KV missing', { status: 500 });
 
-  if (!KV) {
-    return new Response('KV binding PUSH_SCHEDULES not configured. Add it in Pages Dashboard → Settings → Functions → KV namespace bindings.', { status: 500 });
-  }
+  const list = await KV.list({ prefix: 'sched:' });
+  const now = Date.now();
+  let sent = 0;
+  let errors = [];
 
-  try {
-    const list = await KV.list({ prefix: 'sched:' });
-    const now = Date.now();
-    let sent = 0;
+  for (const { name } of list.keys) {
+    const entry = await KV.get(name);
+    if (!entry) continue;
+    const data = JSON.parse(entry);
+    if (data.remindMs > now) continue;
 
-    for (const { name } of list.keys) {
-      const entry = await KV.get(name);
-      if (!entry) continue;
-      const data = JSON.parse(entry);
-      if (data.remindMs > now) continue;
-
-      const subs = await KV.list({ prefix: 'sub:' });
-      for (const { name: subKey } of subs.keys) {
-        const subData = await KV.get(subKey);
-        if (!subData) continue;
-        try {
-          await sendPush(subData, {
-            title: data.title || 'ThingsToDo',
-            body: 'This task is due now.',
-            url: `/#goto-task/${data.taskId}`,
-            taskId: data.taskId
-          }, vapidPrivateKey, vapidPublicKey);
+    const subs = await KV.list({ prefix: 'sub:' });
+    for (const { name: subKey } of subs.keys) {
+      const subData = await KV.get(subKey);
+      if (!subData) continue;
+      try {
+        const result = await sendPush(subData, {
+          title: data.title || 'ThingsToDo',
+          body: 'This task is due now.',
+          url: `/#goto-task/${data.taskId}`,
+          taskId: data.taskId
+        }, vapidPrivateKey, vapidPublicKey);
+        if (result.ok) {
           sent++;
-        } catch (e) { /* push failed for this sub */ }
+        } else {
+          errors.push(`Push to ${subKey} failed: HTTP ${result.status} - ${result.text}`);
+        }
+      } catch (e) {
+        errors.push(`Push to ${subKey} error: ${e.message}`);
       }
-      await KV.delete(name);
     }
-
-    return new Response(`OK - checked ${list.keys.length} items, sent ${sent} pushes`);
-  } catch (err) {
-    return new Response('Error: ' + err.message, { status: 500 });
+    await KV.delete(name);
   }
+
+  let msg = `Checked ${list.keys.length}, sent ${sent}`;
+  if (errors.length > 0) msg += `, errors: ${errors.join(' | ')}`;
+  return new Response(msg);
 }
