@@ -1,19 +1,14 @@
-function base64url(str) {
-  return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
 function fromBase64url(str) {
   str = str.replace(/-/g, '+').replace(/_/g, '/');
   while (str.length % 4) str += '=';
   return Uint8Array.from(atob(str), c => c.charCodeAt(0));
 }
 
-function pemToBinary(pem) {
-  const b64 = pem.replace(/-----BEGIN [\w ]+-----/, '').replace(/-----END [\w ]+-----/, '').replace(/\s/g, '');
-  return fromBase64url(b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''));
+function base64url(str) {
+  return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-async function signVapidJWT(privateKeyPem, publicKeyRaw, endpoint) {
+async function signVapidJWT(privateKeyDerB64, publicKeyRaw, endpoint) {
   const header = base64url(JSON.stringify({ typ: 'JWT', alg: 'ES256' }));
   const now = Math.floor(Date.now() / 1000);
   const payload = base64url(JSON.stringify({
@@ -22,7 +17,7 @@ async function signVapidJWT(privateKeyPem, publicKeyRaw, endpoint) {
     sub: 'mailto:push@thingstodo.app'
   }));
   const signingInput = `${header}.${payload}`;
-  const pkcs8 = pemToBinary(privateKeyPem);
+  const pkcs8 = fromBase64url(privateKeyDerB64);
   const key = await crypto.subtle.importKey('pkcs8', pkcs8, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
   const sig = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, key, new TextEncoder().encode(signingInput));
   return `${signingInput}.${base64url(new Uint8Array(sig))}`;
@@ -76,7 +71,7 @@ async function hkdf(salt, ikm, info, length) {
 }
 
 async function sendPush(subData, payload, vapidPrivateKey, vapidPublicKey) {
-  const sub = typeof subData === 'string' ? JSON.parse(subData) : subData;
+  const sub = JSON.parse(subData);
   const jwt = await signVapidJWT(vapidPrivateKey, vapidPublicKey, sub.endpoint);
   const encrypted = await encryptPayload(payload, sub);
   const res = await fetch(sub.endpoint, {
@@ -97,7 +92,7 @@ export async function onRequest(context) {
   let vapidPrivateKey = context.env.VAPID_PRIVATE_KEY;
   let vapidPublicKey = context.env.VAPID_PUBLIC_KEY;
 
-  if (!vapidPublicKey) vapidPublicKey = 'BJRwAeexC9A0eQiykJrQDTRq4WC9uhxeq1wA_vnbJJqfnJ35UJ2yLhYcNMx0aG6OhwrvwAAddVKYXIh0V8Nuv8M';
+  if (!vapidPublicKey) vapidPublicKey = 'BITp4PXYUt-fqt77OBIt1-T2EWEsd_VR6jSKuj5VF-kUImbyiimU1FrYB0cJHYKbsmUWwAb1fdhf8988kZCuQBc';
   if (!vapidPrivateKey) return new Response('VAPID_PRIVATE_KEY missing', { status: 500 });
   if (!KV) return new Response('KV missing', { status: 500 });
 
@@ -126,16 +121,16 @@ export async function onRequest(context) {
         if (result.ok) {
           sent++;
         } else {
-          errors.push(`Push to ${subKey} failed: HTTP ${result.status} - ${result.text}`);
+          errors.push(`Push HTTP ${result.status}: ${result.text}`);
         }
       } catch (e) {
-        errors.push(`Push to ${subKey} error: ${e.message}`);
+        errors.push(`Error: ${e.message}`);
       }
     }
     await KV.delete(name);
   }
 
   let msg = `Checked ${list.keys.length}, sent ${sent}`;
-  if (errors.length > 0) msg += `, errors: ${errors.join(' | ')}`;
+  if (errors.length) msg += `, errors: ${errors.join(' | ')}`;
   return new Response(msg);
 }

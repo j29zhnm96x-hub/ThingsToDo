@@ -4,7 +4,7 @@
 export const PUSH_CONFIG = {
   apiBase: 'https://thingstodoapp.pages.dev/api',
 
-  vapidPublicKey: 'BJRwAeexC9A0eQiykJrQDTRq4WC9uhxeq1wA_vnbJJqfnJ35UJ2yLhYcNMx0aG6OhwrvwAAddVKYXIh0V8Nuv8M',
+  vapidPublicKey: 'BITp4PXYUt-fqt77OBIt1-T2EWEsd_VR6jSKuj5VF-kUImbyiimU1FrYB0cJHYKbsmUWwAb1fdhf8988kZCuQBc',
 
   vapidSubject: 'mailto:push@thingstodo.app'
 };
