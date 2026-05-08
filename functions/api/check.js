@@ -111,9 +111,9 @@ async function sendPush(subData, payload, vapidPrivateKey, vapidPublicKey) {
 export async function onRequest(context) {
   const KV = context.env.PUSH_SCHEDULES;
   let vapidPrivateKey = context.env.VAPID_PRIVATE_KEY;
-  let vapidPublicKey = context.env.VAPID_PUBLIC_KEY;
 
-  if (!vapidPublicKey) vapidPublicKey = 'BITp4PXYUt-fqt77OBIt1-T2EWEsd_VR6jSKuj5VF-kUImbyiimU1FrYB0cJHYKbsmUWwAb1fdhf8988kZCuQBc';
+  // Use hardcoded public key to avoid env var mismatch with private key
+  const vapidPublicKey = 'BITp4PXYUt-fqt77OBIt1-T2EWEsd_VR6jSKuj5VF-kUImbyiimU1FrYB0cJHYKbsmUWwAb1fdhf8988kZCuQBc';
   if (!vapidPrivateKey) return new Response('VAPID_PRIVATE_KEY missing', { status: 500 });
   if (!KV) return new Response('KV missing', { status: 500 });
 
