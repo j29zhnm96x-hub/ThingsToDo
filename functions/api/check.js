@@ -93,40 +93,50 @@ async function sendPush(subData, payload, vapidPrivateKey, vapidPublicKey) {
 
 export async function onRequest(context) {
   const KV = context.env.PUSH_SCHEDULES;
-  const vapidPrivateKey = context.env.VAPID_PRIVATE_KEY;
-  const vapidPublicKey = context.env.VAPID_PUBLIC_KEY;
+  let vapidPrivateKey = context.env.VAPID_PRIVATE_KEY;
+  let vapidPublicKey = context.env.VAPID_PUBLIC_KEY;
 
-  if (!vapidPrivateKey || !vapidPublicKey) {
-    return new Response('Server not configured (missing VAPID keys)', { status: 500 });
+  // Fallback to hardcoded keys if env vars aren't set
+  // (needed until the user configures them in Dashboard)
+  if (!vapidPublicKey) vapidPublicKey = 'BJRwAeexC9A0eQiykJrQDTRq4WC9uhxeq1wA_vnbJJqfnJ35UJ2yLhYcNMx0aG6OhwrvwAAddVKYXIh0V8Nuv8M';
+  if (!vapidPrivateKey) {
+    return new Response('VAPID_PRIVATE_KEY not configured. Add it in Pages Dashboard → Settings → Functions → Environment variables.', { status: 500 });
   }
 
-  const list = await KV.list({ prefix: 'sched:' });
-  const now = Date.now();
-  let sent = 0;
+  if (!KV) {
+    return new Response('KV binding PUSH_SCHEDULES not configured. Add it in Pages Dashboard → Settings → Functions → KV namespace bindings.', { status: 500 });
+  }
 
-  for (const { name } of list.keys) {
-    const entry = await KV.get(name);
-    if (!entry) continue;
-    const data = JSON.parse(entry);
-    if (data.remindMs > now) continue;
+  try {
+    const list = await KV.list({ prefix: 'sched:' });
+    const now = Date.now();
+    let sent = 0;
 
-    // Try all known subscriptions
-    const subs = await KV.list({ prefix: 'sub:' });
-    for (const { name: subKey } of subs.keys) {
-      const subData = await KV.get(subKey);
-      if (!subData) continue;
-      try {
-        await sendPush(subData, {
-          title: data.title,
-          body: 'This task is due now.',
-          url: `/#goto-task/${data.taskId}`,
-          taskId: data.taskId
-        }, vapidPrivateKey, vapidPublicKey);
-        sent++;
-      } catch (e) { /* push failed for this subscription */ }
+    for (const { name } of list.keys) {
+      const entry = await KV.get(name);
+      if (!entry) continue;
+      const data = JSON.parse(entry);
+      if (data.remindMs > now) continue;
+
+      const subs = await KV.list({ prefix: 'sub:' });
+      for (const { name: subKey } of subs.keys) {
+        const subData = await KV.get(subKey);
+        if (!subData) continue;
+        try {
+          await sendPush(subData, {
+            title: data.title || 'ThingsToDo',
+            body: 'This task is due now.',
+            url: `/#goto-task/${data.taskId}`,
+            taskId: data.taskId
+          }, vapidPrivateKey, vapidPublicKey);
+          sent++;
+        } catch (e) { /* push failed for this sub */ }
+      }
+      await KV.delete(name);
     }
-    await KV.delete(name);
-  }
 
-  return new Response(`Checked. Sent ${sent} notifications.`);
+    return new Response(`OK - checked ${list.keys.length} items, sent ${sent} pushes`);
+  } catch (err) {
+    return new Response('Error: ' + err.message, { status: 500 });
+  }
 }
