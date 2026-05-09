@@ -7,7 +7,6 @@ import { renderArchive } from './screens/archive.js';
 import { renderSettings } from './screens/settings.js';
 import { renderHelp } from './screens/help.js';
 import { openTodoEditor } from './ui/todoEditor.js';
-import { openTodoInfo } from './ui/todoInfo.js';
 import { el } from './ui/dom.js';
 import { applyTheme, applyPalette } from './ui/theme.js';
 import { autoArchiveCompleted, autoEmptyBin } from './logic/todoOps.js';
@@ -169,18 +168,6 @@ export function initApp(root) {
 
       topbarActions.innerHTML = '';
 
-      // Deep-link to a specific task — redirect to the right project/inbox and open modal
-      if (route.name === 'goto-task') {
-        const targetTodo = await db.todos.get(route.params.taskId);
-        if (targetTodo) {
-          window.__pendingTaskId = targetTodo.id;
-          location.hash = targetTodo.projectId ? `#project/${targetTodo.projectId}` : '#inbox';
-        } else {
-          location.hash = '#inbox';
-        }
-        return;
-      }
-
       // Render screen
       if (route.name === 'inbox') {
         topbarTitle.textContent = t('inbox');
@@ -258,44 +245,8 @@ export function initApp(root) {
 
       // After render, move focus to main for accessibility.
       requestAnimationFrame(() => main.focus());
-
-      // Open deep-linked task after render
-      if (window.__pendingTaskId) {
-        const pid = window.__pendingTaskId;
-        window.__pendingTaskId = null;
-        setTimeout(async () => {
-          const t = await db.todos.get(pid);
-          if (t) {
-            openTodoInfo({
-              todo: t,
-              db,
-              modalHost,
-              onEdit: () => ctx.openTodoEditor({ mode: 'edit', todoId: t.id, projectId: t.projectId, db })
-            });
-          }
-        }, 100);
-      }
     }
   });
-
-  // Overdue task notification on startup
-  (async () => {
-    try {
-      if (!('Notification' in window) || Notification.permission !== 'granted') return;
-      const active = await db.todos.listActive();
-      const now = new Date();
-      const overdue = active.filter(t => t.dueDate && !t.completed && new Date(t.dueDate) < now && new Date(t.dueDate) > new Date(now.getTime() - 86400000));
-      if (overdue.length > 0) {
-        const reg = await navigator.serviceWorker.ready;
-        reg.showNotification('ThingsToDo', {
-          body: `You have ${overdue.length} overdue task${overdue.length > 1 ? 's' : ''}.`,
-          icon: './assets/icon-192.png',
-          badge: './assets/icon-192.png',
-          data: { url: '/#inbox' }
-        });
-      }
-    } catch (e) { /* ignore */ }
-  })();
 }
 // Inbox add menu (task or voice memo)
 function openInboxAddMenu(ctx, modalHost) {

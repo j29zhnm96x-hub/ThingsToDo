@@ -128,10 +128,6 @@ export async function recycleTodos(db, todos) {
   for (const t of todos) {
     await db.bin.put({ ...t, deletedAt: now });
     await db.todos.delete(t.id);
-    try {
-      const { cancelReminder } = await import('../push/push.js');
-      await cancelReminder(t.id);
-    } catch (e) { /* push not available */ }
   }
 }
 
@@ -184,12 +180,6 @@ export async function completeTodo(db, todo) {
   };
   
   await db.todos.put(completedTodo);
-
-  // Cancel any scheduled reminder
-  try {
-    const { cancelReminder } = await import('../push/push.js');
-    await cancelReminder(todo.id);
-  } catch (e) { /* push not available */ }
   
   // If this is a recurring task, create the next instance
   if (todo.recurrenceType) {

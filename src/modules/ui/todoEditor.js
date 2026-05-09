@@ -438,12 +438,6 @@ export async function openTodoEditor({
     await db.todos.put(todo);
     didSave = true;
     onChange?.();
-    if (todo.dueDate && !todo.completed) {
-      try {
-        const { scheduleReminder } = await import('../push/push.js');
-        await scheduleReminder(todo);
-      } catch (e) { /* push not available, skip */ }
-    }
     return true;
   }
 
