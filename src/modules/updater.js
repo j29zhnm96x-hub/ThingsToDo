@@ -1,16 +1,31 @@
 // Service Worker update management
-// Provides manual check-for-updates and auto-check on startup
+// Forces a fresh SW install by using a unique URL per deploy,
+// bypassing all caches (CDN, browser, SW internal).
+
+// IMPORTANT: Bump this with every deploy to force PWA update detection
+const SW_BUILD = 2;
 
 let registration = null;
 
+function swUrl() {
+  return `./sw.js?_ts=${SW_BUILD}`;
+}
+
 /**
- * Register the service worker and store the registration reference.
+ * Register the service worker using a cache-busting URL.
  * Call once at startup.
  */
 export async function registerSW() {
   if (!('serviceWorker' in navigator)) return null;
   try {
-    registration = await navigator.serviceWorker.register('./sw.js', {
+    // Clean up any old SW registrations on the non-versioned URL
+    const regs = await navigator.serviceWorker.getRegistrations();
+    for (const reg of regs) {
+      if (reg.active && reg.active.scriptURL && !reg.active.scriptURL.includes(`_ts=${SW_BUILD}`)) {
+        await reg.unregister();
+      }
+    }
+    registration = await navigator.serviceWorker.register(swUrl(), {
       scope: './',
       updateViaCache: 'none'
     });
@@ -22,100 +37,48 @@ export async function registerSW() {
 }
 
 /**
- * Check for a new service worker version.
+ * Check for updates by clearing all caches, unregistering old SWs,
+ * then re-registering with a fresh versioned URL.
  * Returns { updated: boolean, error?: string }
- * - updated: true if a new SW was found and activated
- * - If no SW support, returns { updated: false, error: 'unsupported' }
  */
 export async function checkForUpdates() {
   if (!('serviceWorker' in navigator)) {
     return { updated: false, error: 'unsupported' };
   }
 
-  // If we don't have a registration yet, try registering
-  if (!registration) {
-    await registerSW();
-    if (!registration) return { updated: false, error: 'register_failed' };
-  }
+  try {
+    // 1. Clear all caches (app shell, old SW caches, everything)
+    const cacheKeys = await caches.keys();
+    await Promise.all(cacheKeys.map((key) => caches.delete(key)));
 
-  return new Promise((resolve) => {
-    const timeout = setTimeout(() => {
-      resolve({ updated: false, error: 'timeout' });
-    }, 15000);
+    // 2. Unregister ALL existing service workers
+    const regs = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(regs.map((reg) => reg.unregister()));
 
-    // Listen for controllerchange — fires when a new SW takes over
-    const onControllerChange = () => {
-      clearTimeout(timeout);
-      navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
-      resolve({ updated: true });
-    };
-    navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
+    // 3. Register fresh SW with versioned URL (bypasses all caches)
+    registration = await navigator.serviceWorker.register(swUrl(), {
+      scope: './',
+      updateViaCache: 'none'
+    });
 
-    // Listen for updatefound on the registration
-    if (registration.installing || registration.waiting) {
-      // An update is already waiting or installing
-      clearTimeout(timeout);
-      navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
-      activateNewSW(registration).then((result) => {
-        resolve(result);
+    // 4. Wait briefly for the new SW to install + activate (skipWaiting in sw.js)
+    if (registration.installing) {
+      await new Promise((resolve) => {
+        const timeout = setTimeout(resolve, 4000);
+        registration.installing.addEventListener('statechange', () => {
+          if (registration.installing && registration.installing.state === 'activated') {
+            clearTimeout(timeout);
+            resolve();
+          }
+        });
       });
-      return;
     }
 
-    registration.addEventListener('updatefound', () => {
-      const newWorker = registration.installing;
-      if (!newWorker) return;
-
-      newWorker.addEventListener('statechange', () => {
-        if (newWorker.state === 'installed' && registration.active) {
-          // New SW is installed and waiting
-          clearTimeout(timeout);
-          navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
-          activateNewSW(registration).then((result) => {
-            resolve(result);
-          });
-        }
-      });
-    });
-
-    // Trigger the update check
-    registration.update().catch((err) => {
-      clearTimeout(timeout);
-      navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
-      resolve({ updated: false, error: String(err) });
-    });
-  });
-}
-
-async function activateNewSW(reg) {
-  if (reg.waiting) {
-    // Send message to skip waiting
-    reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-    // Wait for controllerchange
-    return new Promise((resolve) => {
-      const handler = () => {
-        navigator.serviceWorker.removeEventListener('controllerchange', handler);
-        resolve({ updated: true });
-      };
-      navigator.serviceWorker.addEventListener('controllerchange', handler);
-      // Fallback: if controller doesn't change within 5s, consider it done
-      setTimeout(() => {
-        navigator.serviceWorker.removeEventListener('controllerchange', handler);
-        resolve({ updated: true });
-      }, 5000);
-    });
+    return { updated: true };
+  } catch (err) {
+    console.warn('Update check failed:', err);
+    return { updated: false, error: String(err) };
   }
-  // If installing but not yet installed, wait for it
-  if (reg.installing) {
-    return new Promise((resolve) => {
-      reg.installing.addEventListener('statechange', () => {
-        if (reg.installing.state === 'activated') {
-          resolve({ updated: true });
-        }
-      });
-    });
-  }
-  return { updated: false };
 }
 
 /**
@@ -123,12 +86,12 @@ async function activateNewSW(reg) {
  */
 export function getUpdateInfo() {
   if (!('serviceWorker' in navigator)) {
-    return { supported: false, version: null };
+    return { supported: false, version: null, build: null };
   }
   return {
     supported: true,
     version: '1.0.0',
-    registered: !!registration,
-    hasUpdate: !!(registration && (registration.waiting || registration.installing))
+    build: SW_BUILD,
+    registered: !!registration
   };
 }

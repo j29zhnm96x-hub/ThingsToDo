@@ -1,0 +1,6 @@
+# Cloudflare Pages _headers
+# Ensure service worker is never cached so updates are detected immediately
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+  Expires: 0
