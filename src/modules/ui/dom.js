@@ -34,14 +34,13 @@ export function formatDateInput(isoOrNull) {
   const yyyy = String(d.getFullYear());
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const dd = String(d.getDate()).padStart(2, '0');
-  const hh = String(d.getHours()).padStart(2, '0');
-  const min = String(d.getMinutes()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 export function toIsoDateOrNull(dateStr) {
   if (!dateStr) return null;
-  const d = new Date(dateStr);
+  // Store as midnight local time ISO string (good enough for a personal todo list)
+  const d = new Date(`${dateStr}T00:00:00`);
   if (Number.isNaN(d.getTime())) return null;
   return d.toISOString();
 }
@@ -50,13 +49,7 @@ export function humanDue(isoOrNull) {
   if (!isoOrNull) return null;
   const d = new Date(isoOrNull);
   if (Number.isNaN(d.getTime())) return null;
-  const dateStr = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-  const h = d.getHours(), m = d.getMinutes();
-  if (h !== 0 || m !== 0) {
-    const timeStr = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-    return `${dateStr} ${timeStr}`;
-  }
-  return dateStr;
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 export function emptyState(title, message) {

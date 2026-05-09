@@ -60,7 +60,7 @@ export async function openTodoEditor({
   const prioritySelect = el('select', { class: 'select', 'aria-label': t('priority') });
   priorityOptions(prioritySelect, todo.priority);
 
-  const dueInput = el('input', { class: 'input', type: 'datetime-local', value: formatDateInput(todo.dueDate), 'aria-label': t('dueDate') });
+  const dueInput = el('input', { class: 'input', type: 'date', value: formatDateInput(todo.dueDate), 'aria-label': t('dueDate') });
   const completedInput = el('input', { type: 'checkbox', checked: todo.completed ? 'checked' : null, 'aria-label': t('completed') });
   const protectedInput = el('input', { type: 'checkbox', checked: todo.protected ? 'checked' : null, 'aria-label': t('protectTask') });
 
