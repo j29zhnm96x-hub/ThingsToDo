@@ -18,7 +18,7 @@ export async function searchAll(db, query) {
 
   const [allProjects, allTodos, allMemos] = await Promise.all([
     db.projects.list(),
-    db.todos.list(),
+    db.todos.listActive(),
     db.voiceMemos.list()
   ]);
 
@@ -27,7 +27,6 @@ export async function searchAll(db, query) {
   // Search active non-archived todos (title + notes)
   const todos = [];
   for (const t of allTodos) {
-    if (t.archived) continue;
     const title = (t.title || '').toLowerCase();
     const notes = (t.notes || '').toLowerCase();
     if (title.includes(q) || notes.includes(q)) {

@@ -2600,12 +2600,12 @@ html, body {
 /* ── Search Screen ── */
 .search-input {
   display: block;
-  width: calc(100% - 16px);
-  margin: 12px 8px;
-  padding: 14px 16px;
-  font-size: 1rem;
-  border: 1.5px solid var(--border);
-  border-radius: 12px;
+  width: calc(100% - 32px);
+  margin: 16px 16px 8px;
+  padding: 18px 20px;
+  font-size: 1.125rem;
+  border: 2px solid var(--border);
+  border-radius: 14px;
   background: var(--card-bg);
   color: var(--text);
   outline: none;
@@ -2615,9 +2615,17 @@ html, body {
 }
 .search-input:focus {
   border-color: var(--accent);
+  border-width: 2px;
 }
 .search-input::placeholder {
   color: var(--muted);
+}
+
+.search-hint {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.9375rem;
+  padding: 48px 24px;
 }
 
 .search-results {
@@ -2673,20 +2681,4 @@ html, body {
   100% { background: transparent; }
 }
 
-/* Search button in topbar */
-.topbar__searchBtn {
-  background: none;
-  border: none;
-  color: var(--text);
-  font-size: 1rem;
-  padding: 4px 6px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  opacity: 0.7;
-  transition: opacity 150ms ease;
-}
-.topbar__searchBtn:hover,
-.topbar__searchBtn:active {
-  opacity: 1;
-}
+

@@ -26,13 +26,6 @@ export async function renderArchive(ctx) {
   const existingDateEl = topbarActions.querySelector('.topbar__date');
   topbarActions.innerHTML = '';
   if (existingDateEl) topbarActions.appendChild(existingDateEl);
-  const searchBtn = el('button', {
-    class: 'topbar__searchBtn',
-    type: 'button',
-    'aria-label': t('search'),
-    onClick: () => { hapticLight(); location.hash = '#search'; }
-  }, '🔍');
-  topbarActions.append(searchBtn);
   const binBtn = el('button', { 
     class: 'topbar__addBtn', 
     type: 'button', 
@@ -40,6 +33,13 @@ export async function renderArchive(ctx) {
     onClick: () => openBinModal(ctx, { onRestore: () => renderArchive(ctx) }) 
   }, '🗑️');
   topbarActions.append(binBtn);
+  const searchBtn = el('button', {
+    class: 'topbar__addBtn',
+    type: 'button',
+    'aria-label': t('search'),
+    onClick: () => { hapticLight(); location.hash = '#search'; }
+  }, '🔍');
+  topbarActions.append(searchBtn);
 
   const archived = await db.todos.listArchived();
   const { projects, map: projectsById } = await buildProjectsById(db);

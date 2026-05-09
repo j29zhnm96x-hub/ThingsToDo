@@ -174,19 +174,19 @@ export function initApp(root) {
         topbarTitle.textContent = t('inbox');
         appendDateToTopbar(topbarActions);
         topbarActions.append(
-          el('button', { class: 'topbar__searchBtn', type: 'button', 'aria-label': t('search'), onClick: () => { hapticLight(); location.hash = '#search'; } }, '🔍'),
           el('button', { class: 'topbar__addBtn', type: 'button', 'aria-label': t('addTask'), onClick: () => { 
             hapticLight(); 
             openInboxAddMenu(ctx, modalHost);
-          } }, '+')
+          } }, '+'),
+          el('button', { class: 'topbar__addBtn', type: 'button', 'aria-label': t('search'), onClick: () => { hapticLight(); location.hash = '#search'; } }, '🔍')
         );
         await renderInbox(ctx);
       } else if (route.name === 'projects') {
         topbarTitle.textContent = t('projects');
         appendDateToTopbar(topbarActions);
         topbarActions.append(
-          el('button', { class: 'topbar__searchBtn', type: 'button', 'aria-label': t('search'), onClick: () => { hapticLight(); location.hash = '#search'; } }, '🔍'),
-          el('button', { class: 'topbar__addBtn', type: 'button', 'aria-label': t('newProject'), onClick: () => { hapticLight(); openCreateProject({ db, modalHost, onCreated: () => router.refresh() }); } }, '+')
+          el('button', { class: 'topbar__addBtn', type: 'button', 'aria-label': t('newProject'), onClick: () => { hapticLight(); openCreateProject({ db, modalHost, onCreated: () => router.refresh() }); } }, '+'),
+          el('button', { class: 'topbar__addBtn', type: 'button', 'aria-label': t('search'), onClick: () => { hapticLight(); location.hash = '#search'; } }, '🔍')
         );
         await renderProjects(ctx);
       } else if (route.name === 'project') {
@@ -211,8 +211,7 @@ export function initApp(root) {
                         location.hash = '#projects'; 
                     }
                 } 
-            }, '←'),
-            el('button', { class: 'topbar__searchBtn', type: 'button', 'aria-label': t('search'), onClick: () => { hapticLight(); location.hash = '#search'; } }, '🔍')
+            }, '←')
           );
           if ((project.type ?? 'default') !== 'checklist') {
             topbarActions.append(
@@ -227,6 +226,9 @@ export function initApp(root) {
               }, '+')
             );
           }
+          topbarActions.append(
+            el('button', { class: 'topbar__addBtn', type: 'button', 'aria-label': t('search'), onClick: () => { hapticLight(); location.hash = '#search'; } }, '🔍')
+          );
         }
         await renderProjectDetail(ctx, route.params.projectId);
       } else if (route.name === 'archive') {
@@ -237,7 +239,7 @@ export function initApp(root) {
         topbarTitle.textContent = t('settings');
         appendDateToTopbar(topbarActions);
         topbarActions.append(
-          el('button', { class: 'topbar__searchBtn', type: 'button', 'aria-label': t('search'), onClick: () => { hapticLight(); location.hash = '#search'; } }, '🔍')
+          el('button', { class: 'topbar__addBtn', type: 'button', 'aria-label': t('search'), onClick: () => { hapticLight(); location.hash = '#search'; } }, '🔍')
         );
         await renderSettings(ctx);
       } else if (route.name === 'search') {
