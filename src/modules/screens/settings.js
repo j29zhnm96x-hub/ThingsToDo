@@ -6,7 +6,7 @@ import { openBinModal } from '../ui/binModal.js';
 import { showToast } from '../ui/toast.js';
 import { t, getLang, setLang, languageNames, getAvailableLanguages } from '../utils/i18n.js';
 import { router } from '../router.js';
-import { checkForUpdates, getUpdateInfo } from '../updater.js';
+import { checkForUpdates, getUpdateInfo, showUpdateOverlayAndReload } from '../updater.js';
 
 async function blobToDataUrl(blob) {
   return new Promise((resolve, reject) => {
@@ -152,8 +152,7 @@ export async function renderSettings(ctx) {
       checkUpdateBtn.textContent = t('updateChecking');
       const result = await checkForUpdates();
       if (result.updated) {
-        showToast('Update installed — reloading...');
-        setTimeout(() => window.location.reload(), 800);
+        showUpdateOverlayAndReload();
       } else if (result.error === 'unsupported') {
         statusEl.textContent = t('notificationsBlocked') || 'Not supported';
         checkUpdateBtn.textContent = t('updateCheck');

@@ -82,6 +82,45 @@ export async function checkForUpdates() {
 }
 
 /**
+ * Show a fancy full-screen update overlay, then reload.
+ * Call this after checkForUpdates() succeeds.
+ */
+export function showUpdateOverlayAndReload() {
+  return new Promise((resolve) => {
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'update-overlay';
+    overlay.innerHTML = `
+      <div class="update-overlay__card">
+        <div class="update-overlay__spinner" id="updateSpinner"></div>
+        <div class="update-overlay__text" id="updateText">Updating...</div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    // After a moment, switch to success state
+    setTimeout(() => {
+      const spinner = document.getElementById('updateSpinner');
+      const text = document.getElementById('updateText');
+      if (spinner) {
+        spinner.className = 'update-overlay__spinner--done';
+        spinner.textContent = '✓';
+      }
+      if (text) {
+        text.className = 'update-overlay__text--done';
+        text.textContent = 'Updated!';
+      }
+    }, 800);
+
+    // Then reload
+    setTimeout(() => {
+      window.location.reload();
+      resolve();
+    }, 1600);
+  });
+}
+
+/**
  * Get the current SW state info
  */
 export function getUpdateInfo() {
