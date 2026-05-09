@@ -1487,11 +1487,19 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
         const clearBtn = el('button', {
           type: 'button',
           class: 'inlineNote__clear',
-          'aria-label': t('clear') || 'Clear',
-          onClick: () => {
-            textarea.value = '';
-            autosize();
-            void saveText('');
+          'aria-label': t('delete') || 'Delete',
+          onClick: async () => {
+            const ok = await confirm(modalHost, {
+              title: t('deleteNote') || 'Delete note?',
+              message: t('deleteNoteConfirm') || 'Delete this note?',
+              confirmLabel: t('delete') || 'Delete',
+              danger: true
+            });
+            if (ok) {
+              await db.projectNotes.delete(note.id);
+              const noteEl = clearBtn.closest('.inlineNoteWrapper');
+              if (noteEl) noteEl.remove();
+            }
           }
         }, '✕');
 
