@@ -398,10 +398,12 @@ const translations = {
     // Search
     search: 'Search',
     searchPlaceholder: 'Search tasks, projects...',
+    searchArchive: 'Search Archive',
+    searchArchivePlaceholder: 'Search archived tasks...',
     searchEmpty: 'No results',
-    searchEmptyHint: 'Try a different search term',
+    searchNoArchived: 'No archived tasks found',
     in: 'in',
-    searchInProject: 'In',
+    archivedTasks: 'Archived Tasks',
   },
   es: {
     // Navigation
@@ -784,10 +786,12 @@ const translations = {
     // Search
     search: 'Buscar',
     searchPlaceholder: 'Buscar tareas, proyectos...',
+    searchArchive: 'Buscar en Archivo',
+    searchArchivePlaceholder: 'Buscar tareas archivadas...',
     searchEmpty: 'Sin resultados',
-    searchEmptyHint: 'Prueba con otro término de búsqueda',
+    searchNoArchived: 'No se encontraron tareas archivadas',
     in: 'en',
-    searchInProject: 'En',
+    archivedTasks: 'Tareas archivadas',
   },
 
   hr: {
@@ -1174,10 +1178,12 @@ const translations = {
     // Search
     search: 'Pretraži',
     searchPlaceholder: 'Pretraži zadatke, projekte...',
+    searchArchive: 'Pretraži arhivu',
+    searchArchivePlaceholder: 'Pretraži arhivirane zadatke...',
     searchEmpty: 'Nema rezultata',
-    searchEmptyHint: 'Pokušajte s drugim pojmom',
+    searchNoArchived: 'Nema arhiviranih zadataka',
     in: 'u',
-    searchInProject: 'U',
+    archivedTasks: 'Arhivirani zadaci',
   },
 
   it: {
@@ -1564,10 +1570,12 @@ const translations = {
     // Search
     search: 'Cerca',
     searchPlaceholder: 'Cerca attività, progetti...',
+    searchArchive: 'Cerca in Archivio',
+    searchArchivePlaceholder: 'Cerca attività archiviate...',
     searchEmpty: 'Nessun risultato',
-    searchEmptyHint: 'Prova con un termine diverso',
+    searchNoArchived: 'Nessuna attività archiviata trovata',
     in: 'in',
-    searchInProject: 'In',
+    archivedTasks: 'Attività archiviate',
   },
 
   de: {
@@ -1949,10 +1957,12 @@ const translations = {
     // Search
     search: 'Suche',
     searchPlaceholder: 'Aufgaben, Projekte suchen...',
+    searchArchive: 'Archiv durchsuchen',
+    searchArchivePlaceholder: 'Archivierte Aufgaben durchsuchen...',
     searchEmpty: 'Keine Ergebnisse',
-    searchEmptyHint: 'Versuche einen anderen Suchbegriff',
+    searchNoArchived: 'Keine archivierten Aufgaben gefunden',
     in: 'in',
-    searchInProject: 'In',
+    archivedTasks: 'Archivierte Aufgaben',
   }
 };
 

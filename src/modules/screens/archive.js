@@ -37,7 +37,7 @@ export async function renderArchive(ctx) {
     class: 'topbar__addBtn',
     type: 'button',
     'aria-label': t('search'),
-    onClick: () => { hapticLight(); location.hash = '#search'; }
+    onClick: () => { hapticLight(); location.hash = '#search/archive'; }
   }, '🔍');
   topbarActions.append(searchBtn);
 

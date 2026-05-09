@@ -243,11 +243,16 @@ export function initApp(root) {
         );
         await renderSettings(ctx);
       } else if (route.name === 'search') {
-        topbarTitle.textContent = t('search');
+        const scope = route.params.scope || 'all';
+        if (scope === 'archive') {
+          topbarTitle.textContent = t('searchArchive');
+        } else {
+          topbarTitle.textContent = t('search');
+        }
         topbarActions.append(
           el('button', { class: 'topbar__backBtn', type: 'button', 'aria-label': 'Back', onClick: () => { hapticLight(); history.back(); } }, '←')
         );
-        await renderSearch(ctx);
+        await renderSearch(ctx, scope);
       } else if (route.name === 'help') {
         topbarTitle.textContent = t('help');
         topbarActions.append(

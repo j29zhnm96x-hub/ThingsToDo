@@ -4,14 +4,14 @@ import { t } from '../utils/i18n.js';
 import { hapticLight } from '../ui/haptic.js';
 import { openPlaybackModal } from '../ui/voiceMemo.js';
 
-export async function renderSearch(ctx) {
+export async function renderSearch(ctx, scope = 'all') {
   const { main, db, modalHost } = ctx;
   clear(main);
 
   const input = el('input', {
     type: 'text',
     class: 'search-input',
-    placeholder: t('searchPlaceholder'),
+    placeholder: scope === 'archive' ? t('searchArchivePlaceholder') : t('searchPlaceholder'),
     'aria-label': t('search'),
     autofocus: 'true',
     autocomplete: 'off',
@@ -21,33 +21,24 @@ export async function renderSearch(ctx) {
 
   const resultsEl = el('div', { class: 'search-results' });
 
-  const noResults = emptyState(t('searchEmpty'), t('searchEmptyHint'));
-  noResults.style.display = 'none';
-
-  const emptyHint = el('div', { class: 'search-hint' }, '🔍 ' + t('searchEmptyHint'));
-
   const doSearch = debounce(async (raw) => {
     const query = raw.trim();
     if (!query) {
       resultsEl.innerHTML = '';
-      noResults.style.display = 'none';
-      emptyHint.style.display = '';
       return;
     }
-    emptyHint.style.display = 'none';
-    const results = await searchAll(db, query);
-    renderResults(resultsEl, noResults, results, ctx, query);
+    const results = await searchAll(db, query, scope);
+    renderResults(resultsEl, results, ctx, scope);
   }, 300);
 
   input.addEventListener('input', () => doSearch(input.value));
 
-  main.append(input, emptyHint, resultsEl, noResults);
+  main.append(input, resultsEl);
 
-  // Focus input after render
   requestAnimationFrame(() => input.focus());
 }
 
-function renderResults(container, noResults, results, ctx, query) {
+function renderResults(container, results, ctx, scope) {
   container.innerHTML = '';
   let any = false;
 
@@ -60,9 +51,10 @@ function renderResults(container, noResults, results, ctx, query) {
   };
 
   if (results.todos.length) {
-    const list = section(t('tasks'), results.todos.length, '📄');
+    const label = scope === 'archive' ? t('archivedTasks') : t('tasks');
+    const list = section(label, results.todos.length, '📄');
     for (const todo of results.todos) {
-      list.append(makeTodoResult(todo, ctx));
+      list.append(makeTodoResult(todo, scope, ctx));
     }
   }
 
@@ -80,10 +72,17 @@ function renderResults(container, noResults, results, ctx, query) {
     }
   }
 
-  noResults.style.display = any ? 'none' : '';
+  if (!any) {
+    container.append(
+      el('div', { class: 'search-empty' },
+        el('div', { class: 'search-empty__icon' }, scope === 'archive' ? '📦' : '🔍'),
+        el('div', { class: 'search-empty__text' }, scope === 'archive' ? t('searchNoArchived') : t('searchEmpty'))
+      )
+    );
+  }
 }
 
-function makeTodoResult(todo, ctx) {
+function makeTodoResult(todo, scope, ctx) {
   const subtitle = todo._projectName
     ? `${t('in')} ${todo._projectName}`
     : t('inbox');
@@ -92,15 +91,21 @@ function makeTodoResult(todo, ctx) {
     dataset: { todoId: todo.id },
     onClick: () => {
       hapticLight();
-      sessionStorage.setItem('searchHighlight', todo.id);
-      if (todo.pageId && todo.projectId) {
-        try { localStorage.setItem(`checklist-page-${todo.projectId}`, todo.pageId); } catch { /* noop */ }
+      if (scope !== 'archive') {
+        // Navigate to the task's project for active tasks
+        sessionStorage.setItem('searchHighlight', todo.id);
+        if (todo.pageId && todo.projectId) {
+          try { localStorage.setItem(`checklist-page-${todo.projectId}`, todo.pageId); } catch { /* noop */ }
+        }
+        location.hash = todo.projectId ? `#project/${todo.projectId}` : '#inbox';
       }
-      location.hash = todo.projectId ? `#project/${todo.projectId}` : '#inbox';
     }
   },
     el('div', { class: 'search-result__title' }, todo.title || ''),
-    el('div', { class: 'search-result__sub' }, subtitle)
+    el('div', { class: 'search-result__sub' }, scope === 'archive'
+      ? (todo.completedAt ? new Date(todo.completedAt).toLocaleDateString() : '')
+      : subtitle
+    )
   );
 }
 

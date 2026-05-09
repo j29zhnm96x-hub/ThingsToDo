@@ -2601,31 +2601,38 @@ html, body {
 .search-input {
   display: block;
   width: calc(100% - 32px);
-  margin: 16px 16px 8px;
-  padding: 18px 20px;
-  font-size: 1.125rem;
+  margin: 20px 16px 12px;
+  padding: 22px 24px;
+  font-size: 1.35rem;
   border: 2px solid var(--border);
-  border-radius: 14px;
+  border-radius: 16px;
   background: var(--card-bg);
   color: var(--text);
   outline: none;
-  transition: border-color 200ms ease;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
   -webkit-appearance: none;
   appearance: none;
 }
 .search-input:focus {
   border-color: var(--accent);
-  border-width: 2px;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 .search-input::placeholder {
   color: var(--muted);
 }
 
-.search-hint {
+.search-empty {
   text-align: center;
+  padding: 64px 24px;
   color: var(--muted);
+}
+.search-empty__icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+  opacity: 0.6;
+}
+.search-empty__text {
   font-size: 0.9375rem;
-  padding: 48px 24px;
 }
 
 .search-results {
