@@ -79,6 +79,11 @@ export function renderHelp(ctx) {
     section('👆', t('helpGestures'), t('helpGesturesContent'), '#ec4899'),
     section('🎙️', t('helpVoiceMemos'), t('helpVoiceMemosContent'), '#14b8a6'),
     section('⚙️', t('helpSettings'), t('helpSettingsContent'), '#64748b'),
+    section('🔣', t('helpTaskCardIcons'), t('helpTaskCardIconsContent'), '#6b7280'),
+    section('🖼️', t('helpImageGallery'), t('helpImageGalleryContent'), '#a855f7'),
+    section('📋', t('helpChecklistItems'), t('helpChecklistItemsContent'), '#22c55e'),
+    section('🗄️', t('helpArchiveBin'), t('helpArchiveBinContent'), '#64748b'),
+    section('📤', t('helpSharing'), t('helpSharingContent'), '#0ea5e9'),
     section('💾', t('helpDataManagement'), t('helpDataManagementContent'), '#64748b'),
 
     el('div', { style: 'height: 40px;' }) // Spacer
