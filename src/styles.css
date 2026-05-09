@@ -1289,23 +1289,6 @@ html[data-theme='light'] .checklist-clearPage-btn {
   box-shadow: 0 4px 16px rgba(255, 107, 107, 0.3);
 }
 
-/* Focus Mode: collapse floating buttons behind the focus/exit button */
-body.focus-mode .checklist-addItem-btn {
-  transform: translateY(192px);
-  opacity: 0;
-  pointer-events: none;
-}
-body.focus-mode .checklist-clearPage-btn {
-  transform: translateY(128px);
-  opacity: 0;
-  pointer-events: none;
-}
-body.focus-mode .checklist-addPage-btn {
-  transform: translateY(64px);
-  opacity: 0;
-  pointer-events: none;
-}
-
 /* Checklist Container */
 .checklist-container {
   position: relative;

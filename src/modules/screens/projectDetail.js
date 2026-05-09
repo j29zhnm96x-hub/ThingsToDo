@@ -914,11 +914,23 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
       'aria-label': 'Toggle Focus Mode',
       onClick: () => {
         hapticLight();
-        document.body.classList.toggle('focus-mode');
-        const isFocus = document.body.classList.contains('focus-mode');
+        const wasFocus = document.body.classList.contains('focus-mode');
+        if (wasFocus) {
+          document.body.classList.remove('focus-mode');
+        } else {
+          document.body.classList.add('focus-mode');
+        }
+        const isFocus = !wasFocus;
         focusBtn.textContent = isFocus ? '✕' : '⛶';
-        focusBtn.style.transition = 'transform 200ms ease, box-shadow 200ms ease, background 300ms ease';
         focusBtn.style.background = isFocus ? '#ef4444' : '';
+        // Animate the three floating buttons
+        [addItemBtn, clearPageBtn, addPageBtn].forEach((btn, i) => {
+          const dist = [192, 128, 64][i];
+          btn.style.transition = 'transform 350ms cubic-bezier(0.4, 0, 0.2, 1), opacity 350ms ease';
+          btn.style.transform = isFocus ? `translateY(${dist}px) scale(1)` : '';
+          btn.style.opacity = isFocus ? '0' : '';
+          btn.style.pointerEvents = isFocus ? 'none' : '';
+        });
       }
     }, '⛶');
     
