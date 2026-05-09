@@ -1,14 +1,13 @@
 /*
-  Offline-first service worker:
-  - Network-first for JS (so code updates load immediately)
-  - Cache-first for other assets
-  - Network fallback for offline
+  ThingsToDo Service Worker
+  - Cache-first for app shell (offline support)
+  - Network-first for JS (code updates load immediately)
+  - Manual update support via SKIP_WAITING message
 */
 
-// IMPORTANT: bump this to force clients to pick up new JS/CSS.
-const CACHE_NAME = 'thingstodo-v46';
+const CACHE_NAME = 'thingstodo-v47';
+const APP_VERSION = '1.0.0';
 
-// Keep this list small and stable; it's the offline app shell.
 const APP_SHELL = [
   './',
   './index.html',
@@ -37,55 +36,17 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
       const keys = await caches.keys();
-      await Promise.all(keys.map((key) => (key === CACHE_NAME ? null : caches.delete(key))));
+      await Promise.all(keys.map((key) => (key === CACHE_NAME || key.startsWith('thingstodo-') && key < CACHE_NAME) ? caches.delete(key) : null));
       await self.clients.claim();
     })()
   );
 });
 
-self.addEventListener('push', (event) => {
-  let data = {};
-  try {
-    data = event.data ? event.data.json() : {};
-  } catch (e) {
-    data = { title: 'ThingsToDo', body: event.data ? event.data.text() : 'New notification' };
+// Manual update: activate immediately when told
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
   }
-
-  const title = data.title || 'ThingsToDo';
-  const options = {
-    body: data.body || 'Open app to see your tasks',
-    icon: './assets/icon-192.png',
-    badge: './assets/icon-192.png',
-    vibrate: [100, 50, 100],
-    data: {
-      url: data.url || '/'
-    }
-  };
-
-  event.waitUntil(self.registration.showNotification(title, options));
-});
-
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-
-  const urlToOpen = event.notification.data && event.notification.data.url ? event.notification.data.url : '/';
-
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      for (let i = 0; i < windowClients.length; i++) {
-        const client = windowClients[i];
-        if (client.url !== urlToOpen && 'navigate' in client) {
-          client.navigate(urlToOpen);
-        }
-        if ('focus' in client) {
-          return client.focus();
-        }
-      }
-      if (clients.openWindow) {
-        return clients.openWindow(urlToOpen);
-      }
-    })
-  );
 });
 
 self.addEventListener('fetch', (event) => {
@@ -93,10 +54,8 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
 
   const url = new URL(req.url);
-  const isSameOrigin = url.origin === self.location.origin;
-  if (!isSameOrigin) return;
+  if (url.origin !== self.location.origin) return;
 
-  // Use NETWORK-FIRST for JS files so code updates are picked up immediately.
   const isScript = url.pathname.endsWith('.js');
 
   event.respondWith(
@@ -119,7 +78,6 @@ self.addEventListener('fetch', (event) => {
       // Cache-first for everything else
       const cached = await caches.match(req);
       if (cached) {
-        // Safari fix: "Response served by service worker has redirections"
         if (cached.redirected) {
           const body = await cached.blob();
           return new Response(body, {
@@ -133,8 +91,6 @@ self.addEventListener('fetch', (event) => {
 
       try {
         let res = await fetch(req);
-        
-        // Safari fix: If response is redirected, recreate it to strip the 'redirected' flag
         if (res.redirected) {
           const body = await res.blob();
           res = new Response(body, {
@@ -143,62 +99,15 @@ self.addEventListener('fetch', (event) => {
             headers: res.headers
           });
         }
-
         const cache = await caches.open(CACHE_NAME);
         if (res.ok && res.type !== 'opaque') {
           cache.put(req, res.clone());
         }
         return res;
-      } catch (err) {
+      } catch {
         const fallback = await caches.match('./index.html');
-        return fallback || new Response('Offline', { status: 503, statusText: 'Offline' });
+        return fallback || new Response('Offline', { status: 503 });
       }
     })()
-  );
-});
-
-self.addEventListener('push', (event) => {
-  let data = {};
-  try {
-    data = event.data ? event.data.json() : {};
-  } catch (e) {
-    data = { title: 'ThingsToDo', body: event.data ? event.data.text() : 'New notification' };
-  }
-
-  const title = data.title || 'ThingsToDo';
-  const options = {
-    body: data.body || 'Open app to see your tasks',
-    icon: './assets/icon-192.png',
-    badge: './assets/icon-192.png',
-    vibrate: [100, 50, 100],
-    data: {
-      url: data.url || '/'
-    }
-  };
-
-  event.waitUntil(self.registration.showNotification(title, options));
-});
-
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-
-  const urlToOpen = event.notification.data && event.notification.data.url ? event.notification.data.url : '/';
-
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      for (let i = 0; i < windowClients.length; i++) {
-        const client = windowClients[i];
-        // Navigate if possible, then focus
-        if (client.url !== urlToOpen && 'navigate' in client) {
-          client.navigate(urlToOpen);
-        }
-        if ('focus' in client) {
-          return client.focus();
-        }
-      }
-      if (clients.openWindow) {
-        return clients.openWindow(urlToOpen);
-      }
-    })
   );
 });

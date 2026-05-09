@@ -6,6 +6,7 @@ import { openBinModal } from '../ui/binModal.js';
 import { showToast } from '../ui/toast.js';
 import { t, getLang, setLang, languageNames, getAvailableLanguages } from '../utils/i18n.js';
 import { router } from '../router.js';
+import { checkForUpdates, getUpdateInfo } from '../updater.js';
 
 async function blobToDataUrl(blob) {
   return new Promise((resolve, reject) => {
@@ -139,6 +140,32 @@ export async function renderSettings(ctx) {
   const resetBtn = el('button', { class: 'btn btn--danger', type: 'button', onClick: resetData }, t('clearAllData'));
   const manageSuggestionsBtn = el('button', { class: 'btn', type: 'button', onClick: openSuggestionHistoryModal }, t('clearSuggestionHistory') || 'Clear suggestion history');
 
+  // Update check
+  const updateInfo = getUpdateInfo();
+  const updateInfoText = updateInfo.supported ? `v${updateInfo.version || '1.0.0'}` : t('notificationsBlocked') || 'Not supported';
+  const statusEl = el('div', { id: 'updateStatus', class: 'small', style: { marginTop: '4px' } }, updateInfoText);
+  const checkUpdateBtn = el('button', {
+    class: 'btn',
+    type: 'button',
+    onClick: async () => {
+      checkUpdateBtn.disabled = true;
+      checkUpdateBtn.textContent = t('updateChecking');
+      const result = await checkForUpdates();
+      if (result.updated) {
+        showToast('Update installed — reloading...');
+        setTimeout(() => window.location.reload(), 800);
+      } else if (result.error === 'unsupported') {
+        statusEl.textContent = t('notificationsBlocked') || 'Not supported';
+        checkUpdateBtn.textContent = t('updateCheck');
+        checkUpdateBtn.disabled = false;
+      } else {
+        statusEl.textContent = t('updateUpToDate') || 'App is up to date';
+        checkUpdateBtn.textContent = t('updateCheck');
+        checkUpdateBtn.disabled = false;
+      }
+    }
+  }, t('updateCheck') || 'Check for Updates');
+
   main.append(el('div', { class: 'stack' },
     el('div', { class: 'card stack' },
       el('div', { style: { fontWeight: '700' } }, t('language')),
@@ -191,6 +218,11 @@ export async function renderSettings(ctx) {
       pasteSharedBtn,
       binBtn,
       resetBtn
+    ),
+    el('div', { class: 'card stack' },
+      el('div', { style: { fontWeight: '700' } }, t('updateCheck') || 'App Updates'),
+      checkUpdateBtn,
+      statusEl
     )
   ));
 

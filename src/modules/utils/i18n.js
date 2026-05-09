@@ -404,6 +404,11 @@ const translations = {
     searchNoArchived: 'No archived tasks found',
     in: 'in',
     archivedTasks: 'Archived Tasks',
+
+    // Updates
+    updateCheck: 'Check for Updates',
+    updateUpToDate: 'App is up to date',
+    updateChecking: 'Checking...',
   },
   es: {
     // Navigation
@@ -792,6 +797,11 @@ const translations = {
     searchNoArchived: 'No se encontraron tareas archivadas',
     in: 'en',
     archivedTasks: 'Tareas archivadas',
+
+    // Updates
+    updateCheck: 'Buscar actualizaciones',
+    updateUpToDate: 'La aplicación está actualizada',
+    updateChecking: 'Buscando...',
   },
 
   hr: {
@@ -1184,6 +1194,11 @@ const translations = {
     searchNoArchived: 'Nema arhiviranih zadataka',
     in: 'u',
     archivedTasks: 'Arhivirani zadaci',
+
+    // Updates
+    updateCheck: 'Provjeri ažuriranja',
+    updateUpToDate: 'Aplikacija je ažurna',
+    updateChecking: 'Provjeravam...',
   },
 
   it: {
@@ -1576,6 +1591,11 @@ const translations = {
     searchNoArchived: 'Nessuna attività archiviata trovata',
     in: 'in',
     archivedTasks: 'Attività archiviate',
+
+    // Updates
+    updateCheck: 'Controlla aggiornamenti',
+    updateUpToDate: 'App aggiornata',
+    updateChecking: 'Controllo in corso...',
   },
 
   de: {
@@ -1963,6 +1983,11 @@ const translations = {
     searchNoArchived: 'Keine archivierten Aufgaben gefunden',
     in: 'in',
     archivedTasks: 'Archivierte Aufgaben',
+
+    // Updates
+    updateCheck: 'Nach Updates suchen',
+    updateUpToDate: 'App ist auf dem neuesten Stand',
+    updateChecking: 'Suche...',
   }
 };
 
