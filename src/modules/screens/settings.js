@@ -347,7 +347,8 @@ export async function renderSettings(ctx) {
       checklistPages: await db.checklistPages.list(),
       settings: await db.settings.get(),
       attachments: [],
-      projectNotes: []
+      projectNotes: [],
+      voiceMemos: []
     };
 
     // Gather all project notes so they are included in the export (covers edge cases)
@@ -370,6 +371,28 @@ export async function renderSettings(ctx) {
         dataUrl: await blobToDataUrl(a.blob),
         thumbDataUrl: a.thumb ? await blobToDataUrl(a.thumb) : null
       });
+    }
+
+    // Include voice memos in export (convert audio blobs to data URLs)
+    payload.voiceMemos = [];
+    try {
+      const allMemos = await db.voiceMemos.list();
+      for (const m of allMemos) {
+        const memoData = {
+          id: m.id,
+          title: m.title,
+          projectId: m.projectId,
+          duration: m.duration,
+          showInInbox: m.showInInbox,
+          order: m.order,
+          createdAt: m.createdAt,
+          updatedAt: m.updatedAt,
+          dataUrl: m.blob ? await blobToDataUrl(m.blob) : null
+        };
+        payload.voiceMemos.push(memoData);
+      }
+    } catch (e) {
+      // Voice memos store might not exist on older DB versions; skip gracefully
     }
 
     const json = JSON.stringify(payload, null, 2);
@@ -471,6 +494,27 @@ export async function renderSettings(ctx) {
                 blob,
                 thumb: thumbBlob
               });
+            }
+
+            // Restore voice memos if present in the export
+            for (const m of (parsed.voiceMemos || [])) {
+              if (!m.dataUrl) continue;
+              try {
+                const blob = await dataUrlToBlob(m.dataUrl);
+                await db.voiceMemos.put({
+                  id: m.id,
+                  title: m.title,
+                  projectId: m.projectId,
+                  duration: m.duration,
+                  showInInbox: m.showInInbox,
+                  order: m.order,
+                  createdAt: m.createdAt,
+                  updatedAt: m.updatedAt,
+                  blob
+                });
+              } catch (e) {
+                // Skip memo if blob conversion fails
+              }
             }
 
             // Refresh current screen
