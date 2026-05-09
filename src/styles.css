@@ -2600,12 +2600,12 @@ html, body {
 /* ── Search Screen ── */
 .search-input {
   display: block;
-  width: calc(100% - 32px);
-  margin: 20px 16px 12px;
-  padding: 22px 24px;
-  font-size: 1.35rem;
-  border: 2px solid var(--border);
-  border-radius: 16px;
+  width: calc(100% - 24px);
+  margin: 24px 12px 16px;
+  padding: 30px 24px;
+  font-size: 1.65rem;
+  border: 2.5px solid var(--border);
+  border-radius: 18px;
   background: var(--card-bg);
   color: var(--text);
   outline: none;
