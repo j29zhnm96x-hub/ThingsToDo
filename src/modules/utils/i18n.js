@@ -394,6 +394,14 @@ const translations = {
     endSeries: 'End entire series',
     deleteArchivedTodo: 'Delete archived todo?',
     deleteArchivedTodoMsg: 'This will permanently delete the todo and its images.',
+
+    // Search
+    search: 'Search',
+    searchPlaceholder: 'Search tasks, projects...',
+    searchEmpty: 'No results',
+    searchEmptyHint: 'Try a different search term',
+    in: 'in',
+    searchInProject: 'In',
   },
   es: {
     // Navigation
@@ -771,9 +779,17 @@ const translations = {
     deleteJustThis: 'Eliminar solo esta',
     endSeries: 'Finalizar toda la serie',
     deleteArchivedTodo: '¿Eliminar tarea archivada?',
-    deleteArchivedTodoMsg: 'Esto eliminará permanentemente la tarea y sus imágenes.'
+    deleteArchivedTodoMsg: 'Esto eliminará permanentemente la tarea y sus imágenes.',
+
+    // Search
+    search: 'Buscar',
+    searchPlaceholder: 'Buscar tareas, proyectos...',
+    searchEmpty: 'Sin resultados',
+    searchEmptyHint: 'Prueba con otro término de búsqueda',
+    in: 'en',
+    searchInProject: 'En',
   },
-  
+
   hr: {
     // Navigation
     inbox: 'Inbox',
@@ -1154,8 +1170,16 @@ const translations = {
     endSeries: 'Završi cijelu seriju',
     deleteArchivedTodo: 'Obrisati arhivirani zadatak?',
     deleteArchivedTodoMsg: 'Ovo će trajno obrisati zadatak i njegove slike.',
+
+    // Search
+    search: 'Pretraži',
+    searchPlaceholder: 'Pretraži zadatke, projekte...',
+    searchEmpty: 'Nema rezultata',
+    searchEmptyHint: 'Pokušajte s drugim pojmom',
+    in: 'u',
+    searchInProject: 'U',
   },
-  
+
   it: {
     // Navigation
     inbox: 'Posta in arrivo',
@@ -1536,8 +1560,16 @@ const translations = {
     endSeries: 'Termina l\'intera serie',
     deleteArchivedTodo: 'Eliminare attività archiviata?',
     deleteArchivedTodoMsg: 'Questo eliminerà permanentemente l\'attività e le sue immagini.',
+
+    // Search
+    search: 'Cerca',
+    searchPlaceholder: 'Cerca attività, progetti...',
+    searchEmpty: 'Nessun risultato',
+    searchEmptyHint: 'Prova con un termine diverso',
+    in: 'in',
+    searchInProject: 'In',
   },
-  
+
   de: {
     // Navigation
     inbox: 'Posteingang',
@@ -1913,6 +1945,14 @@ const translations = {
     endSeries: 'Gesamte Serie beenden',
     deleteArchivedTodo: 'Archivierte Aufgabe löschen?',
     deleteArchivedTodoMsg: 'Dies wird die Aufgabe und ihre Bilder dauerhaft löschen.',
+
+    // Search
+    search: 'Suche',
+    searchPlaceholder: 'Aufgaben, Projekte suchen...',
+    searchEmpty: 'Keine Ergebnisse',
+    searchEmptyHint: 'Versuche einen anderen Suchbegriff',
+    in: 'in',
+    searchInProject: 'In',
   }
 };
 

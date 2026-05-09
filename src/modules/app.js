@@ -6,6 +6,7 @@ import { renderProjectDetail, openProjectAddMenu } from './screens/projectDetail
 import { renderArchive } from './screens/archive.js';
 import { renderSettings } from './screens/settings.js';
 import { renderHelp } from './screens/help.js';
+import { renderSearch } from './screens/search.js';
 import { openTodoEditor } from './ui/todoEditor.js';
 import { el } from './ui/dom.js';
 import { applyTheme, applyPalette } from './ui/theme.js';
@@ -173,6 +174,7 @@ export function initApp(root) {
         topbarTitle.textContent = t('inbox');
         appendDateToTopbar(topbarActions);
         topbarActions.append(
+          el('button', { class: 'topbar__searchBtn', type: 'button', 'aria-label': t('search'), onClick: () => { hapticLight(); location.hash = '#search'; } }, '🔍'),
           el('button', { class: 'topbar__addBtn', type: 'button', 'aria-label': t('addTask'), onClick: () => { 
             hapticLight(); 
             openInboxAddMenu(ctx, modalHost);
@@ -183,6 +185,7 @@ export function initApp(root) {
         topbarTitle.textContent = t('projects');
         appendDateToTopbar(topbarActions);
         topbarActions.append(
+          el('button', { class: 'topbar__searchBtn', type: 'button', 'aria-label': t('search'), onClick: () => { hapticLight(); location.hash = '#search'; } }, '🔍'),
           el('button', { class: 'topbar__addBtn', type: 'button', 'aria-label': t('newProject'), onClick: () => { hapticLight(); openCreateProject({ db, modalHost, onCreated: () => router.refresh() }); } }, '+')
         );
         await renderProjects(ctx);
@@ -208,7 +211,8 @@ export function initApp(root) {
                         location.hash = '#projects'; 
                     }
                 } 
-            }, '←')
+            }, '←'),
+            el('button', { class: 'topbar__searchBtn', type: 'button', 'aria-label': t('search'), onClick: () => { hapticLight(); location.hash = '#search'; } }, '🔍')
           );
           if ((project.type ?? 'default') !== 'checklist') {
             topbarActions.append(
@@ -232,7 +236,16 @@ export function initApp(root) {
       } else if (route.name === 'settings') {
         topbarTitle.textContent = t('settings');
         appendDateToTopbar(topbarActions);
+        topbarActions.append(
+          el('button', { class: 'topbar__searchBtn', type: 'button', 'aria-label': t('search'), onClick: () => { hapticLight(); location.hash = '#search'; } }, '🔍')
+        );
         await renderSettings(ctx);
+      } else if (route.name === 'search') {
+        topbarTitle.textContent = t('search');
+        topbarActions.append(
+          el('button', { class: 'topbar__backBtn', type: 'button', 'aria-label': 'Back', onClick: () => { hapticLight(); history.back(); } }, '←')
+        );
+        await renderSearch(ctx);
       } else if (route.name === 'help') {
         topbarTitle.textContent = t('help');
         topbarActions.append(
@@ -244,7 +257,20 @@ export function initApp(root) {
       }
 
       // After render, move focus to main for accessibility.
-      requestAnimationFrame(() => main.focus());
+      requestAnimationFrame(() => {
+        main.focus();
+        // Check if a search highlight is pending
+        const highlightId = sessionStorage.getItem('searchHighlight');
+        if (highlightId) {
+          sessionStorage.removeItem('searchHighlight');
+          const card = document.querySelector(`[data-todo-id="${highlightId}"]`);
+          if (card) {
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            card.classList.add('todo--highlight');
+            setTimeout(() => card.classList.remove('todo--highlight'), 2500);
+          }
+        }
+      });
     }
   });
 }

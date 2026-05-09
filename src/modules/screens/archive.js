@@ -21,11 +21,18 @@ export async function renderArchive(ctx) {
   const { main, db, modalHost, topbarActions } = ctx;
   clear(main);
 
-  // Add Bin button to topbar
+  // Add search and bin buttons to topbar
   // Preserve existing date element (added by app init) when clearing actions
   const existingDateEl = topbarActions.querySelector('.topbar__date');
   topbarActions.innerHTML = '';
   if (existingDateEl) topbarActions.appendChild(existingDateEl);
+  const searchBtn = el('button', {
+    class: 'topbar__searchBtn',
+    type: 'button',
+    'aria-label': t('search'),
+    onClick: () => { hapticLight(); location.hash = '#search'; }
+  }, '🔍');
+  topbarActions.append(searchBtn);
   const binBtn = el('button', { 
     class: 'topbar__addBtn', 
     type: 'button', 

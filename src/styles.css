@@ -2596,3 +2596,97 @@ html, body {
 .suggestion-history-delete {
   white-space: nowrap;
 }
+
+/* ── Search Screen ── */
+.search-input {
+  display: block;
+  width: calc(100% - 16px);
+  margin: 12px 8px;
+  padding: 14px 16px;
+  font-size: 1rem;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: var(--card-bg);
+  color: var(--text);
+  outline: none;
+  transition: border-color 200ms ease;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.search-input:focus {
+  border-color: var(--accent);
+}
+.search-input::placeholder {
+  color: var(--muted);
+}
+
+.search-results {
+  padding: 0 8px 16px;
+}
+
+.search-section {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 16px 12px 6px;
+}
+
+.search-section-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.search-result {
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--card-bg);
+  cursor: pointer;
+  transition: background 150ms ease;
+  gap: 2px;
+}
+.search-result:active {
+  background: var(--hover);
+}
+.search-result__title {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.3;
+}
+.search-result__sub {
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+/* Todo highlight animation (from search) */
+.todo--highlight {
+  animation: todoHighlight 2.5s ease-out;
+}
+@keyframes todoHighlight {
+  0%   { background: rgba(250, 204, 21, 0.35); }
+  50%  { background: rgba(250, 204, 21, 0.2); }
+  100% { background: transparent; }
+}
+
+/* Search button in topbar */
+.topbar__searchBtn {
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 1rem;
+  padding: 4px 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  opacity: 0.7;
+  transition: opacity 150ms ease;
+}
+.topbar__searchBtn:hover,
+.topbar__searchBtn:active {
+  opacity: 1;
+}
