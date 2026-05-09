@@ -915,6 +915,10 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
       onClick: () => {
         hapticLight();
         document.body.classList.toggle('focus-mode');
+        const isFocus = document.body.classList.contains('focus-mode');
+        focusBtn.textContent = isFocus ? '✕' : '⛶';
+        focusBtn.style.transition = 'transform 200ms ease, box-shadow 200ms ease, background 300ms ease';
+        focusBtn.style.background = isFocus ? '#ef4444' : '';
       }
     }, '⛶');
     

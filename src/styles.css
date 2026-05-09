@@ -1156,7 +1156,7 @@ html[data-theme='light'] .checklist-pill--active {
   justify-content: center;
   cursor: pointer;
   box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
-  transition: transform 200ms ease, box-shadow 200ms ease;
+  transition: transform 300ms ease, box-shadow 200ms ease, opacity 300ms ease;
   -webkit-tap-highlight-color: transparent;
   z-index: 100;
   line-height: 1.1;
@@ -1194,7 +1194,7 @@ html[data-theme='light'] .checklist-addPage-btn {
   justify-content: center;
   cursor: pointer;
   box-shadow: 0 4px 16px rgba(74, 222, 128, 0.4);
-  transition: transform 200ms ease, box-shadow 200ms ease;
+  transition: transform 300ms ease, box-shadow 200ms ease, opacity 300ms ease;
   -webkit-tap-highlight-color: transparent;
   z-index: 100;
 }
@@ -1232,7 +1232,7 @@ html[data-theme='light'] .checklist-addItem-btn {
   justify-content: center;
   cursor: pointer;
   box-shadow: 0 4px 16px rgba(255, 107, 107, 0.4);
-  transition: transform 200ms ease, box-shadow 200ms ease;
+  transition: transform 300ms ease, box-shadow 200ms ease, opacity 300ms ease;
   -webkit-tap-highlight-color: transparent;
   z-index: 100;
   line-height: 1.1;
@@ -1287,6 +1287,23 @@ html[data-theme='light'] .checklist-focus-btn {
 html[data-theme='light'] .checklist-clearPage-btn {
   background: #ff6b6b;
   box-shadow: 0 4px 16px rgba(255, 107, 107, 0.3);
+}
+
+/* Focus Mode: collapse floating buttons behind the focus/exit button */
+body.focus-mode .checklist-addItem-btn {
+  transform: translateY(192px);
+  opacity: 0;
+  pointer-events: none;
+}
+body.focus-mode .checklist-clearPage-btn {
+  transform: translateY(128px);
+  opacity: 0;
+  pointer-events: none;
+}
+body.focus-mode .checklist-addPage-btn {
+  transform: translateY(64px);
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* Checklist Container */
