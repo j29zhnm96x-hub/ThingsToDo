@@ -258,21 +258,24 @@ export function initApp(root) {
         location.hash = '#inbox';
       }
 
-      // After render, move focus to main for accessibility.
-      requestAnimationFrame(() => {
+      // After render, check for search highlight
+      setTimeout(() => {
         main.focus();
-        // Check if a search highlight is pending
         const highlightId = sessionStorage.getItem('searchHighlight');
         if (highlightId) {
           sessionStorage.removeItem('searchHighlight');
           const card = document.querySelector(`[data-todo-id="${highlightId}"]`);
           if (card) {
             card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            card.classList.add('todo--highlight');
-            setTimeout(() => card.classList.remove('todo--highlight'), 2500);
+            card.style.transition = 'background 300ms ease';
+            card.style.background = 'rgba(250, 204, 21, 0.35)';
+            setTimeout(() => {
+              card.style.background = '';
+              card.style.transition = '';
+            }, 1800);
           }
         }
-      });
+      }, 100);
     }
   });
 }
