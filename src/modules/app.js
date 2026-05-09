@@ -238,9 +238,6 @@ export function initApp(root) {
       } else if (route.name === 'settings') {
         topbarTitle.textContent = t('settings');
         appendDateToTopbar(topbarActions);
-        topbarActions.append(
-          el('button', { class: 'topbar__addBtn', type: 'button', 'aria-label': t('search'), onClick: () => { hapticLight(); location.hash = '#search'; } }, '🔍')
-        );
         await renderSettings(ctx);
       } else if (route.name === 'search') {
         const scope = route.params.scope || 'all';
