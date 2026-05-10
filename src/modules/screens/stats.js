@@ -25,10 +25,9 @@ export async function renderStats(ctx) {
       statTile(t('completedLabel') || 'Done', today.completed, '#22c55e'),
       statTile(t('overdueLabel') || 'Overdue', today.overdue, '#ef4444')
     ),
-    today.streak > 0 ? el('div', { class: 'stats-insight' },
+    today.completed > 0 ? el('div', { class: 'stats-insight' },
       `🔥 ${t('streakActive') || 'Streak active'}`
-    ) : null,
-    { accent: true }
+    ) : null
   ));
 
   // ── Card 2: Streak ──
