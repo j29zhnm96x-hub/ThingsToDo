@@ -9,31 +9,26 @@ function dayKey(date) {
   return `${y}-${m}-${d}`;
 }
 
-function dateFromKey(key) {
-  return new Date(key + 'T00:00:00');
-}
-
 function todayKey() {
   return dayKey(new Date());
 }
 
-/** How many days between two ISO dates */
-function daysBetween(isoA, isoB) {
-  const a = new Date(isoA);
-  const b = new Date(isoB);
-  return Math.round((b.getTime() - a.getTime()) / DAY_MS);
+/** Get all todos (active + archived) — db.todos has no list() method */
+async function getAllTodos(db) {
+  const [active, archived] = await Promise.all([
+    db.todos.listActive(),
+    db.todos.listArchived()
+  ]);
+  return [...active, ...archived];
 }
 
-/**
- * Count how many tasks were completed on each of the last N days.
- * Returns Map<dayKey, count>
- */
+/** Count completed tasks per day for the last N days */
 async function completedPerDay(db, days) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);
   cutoff.setHours(0, 0, 0, 0);
 
-  const all = await db.todos.list();
+  const all = await getAllTodos(db);
   const map = new Map();
   for (const t of all) {
     if (!t.completed || !t.completedAt) continue;
@@ -48,7 +43,7 @@ async function completedPerDay(db, days) {
 /** Today's summary */
 export async function getTodayStats(db) {
   const today = todayKey();
-  const all = await db.todos.list();
+  const all = await getAllTodos(db);
   let completed = 0;
   let dueToday = 0;
   let overdue = 0;
@@ -70,40 +65,32 @@ export async function getTodayStats(db) {
 /** Streak data */
 export async function getStreakData(db, days = 30) {
   const perDay = await completedPerDay(db, days);
-  const today = todayKey();
-
-  // Build last N days as boolean array
   const dayArr = [];
-  let currentStreak = 0;
-  let longestStreak = 0;
-  let tempStreak = 0;
 
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
     const key = dayKey(d);
     const count = perDay.get(key) || 0;
-    const didWork = count > 0;
-    dayArr.push(didWork);
-
-    if (didWork) {
-      tempStreak++;
-      if (tempStreak > longestStreak) longestStreak = tempStreak;
-      // Current streak only counts if today or consecutive from today
-      if (i === 0) currentStreak = tempStreak;
-    } else {
-      tempStreak = 0;
-    }
+    dayArr.push(count > 0);
   }
 
-  // Recalculate current streak properly: count backwards from today
-  currentStreak = 0;
+  // Current streak: count backwards from today
+  let current = 0;
   for (let i = dayArr.length - 1; i >= 0; i--) {
-    if (dayArr[i]) currentStreak++;
+    if (dayArr[i]) current++;
     else break;
   }
 
-  return { current: currentStreak, longest: longestStreak, days: dayArr };
+  // Longest streak in this period
+  let longest = 0;
+  let temp = 0;
+  for (const active of dayArr) {
+    if (active) { temp++; if (temp > longest) longest = temp; }
+    else temp = 0;
+  }
+
+  return { current, longest, days: dayArr };
 }
 
 /** Weekly bar chart data: last 7 days */
@@ -116,9 +103,7 @@ export async function getWeeklyData(db) {
     const d = new Date();
     d.setDate(d.getDate() - i);
     const key = dayKey(d);
-    const count = perDay.get(key) || 0;
-    const dayName = labels[d.getDay()];
-    result.push({ day: dayName, count, key });
+    result.push({ day: labels[d.getDay()], count: perDay.get(key) || 0, key });
   }
   return result;
 }
@@ -132,15 +117,14 @@ export async function getMonthlyData(db) {
     const d = new Date();
     d.setDate(d.getDate() - i);
     const key = dayKey(d);
-    const count = perDay.get(key) || 0;
-    result.push({ date: key, count, day: d.getDate(), weekday: d.getDay() });
+    result.push({ date: key, count: perDay.get(key) || 0, day: d.getDate(), weekday: d.getDay() });
   }
   return result;
 }
 
 /** Overall completion rate */
 export async function getCompletionRate(db) {
-  const all = await db.todos.list();
+  const all = await getAllTodos(db);
   let completed = 0;
   let active = 0;
   let archived = 0;
@@ -151,7 +135,7 @@ export async function getCompletionRate(db) {
     else active++;
   }
 
-  const total = all.length || 1; // avoid division by zero
+  const total = all.length || 1;
   return {
     completed,
     active,
@@ -163,8 +147,8 @@ export async function getCompletionRate(db) {
 
 /** Most productive day of the week */
 export async function getProductiveDay(db) {
-  const all = await db.todos.list();
-  const dayCounts = [0, 0, 0, 0, 0, 0, 0]; // Sun=0..Sat=6
+  const all = await getAllTodos(db);
+  const dayCounts = [0, 0, 0, 0, 0, 0, 0];
   const labels = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
   for (const t of all) {
@@ -176,10 +160,7 @@ export async function getProductiveDay(db) {
   let max = 0;
   let maxIdx = 0;
   for (let i = 0; i < 7; i++) {
-    if (dayCounts[i] > max) {
-      max = dayCounts[i];
-      maxIdx = i;
-    }
+    if (dayCounts[i] > max) { max = dayCounts[i]; maxIdx = i; }
   }
 
   return { day: labels[maxIdx], count: max };
