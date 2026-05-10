@@ -7,6 +7,7 @@ import { renderArchive } from './screens/archive.js';
 import { renderSettings } from './screens/settings.js';
 import { renderHelp } from './screens/help.js';
 import { renderSearch } from './screens/search.js';
+import { renderStats } from './screens/stats.js';
 import { openTodoEditor } from './ui/todoEditor.js';
 import { el } from './ui/dom.js';
 import { applyTheme, applyPalette } from './ui/theme.js';
@@ -239,6 +240,10 @@ export function initApp(root) {
         topbarTitle.textContent = t('settings');
         appendDateToTopbar(topbarActions);
         await renderSettings(ctx);
+      } else if (route.name === 'stats') {
+        topbarTitle.textContent = t('stats');
+        appendDateToTopbar(topbarActions);
+        await renderStats(ctx);
       } else if (route.name === 'search') {
         const scope = route.params.scope || 'all';
         if (scope === 'archive') {

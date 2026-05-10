@@ -234,6 +234,20 @@ const translations = {
     yesterday: 'Yesterday',
     daysAgo: '{n} days ago',
     
+    // Statistics
+    stats: 'Stats',
+    todayPulse: "Today's Pulse",
+    streak: 'Streak',
+    currentStreak: 'Current',
+    bestStreak: 'Best',
+    thisWeek: 'This Week',
+    thisMonth: 'This Month',
+    overallProgress: 'Overall Progress',
+    completedLabel: 'Completed',
+    overdueLabel: 'Overdue',
+    bestDay: 'Best day',
+    streakActive: 'Streak active',
+
     // Misc
     loading: 'Loading...',
     error: 'Error',
@@ -636,6 +650,20 @@ const translations = {
     yesterday: 'Ayer',
     daysAgo: 'hace {n} días',
 
+    // Statistics
+    stats: 'Estadísticas',
+    todayPulse: 'Pulso de Hoy',
+    streak: 'Racha',
+    currentStreak: 'Actual',
+    bestStreak: 'Mejor',
+    thisWeek: 'Esta Semana',
+    thisMonth: 'Este Mes',
+    overallProgress: 'Progreso General',
+    completedLabel: 'Completado',
+    overdueLabel: 'Vencido',
+    bestDay: 'Mejor día',
+    streakActive: 'Racha activa',
+
     // Misc
     loading: 'Cargando...',
     error: 'Error',
@@ -1035,6 +1063,20 @@ const translations = {
     yesterday: 'Jučer',
     daysAgo: 'prije {n} dana',
     
+    // Statistics
+    stats: 'Statistika',
+    todayPulse: 'Današnji Puls',
+    streak: 'Niz',
+    currentStreak: 'Trenutni',
+    bestStreak: 'Najbolji',
+    thisWeek: 'Ovaj Tjedan',
+    thisMonth: 'Ovaj Mjesec',
+    overallProgress: 'Ukupan Napredak',
+    completedLabel: 'Dovršeno',
+    overdueLabel: 'Kašnjenje',
+    bestDay: 'Najbolji dan',
+    streakActive: 'Niz aktivan',
+
     // Misc
     loading: 'Učitavanje...',
     error: 'Greška',
@@ -1434,6 +1476,20 @@ const translations = {
     yesterday: 'Ieri',
     daysAgo: '{n} giorni fa',
     
+    // Statistics
+    stats: 'Statistiche',
+    todayPulse: 'Polso di Oggi',
+    streak: 'Serie',
+    currentStreak: 'Attuale',
+    bestStreak: 'Migliore',
+    thisWeek: 'Questa Settimana',
+    thisMonth: 'Questo Mese',
+    overallProgress: 'Progresso Generale',
+    completedLabel: 'Completato',
+    overdueLabel: 'Scaduto',
+    bestDay: 'Miglior giorno',
+    streakActive: 'Serie attiva',
+
     // Misc
     loading: 'Caricamento...',
     error: 'Errore',
@@ -1828,6 +1884,20 @@ const translations = {
     yesterday: 'Gestern',
     daysAgo: 'vor {n} Tagen',
     
+    // Statistics
+    stats: 'Statistiken',
+    todayPulse: 'Heutiger Puls',
+    streak: 'Serie',
+    currentStreak: 'Aktuell',
+    bestStreak: 'Beste',
+    thisWeek: 'Diese Woche',
+    thisMonth: 'Dieser Monat',
+    overallProgress: 'Gesamtfortschritt',
+    completedLabel: 'Erledigt',
+    overdueLabel: 'Überfällig',
+    bestDay: 'Bester Tag',
+    streakActive: 'Serie aktiv',
+
     // Misc
     loading: 'Laden...',
     error: 'Fehler',

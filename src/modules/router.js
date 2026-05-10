@@ -5,6 +5,7 @@
 // - #project/<id>
 // - #archive
 // - #settings
+// - #stats
 // - #search
 
 function parseHash(hash) {
@@ -21,6 +22,7 @@ function parseHash(hash) {
   if (name === 'projects') return { name: 'projects', group: 'projects', params: {} };
   if (name === 'archive') return { name: 'archive', group: 'archive', params: {} };
   if (name === 'settings') return { name: 'settings', group: 'settings', params: {} };
+  if (name === 'stats') return { name: 'stats', group: 'stats', params: {} };
   if (name === 'search') {
     const scope = parts[1] || 'all';
     return { name: 'search', group: 'search', params: { scope } };
