@@ -86,6 +86,7 @@ export function renderHelp(ctx) {
     section('📤', t('helpSharing'), t('helpSharingContent'), '#0ea5e9'),
     section('💾', t('helpDataManagement'), t('helpDataManagementContent'), '#64748b'),
     section('📲', t('helpUpdates'), t('helpUpdatesContent'), '#22c55e'),
+    section('📊', t('helpStats'), t('helpStatsContent'), '#8b5cf6'),
 
     el('div', { style: 'height: 40px;' }) // Spacer
   );
