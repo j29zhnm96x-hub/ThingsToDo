@@ -2597,6 +2597,35 @@ html, body {
   white-space: nowrap;
 }
 
+/* ── Quick Add Floating Button ── */
+.quickAdd-btn {
+  position: fixed;
+  right: 20px;
+  bottom: calc(80px + var(--safe-bottom, 0px));
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: white;
+  font-size: 28px;
+  font-weight: 300;
+  line-height: 1;
+  box-shadow: 0 4px 20px var(--glow);
+  cursor: pointer;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+.quickAdd-btn:active {
+  transform: scale(0.92);
+}
+html[data-theme='light'] .quickAdd-btn {
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+}
+
 /* ── View Toggle Pills ── */
 .pill-btn {
   padding: 6px 16px;

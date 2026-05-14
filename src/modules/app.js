@@ -9,6 +9,7 @@ import { renderHelp } from './screens/help.js';
 import { renderSearch } from './screens/search.js';
 import { renderStats } from './screens/stats.js';
 import { openTodoEditor } from './ui/todoEditor.js';
+import { createQuickAddButton, updateQuickAddButton } from './ui/quickAdd.js';
 import { el } from './ui/dom.js';
 import { applyTheme, applyPalette } from './ui/theme.js';
 import { autoArchiveCompleted, autoEmptyBin } from './logic/todoOps.js';
@@ -107,6 +108,10 @@ export function initApp(root) {
     openTodoEditor: (opts) => openTodoEditor({ ...opts, db, modalHost, onChange: () => router.refresh() }),
     db
   };
+
+  // Floating Quick Add button
+  const quickAddBtn = createQuickAddButton(ctx);
+  root?.appendChild(quickAddBtn);
 
   // SPA nav: bottom tabs
   tabButtons.forEach((btn) => {
@@ -282,6 +287,8 @@ export function initApp(root) {
             }, 1800);
           }
         }
+        // Update quick add button visibility
+        updateQuickAddButton(quickAddBtn);
       }, 100);
     }
   });

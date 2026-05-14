@@ -3,6 +3,7 @@ import { compareTodos } from '../logic/sorting.js';
 import { daysLeftText, daysLeftClass } from './todoInfo.js';
 import { hapticLight, hapticSelection } from './haptic.js';
 import { t } from '../utils/i18n.js';
+import { burstFromElement } from './confetti.js';
 
 const PRIORITY_LABEL_KEYS = { URGENT: 'urgent', P0: 'highest', P1: 'high', P2: 'medium', P3: 'low' };
 const PRIORITY_ORDER = ['URGENT', 'P0', 'P1', 'P2', 'P3'];
@@ -106,6 +107,7 @@ export function renderTodoList({
 
           // Immediately persist completion without animation.
           if (nextState && mode !== 'archive') {
+            burstFromElement(e.target);
             onToggleCompleted?.(todo, true);
             return;
           }
