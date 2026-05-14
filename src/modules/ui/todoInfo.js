@@ -406,7 +406,7 @@ export async function openTodoInfo({ todo, db, modalHost, onEdit }) {
     title: t('todoDetails'),
     content,
     actions: [
-      { label: 'Edit', class: 'btn', onClick: () => { onEdit?.(todo); return true; } },
+      { label: t('edit'), class: 'btn', onClick: () => { onEdit?.(todo); return true; } },
       { label: 'Close', class: 'btn btn--primary', onClick: () => true }
     ],
     onClose: () => {

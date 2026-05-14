@@ -212,7 +212,7 @@ export async function renderInbox(ctx) {
         openModal(modalHost, {
           title: 'Task Protected',
           content: el('div', {}, 'This task is protected. Please uncheck "Protect task" in the editor to archive it.'),
-          actions: [{ label: 'OK', class: 'btn btn--primary', onClick: () => true }]
+          actions: [{ label: t('ok'), class: 'btn btn--primary', onClick: () => true }]
         });
         return;
       }
@@ -235,7 +235,7 @@ export async function renderInbox(ctx) {
     onMenu: (todo, { onLinkToggle } = {}) => openTodoMenu(modalHost, {
       title: todo.title || 'Todo',
       actions: [
-        { label: 'Edit', class: 'btn', onClick: () => (ctx.openTodoEditor({ mode: 'edit', todoId: todo.id, projectId: todo.projectId, db }), true) },
+        { label: t('edit'), class: 'btn', onClick: () => (ctx.openTodoEditor({ mode: 'edit', todoId: todo.id, projectId: todo.projectId, db }), true) },
         // Only show Unlink for Project tasks that are here via link
         ...(todo.projectId && todo.showInInbox ? [{
           label: 'Unlink from Inbox', 
@@ -262,7 +262,7 @@ export async function renderInbox(ctx) {
             openModal(modalHost, {
               title: 'Task Protected',
               content: el('div', {}, 'This task is protected. Please uncheck "Protect task" in the editor to archive it.'),
-              actions: [{ label: 'OK', class: 'btn btn--primary', onClick: () => true }]
+              actions: [{ label: t('ok'), class: 'btn btn--primary', onClick: () => true }]
             });
             return true;
           }

@@ -138,7 +138,7 @@ export async function renderArchive(ctx) {
         const ok = await confirm(modalHost, {
           title: 'Delete group?',
           message: `Delete ${unprotected.length} archived todos from ${date}?` + (protectedCount ? ` (${protectedCount} protected items will be kept)` : ''),
-          confirmLabel: 'Delete',
+          confirmLabel: t('delete'),
           danger: true
         });
         
@@ -256,7 +256,7 @@ export async function renderArchive(ctx) {
         const ok = await confirm(modalHost, {
           title: t('deleteArchivedTodo') || 'Delete archived todo?',
           message: t('deleteArchivedTodoMsg') || 'This will permanently delete the todo and its images.',
-          confirmLabel: t('delete') || 'Delete',
+          confirmLabel: t('delete') || t('delete'),
           danger: true
         });
         if (!ok) return;
@@ -285,7 +285,7 @@ export async function renderArchive(ctx) {
             }
             return true;
           } },
-          { label: t('delete') || 'Delete', class: 'btn btn--danger', onClick: async () => {
+          { label: t('delete') || t('delete'), class: 'btn btn--danger', onClick: async () => {
             if (todo.protected) {
               openModal(modalHost, {
                 title: t('taskProtected') || 'Task Protected',
@@ -321,7 +321,7 @@ export async function renderArchive(ctx) {
             const ok = await confirm(modalHost, {
               title: t('deleteArchivedTodo') || 'Delete archived todo?',
               message: t('deleteArchivedTodoMsg') || 'This will permanently delete the todo and its images.',
-              confirmLabel: t('delete') || 'Delete',
+              confirmLabel: t('delete') || t('delete'),
               danger: true
             });
             if (ok) {

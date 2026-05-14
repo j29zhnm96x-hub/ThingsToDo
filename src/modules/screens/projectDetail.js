@@ -145,7 +145,7 @@ function openChecklistAddMenu(ctx, {
     align: 'bottom',
     content,
     actions: [
-      { label: t('cancel') || 'Cancel', class: 'btn btn--ghost', onClick: () => true }
+      { label: t('cancel') || t('cancel'), class: 'btn btn--ghost', onClick: () => true }
     ]
   });
 
@@ -219,7 +219,7 @@ async function openNoteMenu(ctx, note) {
       return true;
     }
   });
-  actions.push({ label: t('cancel') || 'Cancel', class: 'btn btn--ghost', onClick: () => true });
+  actions.push({ label: t('cancel') || t('cancel'), class: 'btn btn--ghost', onClick: () => true });
 
   openModal(modalHost, {
     title: t('note') || 'Note',
@@ -811,7 +811,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
           title,
           content,
           actions: [
-            { label: t('cancel') || 'Cancel', class: 'btn btn--ghost', onClick: () => (resolve(undefined), true) },
+            { label: t('cancel') || t('cancel'), class: 'btn btn--ghost', onClick: () => (resolve(undefined), true) },
             {
               label: confirmLabel,
               class: 'btn btn--primary',
@@ -930,7 +930,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
         title: 'Select items to move',
         content,
         actions: [
-          { label: t('cancel') || 'Cancel', class: 'btn btn--ghost', onClick: () => true },
+          { label: t('cancel') || t('cancel'), class: 'btn btn--ghost', onClick: () => true },
           { label: 'Next', class: 'btn btn--primary', onClick: proceedToDestination }
         ]
       });
@@ -1118,7 +1118,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
                     return true;
                   }
                 },
-                { label: t('cancel') || 'Cancel', class: 'btn btn--ghost', onClick: () => true }
+                { label: t('cancel') || t('cancel'), class: 'btn btn--ghost', onClick: () => true }
               ]
             });
           }, 0);
@@ -1179,7 +1179,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
           openModal(modalHost, {
             title: t('taskProtected') || 'Task Protected',
             content: el('div', {}, t('taskProtectedMessage') || 'This task is protected.'),
-            actions: [{ label: 'OK', class: 'btn btn--primary', onClick: () => true }]
+            actions: [{ label: t('ok'), class: 'btn btn--primary', onClick: () => true }]
           });
           if (rowElement) {
             rowElement.style.transition = 'transform 200ms ease';
@@ -1214,7 +1214,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
             openModal(modalHost, {
               title: t('allProtected') || 'All Protected',
               content: el('div', {}, t('allProtectedMessage') || 'All completed items are protected.'),
-              actions: [{ label: 'OK', class: 'btn btn--primary', onClick: () => true }]
+              actions: [{ label: t('ok'), class: 'btn btn--primary', onClick: () => true }]
             });
           }
           return;
@@ -1362,7 +1362,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
         openModal(modalHost, {
           title: 'Task Protected',
           content: el('div', {}, 'This task is protected. Please uncheck "Protect task" in the editor to archive it.'),
-          actions: [{ label: 'OK', class: 'btn btn--primary', onClick: () => true }]
+          actions: [{ label: t('ok'), class: 'btn btn--primary', onClick: () => true }]
         });
         return;
       }
@@ -1385,7 +1385,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
     onMenu: (todo, { onLinkToggle } = {}) => openTodoMenu(modalHost, {
       title: todo.title || 'Todo',
       actions: [
-        { label: 'Edit', class: 'btn', onClick: () => (ctx.openTodoEditor({ mode: 'edit', todoId: todo.id, projectId: todo.projectId, db }), true) },
+        { label: t('edit'), class: 'btn', onClick: () => (ctx.openTodoEditor({ mode: 'edit', todoId: todo.id, projectId: todo.projectId, db }), true) },
         { label: todo.showInInbox ? 'Unlink from Inbox' : 'Link to Inbox', class: 'btn', onClick: async () => {
              const wasLinked = todo.showInInbox;
              await db.todos.put({ ...todo, showInInbox: !todo.showInInbox });
@@ -1412,7 +1412,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
             openModal(modalHost, {
               title: 'Task Protected',
               content: el('div', {}, 'This task is protected. Please uncheck "Protect task" in the editor to archive it.'),
-              actions: [{ label: 'OK', class: 'btn btn--primary', onClick: () => true }]
+              actions: [{ label: t('ok'), class: 'btn btn--primary', onClick: () => true }]
             });
             return true;
           }
@@ -2163,12 +2163,12 @@ function openEditChecklistItem({ modalHost, db, todo, onSaved }) {
     content: input,
     align: 'top',
     headerActions: [
-      { label: 'Save', class: 'btn btn--primary', onClick: saveItem }
+      { label: t('save'), class: 'btn btn--primary', onClick: saveItem }
     ],
     actions: [
-      { label: 'Cancel', class: 'btn btn--ghost', onClick: () => true },
+      { label: t('cancel'), class: 'btn btn--ghost', onClick: () => true },
       {
-        label: 'Save',
+        label: t('save'),
         class: 'btn btn--primary',
         onClick: saveItem
       }
