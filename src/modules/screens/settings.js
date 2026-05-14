@@ -40,7 +40,7 @@ export async function renderSettings(ctx) {
   const themeToggle = el('input', {
     type: 'checkbox',
     checked: isLight ? 'checked' : null,
-    'aria-label': 'Light mode'
+    'aria-label': t('lightMode')
   });
 
   themeToggle.addEventListener('change', async () => {
@@ -83,7 +83,7 @@ export async function renderSettings(ctx) {
   const compressToggle = el('input', {
     type: 'checkbox',
     checked: compressImages ? 'checked' : null,
-    'aria-label': 'Compress images'
+    'aria-label': t('compressImages')
   });
 
   compressToggle.addEventListener('change', async () => {
@@ -262,20 +262,36 @@ export async function renderSettings(ctx) {
   ));
 
   async function openPasteSharedModal() {
-    const ta = el('textarea', { rows: 10, class: 'input', placeholder: 'Paste shared JSON here' });
+    const ta = el('textarea', { rows: 10, class: 'input', placeholder: t('pasteJsonPlaceholder') });
     openModal(modalHost, {
-      title: 'Paste shared task or project',
-      content: el('div', { class: 'stack' }, el('div', { class: 'small' }, 'Paste the JSON blob shared from another user.'), ta),
+      title: t('pasteJson'),
+      content: el('div', { class: 'stack' }, el('div', { class: 'small' }, t('pasteJsonInfo')), ta),
       actions: [
-        { label: 'Cancel', class: 'btn btn--ghost', onClick: () => true },
-        { label: 'Import', class: 'btn btn--primary', onClick: async () => {
+        { label: t('cancel'), class: 'btn btn--ghost', onClick: () => true },
+        { label: t('importData'), class: 'btn btn--primary', onClick: async () => {
           const text = (ta.value || '').trim();
           if (!text) return false;
           let parsed;
           try { parsed = JSON.parse(text); } catch (e) {
-            openModal(modalHost, { title: 'Invalid JSON', content: el('div', { class: 'small' }, 'The pasted text is not valid JSON.'), actions: [{ label: 'OK', class: 'btn btn--primary', onClick: () => true }] });
+            openModal(modalHost, { title: t('invalidJson'), content: el('div', { class: 'small' }, t('invalidJsonMsg')), actions: [{ label: t('ok'), class: 'btn btn--primary', onClick: () => true }] });
             return false;
           }
+          try {
+            const { importShared } = await import('../utils/share.js');
+            const res = await importShared(parsed, db);
+            showToast((t('importData') || 'Imported') + ' ' + res.type);
+            if (res.type === 'todo') location.hash = '#inbox';
+            if (res.type === 'project') location.hash = '#projects';
+            return true;
+          } catch (err) {
+            console.error('Import failed', err);
+            openModal(modalHost, { title: t('importFailed'), content: el('div', { class: 'small' }, String(err)), actions: [{ label: t('ok'), class: 'btn btn--primary', onClick: () => true }] });
+            return false;
+          }
+        } }
+      ]
+    });
+  }
           try {
             const { importShared } = await import('../utils/share.js');
             const res = await importShared(parsed, db);
