@@ -28,9 +28,40 @@ export async function renderInbox(ctx) {
   const { main, db, modalHost } = ctx;
   clear(main);
 
+  // View toggle: All / Today
+  const view = sessionStorage.getItem('inboxView') || 'all';
+  const toggleAll = el('button', {
+    class: `pill-btn${view === 'all' ? ' pill-btn--active' : ''}`,
+    type: 'button',
+    onClick: () => {
+      sessionStorage.setItem('inboxView', 'all');
+      renderInbox(ctx);
+    }
+  }, t('allTasks'));
+  const toggleToday = el('button', {
+    class: `pill-btn${view === 'today' ? ' pill-btn--active' : ''}`,
+    type: 'button',
+    onClick: () => {
+      sessionStorage.setItem('inboxView', 'today');
+      renderInbox(ctx);
+    }
+  }, t('today'));
+  const viewToggle = el('div', { class: 'view-toggle', style: 'display:flex;gap:6px;margin-bottom:12px' }, toggleAll, toggleToday);
+
   const allTodos = await db.todos.listActive();
+
+  // If Today view, filter to only tasks due today or overdue
+  let filteredTodos = allTodos;
+  if (view === 'today') {
+    const todayKey = new Date().toISOString().slice(0, 10);
+    filteredTodos = allTodos.filter(t => {
+      if (!t.dueDate) return false;
+      const dueKey = t.dueDate.slice(0, 10);
+      return dueKey <= todayKey;
+    });
+  }
   // Filter for inbox items and exclude future recurring instances
-  const todos = allTodos.filter(t => {
+  const todos = filteredTodos.filter(t => {
     // Include if it's inbox or linked to inbox
     if (!(t.projectId === null || t.showInInbox === true)) {
       // Check if it's a task with due date and inboxBefore setting
@@ -248,10 +279,12 @@ export async function renderInbox(ctx) {
     : null;
 
   if (todos.length === 0 && linkedProjects.length === 0 && voiceMemos.length === 0) {
-    main.append(emptyState(t('noTasks'), t('noTasksHint')));
+    const emptyWrapper = el('div', { style: 'display:flex;flex-direction:column;gap:8px' }, viewToggle, emptyState(t('noTasks'), t('noTasksHint')));
+    main.append(emptyWrapper);
   } else {
     const content = el('div', { class: 'stack' });
 
+    content.append(viewToggle);
     if (linkedProjectsList) content.append(linkedProjectsList);
     if (voiceMemosList) content.append(voiceMemosList);
 

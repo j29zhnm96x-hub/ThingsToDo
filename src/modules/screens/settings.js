@@ -33,6 +33,9 @@ export async function renderSettings(ctx) {
   const compressArchivedImages = settings.compressArchivedImages !== false; // Default to true
   const voiceQuality = settings.voiceQuality || 'low'; // Default to low
   const groupActiveTasks = settings.groupActiveTasks === true;
+  const enableConfetti = settings.enableConfetti !== false; // Default true
+  const enableSwipe = settings.enableSwipe === true; // Default false
+  const enableQuickAdd = settings.enableQuickAdd !== false; // Default true
 
   const themeToggle = el('input', {
     type: 'checkbox',
@@ -137,6 +140,24 @@ export async function renderSettings(ctx) {
   const pasteSharedBtn = el('button', { class: 'btn', type: 'button', onClick: openPasteSharedModal }, 'Paste a task/project');
   const binBtn = el('button', { class: 'btn', type: 'button', onClick: () => openBinModal(ctx) }, t('bin'));
   const helpBtn = el('button', { class: 'btn', type: 'button', onClick: () => location.hash = '#help' }, t('help'));
+
+  // Behaviors toggles
+  const confettiToggle = el('input', { type: 'checkbox', checked: enableConfetti ? 'checked' : null, 'aria-label': t('enableConfetti') });
+  confettiToggle.addEventListener('change', async () => {
+    const next = { ...await db.settings.get(), enableConfetti: confettiToggle.checked };
+    await db.settings.put(next);
+  });
+  const swipeToggle = el('input', { type: 'checkbox', checked: enableSwipe ? 'checked' : null, 'aria-label': t('enableSwipe') });
+  swipeToggle.addEventListener('change', async () => {
+    const next = { ...await db.settings.get(), enableSwipe: swipeToggle.checked };
+    await db.settings.put(next);
+  });
+  const quickAddToggle = el('input', { type: 'checkbox', checked: enableQuickAdd ? 'checked' : null, 'aria-label': t('enableQuickAdd') });
+  quickAddToggle.addEventListener('change', async () => {
+    const next = { ...await db.settings.get(), enableQuickAdd: quickAddToggle.checked };
+    await db.settings.put(next);
+  });
+
   const resetBtn = el('button', { class: 'btn btn--danger', type: 'button', onClick: resetData }, t('clearAllData'));
   const manageSuggestionsBtn = el('button', { class: 'btn', type: 'button', onClick: openSuggestionHistoryModal }, t('clearSuggestionHistory') || 'Clear suggestion history');
 
@@ -188,6 +209,21 @@ export async function renderSettings(ctx) {
       el('div', { style: { fontWeight: '700' } }, t('checklistOptions') || 'Checklists options'),
       el('div', { class: 'small' }, t('manageSuggestionHistory') || 'Manage saved checklist suggestions'),
       manageSuggestionsBtn
+    ),
+    el('div', { class: 'card stack' },
+      el('div', { style: { fontWeight: '700' } }, t('behaviors')),
+      el('div', { class: 'row' },
+        el('div', { class: 'small' }, t('enableConfetti')),
+        confettiToggle
+      ),
+      el('div', { class: 'row' },
+        el('div', { class: 'small' }, t('enableSwipe')),
+        swipeToggle
+      ),
+      el('div', { class: 'row' },
+        el('div', { class: 'small' }, t('enableQuickAdd')),
+        quickAddToggle
+      )
     ),
     el('div', { class: 'card stack' },
       el('div', { style: { fontWeight: '700' } }, t('theme')),

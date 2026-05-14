@@ -2597,6 +2597,24 @@ html, body {
   white-space: nowrap;
 }
 
+/* ── View Toggle Pills ── */
+.pill-btn {
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+.pill-btn--active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
 /* ── Update Overlay ── */
 .update-overlay {
   position: fixed;
