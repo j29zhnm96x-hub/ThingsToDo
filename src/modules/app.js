@@ -197,13 +197,13 @@ export function initApp(root) {
         await renderProjects(ctx);
       } else if (route.name === 'project') {
         const project = await db.projects.get(route.params.projectId);
-        topbarTitle.textContent = project ? project.name : 'Project';
+        topbarTitle.textContent = project ? project.name : t('project');
         if (project) {
           topbarActions.append(
             el('button', { 
                 class: 'topbar__backBtn', 
                 type: 'button', 
-                'aria-label': 'Back', 
+                'aria-label': t('back'), 
                 onClick: async () => { 
                     hapticLight(); 
                     if (project.parentId) {
@@ -224,7 +224,7 @@ export function initApp(root) {
               el('button', { 
                   class: 'topbar__addBtn', 
                   type: 'button', 
-                  'aria-label': 'Add item', 
+                  'aria-label': t('addItem'), 
                   onClick: () => { 
                       hapticLight(); 
                       openProjectAddMenu(ctx, project);
@@ -257,13 +257,13 @@ export function initApp(root) {
           topbarTitle.textContent = t('search');
         }
         topbarActions.append(
-          el('button', { class: 'topbar__backBtn', type: 'button', 'aria-label': 'Back', onClick: () => { hapticLight(); history.back(); } }, '←')
+          el('button', { class: 'topbar__backBtn', type: 'button', 'aria-label': t('back'), onClick: () => { hapticLight(); history.back(); } }, '←')
         );
-        await renderSearch(ctx, scope);
+        await renderSearch(ctx);
       } else if (route.name === 'help') {
         topbarTitle.textContent = t('help');
         topbarActions.append(
-          el('button', { class: 'topbar__backBtn', type: 'button', 'aria-label': 'Back', onClick: () => { hapticLight(); location.hash = '#settings'; } }, '←')
+          el('button', { class: 'topbar__backBtn', type: 'button', 'aria-label': t('back'), onClick: () => { hapticLight(); location.hash = '#settings'; } }, '←')
         );
         await renderHelp(ctx);
       } else {

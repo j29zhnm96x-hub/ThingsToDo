@@ -13,6 +13,7 @@ const translations = {
     // Common actions
     save: 'Save',
     cancel: 'Cancel',
+    back: 'Back',
     delete: 'Delete',
     edit: 'Edit',
     create: 'Create',
@@ -42,6 +43,7 @@ const translations = {
     taskNotes: 'Notes',
     noTasks: 'No tasks yet',
     noTasksHint: 'Tap the + button to add your first task',
+    noTasksProject: 'No todos in this project yet. Tap + to add one.',
     completed: 'Completed',
     active: 'active',
     markCompleted: 'Mark completed',

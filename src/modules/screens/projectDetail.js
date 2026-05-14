@@ -1548,7 +1548,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
       subProjectsList, // Add sub-projects list at the top
       voiceMemosList,
       notesList,
-      todos.length ? list : el('div', { class: 'card small' }, 'No todos in this project yet. Tap + to add one.')
+      todos.length ? list : el('div', { class: 'card small' }, t('noTasksProject'))
   ));
 }
 
