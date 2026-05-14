@@ -288,7 +288,7 @@ export function initApp(root) {
           }
         }
         // Update quick add button visibility
-        updateQuickAddButton(quickAddBtn);
+        updateQuickAddButton(quickAddBtn, ctx.db);
       }, 100);
     }
   });

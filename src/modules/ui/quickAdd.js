@@ -168,8 +168,8 @@ export function createQuickAddButton(ctx) {
 /**
  * Show/hide the quick add button based on current settings.
  */
-export async function updateQuickAddButton(btn) {
-  if (!btn) return;
+export async function updateQuickAddButton(btn, db) {
+  if (!btn || !db) return;
   const settings = await db.settings.get();
   btn.style.display = settings.enableQuickAdd !== false ? '' : 'none';
 }

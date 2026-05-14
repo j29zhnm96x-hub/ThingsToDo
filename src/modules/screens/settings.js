@@ -29,13 +29,13 @@ export async function renderSettings(ctx) {
   const settings = await db.settings.get();
   const isLight = settings.theme === 'light';
   const themePalette = settings.themePalette || 'default';
-  const compressImages = settings.compressImages !== false; // Default to true
-  const compressArchivedImages = settings.compressArchivedImages !== false; // Default to true
-  const voiceQuality = settings.voiceQuality || 'low'; // Default to low
+  const compressImages = settings.compressImages !== false;
+  const compressArchivedImages = settings.compressArchivedImages !== false;
+  const voiceQuality = settings.voiceQuality || 'low';
   const groupActiveTasks = settings.groupActiveTasks === true;
-  const enableConfetti = settings.enableConfetti !== false; // Default true
-  const enableSwipe = settings.enableSwipe === true; // Default false
-  const enableQuickAdd = settings.enableQuickAdd !== false; // Default true
+  const enableConfetti = settings.enableConfetti !== false;
+  const enableSwipe = settings.enableSwipe === true;
+  const enableQuickAdd = settings.enableQuickAdd !== false;
 
   const themeToggle = el('input', {
     type: 'checkbox',
@@ -76,7 +76,7 @@ export async function renderSettings(ctx) {
           applyPalette(p.id);
           await renderSettings(ctx);
         }
-      }, isSelected ? '✓' : '');
+      }, isSelected ? '\u2713' : '');
     })
   );
 
@@ -100,7 +100,6 @@ export async function renderSettings(ctx) {
     await db.settings.put({ ...await db.settings.get(), compressArchivedImages: compressArchiveToggle.checked });
   });
 
-  // Voice quality selector
   const voiceQualitySelect = el('select', {
     class: 'select',
     'aria-label': t('voiceRecordingQuality') || 'Voice recording quality',
@@ -112,7 +111,6 @@ export async function renderSettings(ctx) {
     el('option', { value: 'high', selected: voiceQuality === 'high' ? 'selected' : null }, t('highQuality') || 'High quality')
   );
 
-  // Language selector
   const currentLang = getLang();
   const groupingToggle = el('input', {
     type: 'checkbox',
@@ -141,7 +139,6 @@ export async function renderSettings(ctx) {
   const binBtn = el('button', { class: 'btn', type: 'button', onClick: () => openBinModal(ctx) }, t('bin'));
   const helpBtn = el('button', { class: 'btn', type: 'button', onClick: () => location.hash = '#help' }, t('help'));
 
-  // Behaviors toggles
   const confettiToggle = el('input', { type: 'checkbox', checked: enableConfetti ? 'checked' : null, 'aria-label': t('enableConfetti') });
   confettiToggle.addEventListener('change', async () => {
     const next = { ...await db.settings.get(), enableConfetti: confettiToggle.checked };
@@ -161,7 +158,6 @@ export async function renderSettings(ctx) {
   const resetBtn = el('button', { class: 'btn btn--danger', type: 'button', onClick: resetData }, t('clearAllData'));
   const manageSuggestionsBtn = el('button', { class: 'btn', type: 'button', onClick: openSuggestionHistoryModal }, t('clearSuggestionHistory') || 'Clear suggestion history');
 
-  // Update check
   const updateInfo = getUpdateInfo();
   const updateInfoText = updateInfo.supported ? `v${updateInfo.version || '1.0.0'}` : t('notificationsBlocked') || 'Not supported';
   const statusEl = el('div', { id: 'updateStatus', class: 'small', style: { marginTop: '4px' } }, updateInfoText);
@@ -237,8 +233,8 @@ export async function renderSettings(ctx) {
       el('div', { style: { fontWeight: '700' } }, t('help')),
       helpBtn
     ),
-      el('div', { class: 'card stack' },
-        el('div', { style: { fontWeight: '700' } }, t('dataManagement')),
+    el('div', { class: 'card stack' },
+      el('div', { style: { fontWeight: '700' } }, t('dataManagement')),
       el('div', { class: 'small' }, t('dataStoredLocally')),
       el('div', { class: 'row' },
         el('div', { class: 'small' }, t('compressImages')),
@@ -292,29 +288,11 @@ export async function renderSettings(ctx) {
       ]
     });
   }
-          try {
-            const { importShared } = await import('../utils/share.js');
-            const res = await importShared(parsed, db);
-            showToast('Imported ' + res.type);
-            // Navigate to appropriate page
-            if (res.type === 'todo') location.hash = '#inbox';
-            if (res.type === 'project') location.hash = '#projects';
-            return true;
-          } catch (err) {
-            console.error('Import failed', err);
-            openModal(modalHost, { title: 'Import failed', content: el('div', { class: 'small' }, String(err)), actions: [{ label: 'OK', class: 'btn btn--primary', onClick: () => true }] });
-            return false;
-          }
-        } }
-      ]
-    });
-  }
 
   async function openSuggestionHistoryModal() {
     let suggestions = [];
     try {
       suggestions = await db.checklistSuggestions.list();
-      // Sort alphabetically, case-insensitive
       suggestions.sort((a, b) => a.text.localeCompare(b.text, undefined, { sensitivity: 'base' }));
     } catch (err) {
       console.error(err);
@@ -345,7 +323,7 @@ export async function renderSettings(ctx) {
                 console.error(err);
               }
             }
-          }, '✕')
+          }, '\u2716')
         );
         listEl.append(row);
       }
@@ -403,16 +381,13 @@ export async function renderSettings(ctx) {
       voiceMemos: []
     };
 
-    // Gather all project notes so they are included in the export (covers edge cases)
     try {
       const allNotes = await db.projectNotes.list();
       if (allNotes && allNotes.length) payload.projectNotes.push(...allNotes);
     } catch (e) {
-      // If projectNotes store is missing on older DB versions, skip gracefully
     }
 
     const atts = await db.attachments.list();
-    // Convert blobs to data URLs for portability.
     for (const a of atts) {
       payload.attachments.push({
         id: a.id,
@@ -425,7 +400,6 @@ export async function renderSettings(ctx) {
       });
     }
 
-    // Include voice memos in export (convert audio blobs to data URLs)
     payload.voiceMemos = [];
     try {
       const allMemos = await db.voiceMemos.list();
@@ -444,7 +418,6 @@ export async function renderSettings(ctx) {
         payload.voiceMemos.push(memoData);
       }
     } catch (e) {
-      // Voice memos store might not exist on older DB versions; skip gracefully
     }
 
     const json = JSON.stringify(payload, null, 2);
@@ -465,7 +438,7 @@ export async function renderSettings(ctx) {
     const fileButton = el('button', { type: 'button', class: 'btn btn--primary', style: { padding: '0.75rem 1.5rem' } }, t('chooseFile'));
     const fileStatusLabel = el('span', { style: { marginLeft: '1rem' } }, t('noFilesSelected'));
     const fileInputWrapper = el('div', { style: { display: 'flex', alignItems: 'center', width: '100%' } }, fileButton, fileStatusLabel);
-    
+
     fileButton.addEventListener('click', () => fileInput.click());
 
     fileInput.addEventListener('change', () => {
@@ -524,12 +497,10 @@ export async function renderSettings(ctx) {
             for (const page of (parsed.checklistPages || [])) await db.checklistPages.put(page);
             if (parsed.settings) await db.settings.put(parsed.settings);
 
-            // Restore project notes if present in the export (backward compatible)
             for (const note of (parsed.projectNotes || [])) {
               try {
                 await db.projectNotes.put(note);
               } catch (e) {
-                // If projectNotes store doesn't exist on this runtime, skip restoring notes
               }
             }
 
@@ -548,7 +519,6 @@ export async function renderSettings(ctx) {
               });
             }
 
-            // Restore voice memos if present in the export
             for (const m of (parsed.voiceMemos || [])) {
               if (!m.dataUrl) continue;
               try {
@@ -565,11 +535,9 @@ export async function renderSettings(ctx) {
                   blob
                 });
               } catch (e) {
-                // Skip memo if blob conversion fails
               }
             }
 
-            // Refresh current screen
             location.hash = '#settings';
             return true;
           }

@@ -13,7 +13,6 @@ import { Priority } from '../data/models.js';
 import { t } from '../utils/i18n.js';
 import { renderVoiceMemoList, openPlaybackModal, openVoiceMemoMenu } from '../ui/voiceMemo.js';
 import { openModal } from '../ui/modal.js';
-import { openTodoInfo } from '../ui/todoInfo.js';
 import { isDueNowOrPast } from '../logic/recurrence.js';
 import { renderCalendarGrid, buildCalendarData } from '../ui/calendarView.js';
 
