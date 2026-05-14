@@ -33,13 +33,18 @@ export async function renderInbox(ctx) {
   const todos = allTodos.filter(t => {
     // Include if it's inbox or linked to inbox
     if (!(t.projectId === null || t.showInInbox === true)) {
-      // Check if it's a task with due date approaching (3 days before)
+      // Check if it's a task with due date and inboxBefore setting
       if (t.dueDate && t.projectId !== null) {
+        // inboxBefore: null = never, 0 = on due date, N = N days before
+        // undefined (old data) = treat as 0 (on due date)
+        const daysBefore = t.inboxBefore === undefined ? 0 : t.inboxBefore;
+        if (daysBefore === null) {
+          return false; // User picked "Never"
+        }
         const dueTime = new Date(t.dueDate).getTime();
         const now = Date.now();
-        const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
-        if (now >= dueTime - threeDaysMs) {
-          // Include as virtual link
+        const msBefore = daysBefore * 24 * 60 * 60 * 1000;
+        if (now >= dueTime - msBefore) {
           t.isVirtualLink = true;
         } else {
           return false;

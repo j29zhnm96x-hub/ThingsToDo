@@ -10,6 +10,10 @@ import { createNextRecurringInstance } from '../logic/recurrence.js';
 const EDIT_COMPRESS_SPEC = { maxSize: 1280, quality: 0.8 };
 const THUMB_COMPRESS_SPEC = { maxSize: 320, quality: 0.6 };
 
+function templateN(key, n) {
+  return n === 1 ? t(key, { n }) : t('inboxBeforeDays', { n });
+}
+
 function priorityOptions(select, value) {
   const opts = [Priority.URGENT, Priority.P0, Priority.P1, Priority.P2, Priority.P3];
   const labels = {
@@ -61,6 +65,42 @@ export async function openTodoEditor({
   priorityOptions(prioritySelect, todo.priority);
 
   const dueInput = el('input', { class: 'input', type: 'date', value: formatDateInput(todo.dueDate), 'aria-label': t('dueDate') });
+
+  // Inbox-before picker: shown only when dueDate has a value
+  const inboxBeforeVal = todo.inboxBefore === undefined ? 0 : todo.inboxBefore;
+  const inboxSelect = el('select', { class: 'select', 'aria-label': t('inboxBefore') });
+  inboxSelect.innerHTML = `
+    <option value="null">${t('inboxBeforeNever')}</option>
+    <option value="0">${t('inboxBeforeOnDue')}</option>
+    <option value="1">${templateN('inboxBeforeDay', 1)}</option>
+    <option value="2">${templateN('inboxBeforeDays', 2)}</option>
+    <option value="3">${templateN('inboxBeforeDays', 3)}</option>
+    <option value="custom">${t('inboxBeforeCustom')}</option>
+  `;
+  inboxSelect.value = inboxBeforeVal === null ? 'null' : String(inboxBeforeVal);
+  // Show custom label in the select if the value is not one of the presets
+  const presetValues = [null, 0, 1, 2, 3];
+  if (!presetValues.includes(inboxBeforeVal)) {
+    inboxSelect.value = 'custom';
+  }
+
+  const inboxCustom = el('input', {
+    type: 'number', class: 'input', min: '1', max: '365', value: typeof inboxBeforeVal === 'number' && inboxBeforeVal > 3 ? String(inboxBeforeVal) : '',
+    'aria-label': t('inboxBeforeCustom'), placeholder: 'Days',
+    style: inboxSelect.value === 'custom' ? '' : 'display:none'
+  });
+  inboxSelect.addEventListener('change', () => {
+    inboxCustom.style.display = inboxSelect.value === 'custom' ? '' : 'none';
+  });
+
+  const inboxRow = el('label', { class: 'label', style: dueInput.value ? '' : 'display:none' },
+    el('span', {}, t('inboxBefore')), inboxSelect, inboxCustom
+  );
+  dueInput.addEventListener('input', () => {
+    inboxRow.style.display = dueInput.value ? '' : 'none';
+    if (!dueInput.value) inboxSelect.value = '0';
+  });
+
   const completedInput = el('input', { type: 'checkbox', checked: todo.completed ? 'checked' : null, 'aria-label': t('completed') });
   const protectedInput = el('input', { type: 'checkbox', checked: todo.protected ? 'checked' : null, 'aria-label': t('protectTask') });
 
@@ -291,6 +331,7 @@ export async function openTodoEditor({
       el('label', { class: 'label' }, el('span', {}, t('priority')), prioritySelect),
       el('label', { class: 'label' }, el('span', {}, t('dueDate')), dueInput)
     ),
+    inboxRow,
     el('label', { class: 'label' }, el('span', {}, t('repeat') || 'Repeat'), recurrenceSelect),
     recurrenceDetailsContainer,
     el('label', { class: 'label' },
@@ -415,6 +456,21 @@ export async function openTodoEditor({
 
     // Set dueDate after all recurrence calculations
     todo.dueDate = dueDate;
+
+    // Set inboxBefore from picker
+    if (dueDate) {
+      const sel = inboxSelect.value;
+      if (sel === 'null') {
+        todo.inboxBefore = null;
+      } else if (sel === 'custom') {
+        const customVal = parseInt(inboxCustom.value, 10);
+        todo.inboxBefore = !isNaN(customVal) && customVal > 0 ? customVal : null;
+      } else {
+        todo.inboxBefore = parseInt(sel, 10);
+      }
+    } else {
+      todo.inboxBefore = 0;
+    }
 
     // Manual order management:
     // - Default sort: priority -> order -> createdAt

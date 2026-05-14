@@ -52,6 +52,7 @@ export function newTodo({ title, projectId, pageId = null }) {
     archivedAt: null,
     archivedFromProjectId: null,
     showInInbox: false,
+    inboxBefore: 0,
     order: 0,
     // Recurrence fields
     recurrenceType: null, // 'daily' | 'weekly' | 'monthly' | 'yearly' | null

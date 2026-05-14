@@ -231,6 +231,66 @@ async function openNoteMenu(ctx, note) {
   });
 }
 
+function makeInboxBeforeLabel(val) {
+  if (val === null) return t('inboxBeforeNever');
+  if (val === 0) return t('inboxBeforeOnDue');
+  const key = val === 1 ? 'inboxBeforeDay' : 'inboxBeforeDays';
+  return t(key, { n: val });
+}
+
+function openInboxBeforeModal(ctx, todo) {
+  const { db, modalHost } = ctx;
+  const current = todo.inboxBefore === undefined ? 0 : todo.inboxBefore;
+
+  const presets = [null, 0, 1, 2, 3];
+  const select = el('select', { class: 'select', 'aria-label': t('inboxBefore') });
+  select.innerHTML = `
+    <option value="null">${t('inboxBeforeNever')}</option>
+    <option value="0">${t('inboxBeforeOnDue')}</option>
+    <option value="1">${makeInboxBeforeLabel(1)}</option>
+    <option value="2">${makeInboxBeforeLabel(2)}</option>
+    <option value="3">${makeInboxBeforeLabel(3)}</option>
+    <option value="custom">${t('inboxBeforeCustom')}</option>
+  `;
+  select.value = current === null ? 'null' : (presets.includes(current) ? String(current) : 'custom');
+
+  const customInput = el('input', {
+    type: 'number', class: 'input', min: '1', max: '365',
+    value: typeof current === 'number' && !presets.includes(current) ? String(current) : '',
+    placeholder: 'Days',
+    style: select.value === 'custom' ? '' : 'display:none'
+  });
+  select.addEventListener('change', () => {
+    customInput.style.display = select.value === 'custom' ? '' : 'none';
+  });
+
+  const desc = todo.dueDate
+    ? el('div', { class: 'small' }, `${t('inboxBeforeTitle')}: ${makeInboxBeforeLabel(current)}`)
+    : el('div', { class: 'small' }, t('dueDate') + ' ' + t('inboxBeforeNever'));
+
+  openModal(modalHost, {
+    title: t('inboxBefore'),
+    content: el('div', { class: 'stack' }, desc, select, customInput),
+    actions: [
+      { label: t('cancel'), class: 'btn btn--ghost', onClick: () => true },
+      { label: t('save'), class: 'btn btn--primary', onClick: async () => {
+        const sel = select.value;
+        let val;
+        if (sel === 'null') val = null;
+        else if (sel === 'custom') {
+          const n = parseInt(customInput.value, 10);
+          val = !isNaN(n) && n > 0 ? n : null;
+        } else {
+          val = parseInt(sel, 10);
+        }
+        await db.todos.put({ ...todo, inboxBefore: val });
+        renderProjectDetail(ctx, todo.projectId, 0);
+        return true;
+      }}
+    ]
+  });
+}
+
 export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
   const { main, db, modalHost } = ctx;
   clear(main);
@@ -1342,11 +1402,13 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
              const wasLinked = todo.showInInbox;
              await db.todos.put({ ...todo, showInInbox: !todo.showInInbox });
              await renderProjectDetail(ctx, projectId, 0);
-             
-             // Show success toast (modal will close automatically via return true)
              const message = wasLinked ? t('taskUnlinkedFromInbox') : t('taskLinkedToInbox');
              showToast(message);
              return true;
+        } },
+        { label: t('inboxBefore'), class: 'btn', onClick: async () => {
+          openInboxBeforeModal(ctx, todo);
+          return true;
         } },
         { label: 'Share…', class: 'btn', onClick: async () => { const { exportTodoToFile } = await import('../utils/share.js'); await exportTodoToFile(db, todo); return true; } },
         { label: 'Move', class: 'btn', onClick: async () => {
