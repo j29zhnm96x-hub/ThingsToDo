@@ -29,7 +29,7 @@ export async function renderArchive(ctx) {
   const binBtn = el('button', { 
     class: 'topbar__addBtn', 
     type: 'button', 
-    'aria-label': 'Bin', 
+    'aria-label': t('bin'), 
     onClick: () => openBinModal(ctx, { onRestore: () => renderArchive(ctx) }) 
   }, '🗑️');
   topbarActions.append(binBtn);
@@ -54,7 +54,7 @@ export async function renderArchive(ctx) {
   for (const t of archived) {
     const date = t.completedAt ? new Date(t.completedAt).toLocaleDateString(undefined, {
       weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
-    }) : 'Unknown date';
+    }) : t('unknownDate');
     
     if (!groups.has(date)) groups.set(date, []);
     groups.get(date).push(t);
@@ -80,7 +80,7 @@ export async function renderArchive(ctx) {
   const collapseBtn = el('button', {
       class: 'topbar__addBtn',
       type: 'button',
-      'aria-label': allCollapsed ? 'Expand all' : 'Collapse all',
+      'aria-label': allCollapsed ? t('expandAll') : t('collapseAll'),
       style: 'margin-right: 12px;', 
       onClick: () => {
         hapticLight();
@@ -126,11 +126,11 @@ export async function renderArchive(ctx) {
         const unprotected = groupTodos.filter(t => !t.protected);
         const protectedCount = groupTodos.length - unprotected.length;
 
-        if (unprotected.length === 0 && protectedCount > 0) {
-             openModal(modalHost, {
-                title: 'Group Protected',
-                content: el('div', {}, 'All tasks in this group are protected and cannot be deleted.'),
-                actions: [{ label: 'OK', class: 'btn btn--primary', onClick: () => true }]
+         if (unprotected.length === 0 && protectedCount > 0) {
+              openModal(modalHost, {
+                title: t('groupProtected'),
+                content: el('div', {}, t('groupProtectedMsg')),
+                actions: [{ label: t('ok'), class: 'btn btn--primary', onClick: () => true }]
               });
              return;
         }

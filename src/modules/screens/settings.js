@@ -137,7 +137,7 @@ export async function renderSettings(ctx) {
 
   const exportBtn = el('button', { class: 'btn btn--primary', type: 'button', onClick: exportData }, t('exportData'));
   const importBtn = el('button', { class: 'btn', type: 'button', onClick: importData }, t('importData'));
-  const pasteSharedBtn = el('button', { class: 'btn', type: 'button', onClick: openPasteSharedModal }, 'Paste a task/project');
+  const pasteSharedBtn = el('button', { class: 'btn', type: 'button', onClick: openPasteSharedModal }, t('pasteTaskProject'));
   const binBtn = el('button', { class: 'btn', type: 'button', onClick: () => openBinModal(ctx) }, t('bin'));
   const helpBtn = el('button', { class: 'btn', type: 'button', onClick: () => location.hash = '#help' }, t('help'));
 

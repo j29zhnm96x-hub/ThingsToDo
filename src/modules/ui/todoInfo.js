@@ -71,12 +71,13 @@ function daysLeft(isoOrNull) {
 }
 
 function daysLeftText(isoOrNull) {
-  const days = daysLeft(isoOrNull);
+  if (!isoOrNull) return null;
+  const days = daysUntil(isoOrNull);
   if (days === null) return null;
-  if (days < 0) return `${Math.abs(days)} day${Math.abs(days) !== 1 ? 's' : ''} overdue`;
-  if (days === 0) return 'Due today';
-  if (days === 1) return 'Due tomorrow';
-  return `${days} days left`;
+  if (days < 0) return `${Math.abs(days)} ${t('daysOverdue')}`;
+  if (days === 0) return t('dueToday');
+  if (days === 1) return t('dueTomorrow');
+  return t('daysLeft', { n: days });
 }
 
 function daysLeftClass(isoOrNull) {
@@ -355,7 +356,7 @@ export async function openTodoInfo({ todo, db, modalHost, onEdit }) {
     const closeBtn = el('button', { 
       class: 'imageViewer__close', 
       type: 'button',
-      'aria-label': 'Close'
+      'aria-label': t('close')
     }, '×');
 
     const overlay = el('div', { class: 'imageViewer' },
@@ -402,7 +403,7 @@ export async function openTodoInfo({ todo, db, modalHost, onEdit }) {
   );
 
   openModal(modalHost, {
-    title: 'Todo Details',
+    title: t('todoDetails'),
     content,
     actions: [
       { label: 'Edit', class: 'btn', onClick: () => { onEdit?.(todo); return true; } },
