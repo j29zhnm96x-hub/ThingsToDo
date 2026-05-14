@@ -137,7 +137,7 @@ export function renderTodoList({
     ),
     row2);
 
-    // Swipe gesture support
+    // Swipe gesture support (togglable via enableSwipe setting in Settings > Behaviors)
     let swipeStartX = 0, swipeCurrentX = 0, swiping = false;
     const SWIPE_THRESHOLD = 80;
     item.addEventListener('touchstart', (e) => {

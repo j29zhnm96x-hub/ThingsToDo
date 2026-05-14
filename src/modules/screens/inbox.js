@@ -13,7 +13,9 @@ import { Priority } from '../data/models.js';
 import { t } from '../utils/i18n.js';
 import { renderVoiceMemoList, openPlaybackModal, openVoiceMemoMenu } from '../ui/voiceMemo.js';
 import { openModal } from '../ui/modal.js';
+import { openTodoInfo } from '../ui/todoInfo.js';
 import { isDueNowOrPast } from '../logic/recurrence.js';
+import { renderCalendarGrid, buildCalendarData } from '../ui/calendarView.js';
 
 const PRIORITY_ORDER = ['URGENT', 'P0', 'P1', 'P2', 'P3'];
 let collapsedPriorities = {};
@@ -28,8 +30,12 @@ export async function renderInbox(ctx) {
   const { main, db, modalHost } = ctx;
   clear(main);
 
-  // View toggle: All / Today
+  // View toggle: All / Today / Calendar
   const view = sessionStorage.getItem('inboxView') || 'all';
+  const calYear = parseInt(sessionStorage.getItem('calYear') || String(new Date().getFullYear()), 10);
+  const calMonth = parseInt(sessionStorage.getItem('calMonth') || String(new Date().getMonth()), 10);
+  const calDay = parseInt(sessionStorage.getItem('calDay') || '0', 10);
+
   const toggleAll = el('button', {
     class: `pill-btn${view === 'all' ? ' pill-btn--active' : ''}`,
     type: 'button',
@@ -43,15 +49,26 @@ export async function renderInbox(ctx) {
     type: 'button',
     onClick: () => {
       sessionStorage.setItem('inboxView', 'today');
+      sessionStorage.removeItem('calDay');
       renderInbox(ctx);
     }
   }, t('today'));
-  const viewToggle = el('div', { class: 'view-toggle', style: 'display:flex;gap:6px;margin-bottom:12px' }, toggleAll, toggleToday);
+  const toggleCal = el('button', {
+    class: `pill-btn${view === 'cal' ? ' pill-btn--active' : ''}`,
+    type: 'button',
+    onClick: () => {
+      sessionStorage.setItem('inboxView', 'cal');
+      renderInbox(ctx);
+    }
+  }, '📅');
+  const viewToggle = el('div', { class: 'view-toggle', style: 'display:flex;gap:6px;margin-bottom:12px' }, toggleAll, toggleToday, toggleCal);
 
   const allTodos = await db.todos.listActive();
 
-  // If Today view, filter to only tasks due today or overdue
   let filteredTodos = allTodos;
+  let selectedDay = 0;
+  let calSection = null;
+
   if (view === 'today') {
     const todayKey = new Date().toISOString().slice(0, 10);
     filteredTodos = allTodos.filter(t => {
@@ -59,7 +76,39 @@ export async function renderInbox(ctx) {
       const dueKey = t.dueDate.slice(0, 10);
       return dueKey <= todayKey;
     });
+  } else if (view === 'cal') {
+    // Build calendar data from ALL active todos (not filtered by inbox visibility)
+    const { countMap, todoMap } = buildCalendarData(allTodos);
+    selectedDay = calDay;
+
+    const handleNav = (dir) => {
+      let y = calYear, m = calMonth;
+      if (dir === 'prev') { m--; if (m < 0) { m = 11; y--; } }
+      if (dir === 'next') { m++; if (m > 11) { m = 0; y++; } }
+      sessionStorage.setItem('calYear', String(y));
+      sessionStorage.setItem('calMonth', String(m));
+      renderInbox(ctx);
+    };
+    const handleDay = (day) => {
+      sessionStorage.setItem('calDay', String(day));
+      renderInbox(ctx);
+    };
+    calSection = el('div', { style: 'margin-bottom:12px' },
+      renderCalendarGrid(calYear, calMonth, countMap, selectedDay, (val) => {
+        if (val === 'prev' || val === 'next') handleNav(val);
+        else handleDay(val);
+      })
+    );
+
+    // Filter todos to only show selected day's tasks
+    if (selectedDay > 0) {
+      const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(selectedDay).padStart(2,'0')}`;
+      filteredTodos = todoMap.get(dateStr) || [];
+    } else {
+      filteredTodos = [];
+    }
   }
+
   // Filter for inbox items and exclude future recurring instances
   const todos = filteredTodos.filter(t => {
     // Include if it's inbox or linked to inbox
@@ -285,6 +334,7 @@ export async function renderInbox(ctx) {
     const content = el('div', { class: 'stack' });
 
     content.append(viewToggle);
+    if (calSection) content.append(calSection);
     if (linkedProjectsList) content.append(linkedProjectsList);
     if (voiceMemosList) content.append(voiceMemosList);
 
