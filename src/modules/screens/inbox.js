@@ -249,27 +249,27 @@ export async function renderInbox(ctx) {
              return true;
           }
         }] : []),
-        { label: 'Share…', class: 'btn', onClick: async () => { const { exportTodoToFile } = await import('../utils/share.js'); await exportTodoToFile(db, todo); return true; } },
-        { label: 'Move', class: 'btn', onClick: async () => {
-          const dest = await pickProject(modalHost, { title: 'Move to…', projects, includeInbox: true, initial: todo.projectId ?? null, confirmLabel: 'Move' });
+        { label: t('share'), class: 'btn', onClick: async () => { const { exportTodoToFile } = await import('../utils/share.js'); await exportTodoToFile(db, todo); return true; } },
+        { label: t('move'), class: 'btn', onClick: async () => {
+          const dest = await pickProject(modalHost, { title: t('moveToProject'), projects, includeInbox: true, initial: todo.projectId ?? null, confirmLabel: t('move') });
           if (dest === undefined) return false;
           await moveTodo(db, todo, dest);
           await renderInbox(ctx);
           return true;
         } },
-        { label: 'Archive', class: 'btn btn--danger', onClick: async () => {
+        { label: t('archiveItem'), class: 'btn btn--danger', onClick: async () => {
           if (todo.protected) {
             openModal(modalHost, {
-              title: 'Task Protected',
-              content: el('div', {}, 'This task is protected. Please uncheck "Protect task" in the editor to archive it.'),
+              title: t('taskProtected'),
+              content: el('div', {}, t('taskProtectedMsg')),
               actions: [{ label: t('ok'), class: 'btn btn--primary', onClick: () => true }]
             });
             return true;
           }
           const ok = await confirm(modalHost, {
-            title: 'Archive todo?',
-            message: 'You can restore it later from Archive.',
-            confirmLabel: 'Archive'
+            title: t('archiveTodo'),
+            message: t('archiveTodoMsg'),
+            confirmLabel: t('archiveItem')
           });
           if (!ok) return false;
           await db.todos.put({

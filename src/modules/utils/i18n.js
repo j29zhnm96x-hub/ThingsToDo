@@ -196,6 +196,7 @@ const translations = {
     taskProtectedMsg: 'This task is protected. Please uncheck "Protect task" in the editor to delete it.',
     deleteConfirmTitle: 'Delete todo?',
     deleteConfirmMsg: 'This will permanently delete the todo and its images.',
+    task: 'Task',
     
     // Menu options
     menu: 'Menu',
@@ -210,6 +211,8 @@ const translations = {
     protect: 'Protect',
     unprotect: 'Unprotect',
     archiveItem: 'Archive',
+    archiveTodo: 'Archive todo?',
+    archiveTodoMsg: 'You can restore it later from Archive.',
     restoreItem: 'Restore',
     deleteItem: 'Delete',
     deletePermanently: 'Delete Permanently',

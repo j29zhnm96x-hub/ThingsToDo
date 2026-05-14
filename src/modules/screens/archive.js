@@ -213,7 +213,7 @@ export async function renderArchive(ctx) {
           projects,
           includeInbox: true,
           initial,
-          confirmLabel: 'Restore'
+          confirmLabel: t('restoreItem')
         });
         if (dest === undefined) return;
         await restoreTodo(db, todo, dest);
@@ -268,7 +268,7 @@ export async function renderArchive(ctx) {
         actions: [
           { label: 'Edit', class: 'btn', onClick: () => (ctx.openTodoEditor({ mode: 'edit', todoId: todo.id, projectId: todo.projectId, db }), true) },
           { label: 'Share…', class: 'btn', onClick: async () => { const { exportTodoToFile } = await import('../utils/share.js'); await exportTodoToFile(db, todo); return true; } },
-          { label: 'Restore', class: 'btn', onClick: async () => {
+          { label: t('restoreItem'), class: 'btn', onClick: async () => {
             const initial = todo.archivedFromProjectId && projectsById.has(todo.archivedFromProjectId)
               ? todo.archivedFromProjectId
               : null;
@@ -277,7 +277,7 @@ export async function renderArchive(ctx) {
               projects,
               includeInbox: true,
               initial,
-              confirmLabel: 'Restore'
+              confirmLabel: t('restoreItem')
             });
             if (dest !== undefined) {
               await restoreTodo(db, todo, dest);

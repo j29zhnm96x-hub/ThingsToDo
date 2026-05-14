@@ -1360,16 +1360,16 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
     onArchive: async (todo) => {
       if (todo.protected) {
         openModal(modalHost, {
-          title: 'Task Protected',
-          content: el('div', {}, 'This task is protected. Please uncheck "Protect task" in the editor to archive it.'),
+          title: t('taskProtected'),
+          content: el('div', {}, t('taskProtectedMsg')),
           actions: [{ label: t('ok'), class: 'btn btn--primary', onClick: () => true }]
         });
         return;
       }
       const ok = await confirm(modalHost, {
-        title: 'Archive todo?',
-        message: 'You can restore it later from Archive.',
-        confirmLabel: 'Archive'
+        title: t('archiveTodo'),
+        message: t('archiveTodoMsg'),
+        confirmLabel: t('archiveItem')
       });
       if (!ok) return;
       await db.todos.put({
@@ -1383,10 +1383,10 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
       await renderProjectDetail(ctx, projectId, 0);
     },
     onMenu: (todo, { onLinkToggle } = {}) => openTodoMenu(modalHost, {
-      title: todo.title || 'Todo',
+      title: todo.title || t('task'),
       actions: [
         { label: t('edit'), class: 'btn', onClick: () => (ctx.openTodoEditor({ mode: 'edit', todoId: todo.id, projectId: todo.projectId, db }), true) },
-        { label: todo.showInInbox ? 'Unlink from Inbox' : 'Link to Inbox', class: 'btn', onClick: async () => {
+        { label: todo.showInInbox ? t('unlinkFromInbox') : t('linkToInbox'), class: 'btn', onClick: async () => {
              const wasLinked = todo.showInInbox;
              await db.todos.put({ ...todo, showInInbox: !todo.showInInbox });
              await renderProjectDetail(ctx, projectId, 0);
@@ -1879,7 +1879,7 @@ function renderChecklistWithDrag({ todos, modalHost, db, projectId, currentPageI
         }
       }, completed ? '✓' : ''),
       textSpan,
-      todo.protected ? el('span', { class: 'icon-protected', 'aria-label': 'Protected' }, '🔒') : null
+      todo.protected ? el('span', { class: 'icon-protected', 'aria-label': t('protect') }, '🔒') : null
     );
 
     // Simple tap to open item

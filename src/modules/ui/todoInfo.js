@@ -111,14 +111,14 @@ export async function openTodoInfo({ todo, db, modalHost, onEdit }) {
 
   // Priority badge
   const priorityEl = el('div', { class: 'todoInfo__row' },
-    el('span', { class: 'todoInfo__label' }, 'Priority'),
+    el('span', { class: 'todoInfo__label' }, t('priority')),
     el('span', { class: 'todoInfo__value', style: { color: priorityColor, fontWeight: '700' } }, priorityLabel)
   );
 
   // Due date
   const dueDateEl = dueDateFormatted
     ? el('div', { class: 'todoInfo__row' },
-        el('span', { class: 'todoInfo__label' }, 'Due date'),
+        el('span', { class: 'todoInfo__label' }, t('dueDate')),
         el('div', { class: 'todoInfo__value' },
           el('span', {}, dueDateFormatted),
           daysLeftStr ? el('span', { class: `dueTag ${daysLeftCls}` }, daysLeftStr) : null
@@ -132,7 +132,7 @@ export async function openTodoInfo({ todo, db, modalHost, onEdit }) {
     const notesTextEl = el('div', { class: 'todoInfo__notes' }, todo.notes);
     attachLongPressCopy(notesTextEl, () => [todo.title, todo.notes].filter(Boolean).join('\n\n'));
     notesEl = el('div', { class: 'todoInfo__section' },
-      el('div', { class: 'todoInfo__label' }, 'Notes'),
+      el('div', { class: 'todoInfo__label' }, t('notes')),
       notesTextEl
     );
   }
@@ -157,11 +157,11 @@ export async function openTodoInfo({ todo, db, modalHost, onEdit }) {
         class: 'thumb thumb--clickable',
         onClick: () => openImageViewer([...fullImageUrls], index)
       },
-        el('img', { src: thumbUrl, alt: att.name || 'Attachment', loading: 'lazy', decoding: 'async' })
+        el('img', { src: thumbUrl, alt: att.name || t('attachment'), loading: 'lazy', decoding: 'async' })
       );
     });
     imagesEl = el('div', { class: 'todoInfo__section' },
-      el('div', { class: 'todoInfo__label' }, 'Images'),
+      el('div', { class: 'todoInfo__label' }, t('imagesLabel')),
       el('div', { class: 'thumbGrid' }, ...thumbs)
     );
   }
@@ -183,7 +183,7 @@ export async function openTodoInfo({ todo, db, modalHost, onEdit }) {
     const img = el('img', { 
       class: 'imageViewer__img', 
       src: urls[currentIndex], 
-      alt: 'Image'
+      alt: t('attachment')
     });
 
     // Counter element (e.g., "1 / 3")
@@ -388,8 +388,8 @@ export async function openTodoInfo({ todo, db, modalHost, onEdit }) {
 
   // Status
   const statusEl = el('div', { class: 'todoInfo__row' },
-    el('span', { class: 'todoInfo__label' }, 'Status'),
-    el('span', { class: 'todoInfo__value' }, todo.completed ? 'Completed' : 'Active')
+    el('span', { class: 'todoInfo__label' }, t('status')),
+    el('span', { class: 'todoInfo__value' }, todo.completed ? t('completed') : t('active'))
   );
 
   const content = el('div', { class: 'stack' },
@@ -407,7 +407,7 @@ export async function openTodoInfo({ todo, db, modalHost, onEdit }) {
     content,
     actions: [
       { label: t('edit'), class: 'btn', onClick: () => { onEdit?.(todo); return true; } },
-      { label: 'Close', class: 'btn btn--primary', onClick: () => true }
+      { label: t('close'), class: 'btn btn--primary', onClick: () => true }
     ],
     onClose: () => {
       // Revoke object URLs
