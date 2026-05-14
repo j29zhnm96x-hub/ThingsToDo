@@ -57,7 +57,6 @@ function openChecklistAddMenu(ctx, {
         onSubmit: async (raw) => {
           try {
             const { pageName, items } = parseBulkAddTextWithPage(raw);
-            console.debug('bulkAdd raw:', raw, 'parsed pageName:', pageName, 'items:', items);
             if (!items.length) return;
 
             // Capitalize items: first letter uppercase, rest unchanged
@@ -293,6 +292,28 @@ function openInboxBeforeModal(ctx, todo) {
 
 export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
   const { main, db, modalHost } = ctx;
+
+  // Flush any unsaved note edits BEFORE clearing the DOM
+  const existingTextareas = document.querySelectorAll('.inlineNote__input');
+  if (existingTextareas.length) {
+    const savePromises = [];
+    for (const ta of existingTextareas) {
+      const noteId = ta.dataset.noteId;
+      if (!noteId) continue;
+      try {
+        const stored = await db.projectNotes.get(noteId);
+        const current = (ta.value || '').trim();
+        const storedText = (stored && stored.text) ? stored.text.trim() : '';
+        if (stored && current !== storedText) {
+          savePromises.push(db.projectNotes.put({ ...stored, text: current }));
+        }
+      } catch (err) {
+        console.error('Error flushing note:', noteId, err);
+      }
+    }
+    await Promise.allSettled(savePromises);
+  }
+
   clear(main);
 
   const project = await db.projects.get(projectId);
@@ -1020,39 +1041,6 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
         await renderProjectDetail(ctx, projectId, 0);
       },
       onTap: (todo) => {
-        const pickChecklistPage = (modalHost, { title, pages, initial = null, confirmLabel }) => {
-          return new Promise((resolve) => {
-            const select = el('select', { class: 'select', 'aria-label': 'Page' });
-            for (const p of pages) {
-              select.appendChild(el('option', { value: p.id }, p.name || t('untitled') || 'Untitled'));
-            }
-            if (initial != null) select.value = initial;
-
-            const content = el('div', { class: 'stack' },
-              el('label', { class: 'label' },
-                el('span', {}, t('page') || 'Page'),
-                select
-              )
-            );
-
-            openModal(modalHost, {
-              title,
-              content,
-              actions: [
-                { label: t('cancel') || 'Cancel', class: 'btn btn--ghost', onClick: () => (resolve(undefined), true) },
-                {
-                  label: confirmLabel,
-                  class: 'btn btn--primary',
-                  onClick: () => {
-                    resolve(select.value || null);
-                    return true;
-                  }
-                }
-              ]
-            });
-          });
-        };
-
         const moveChecklistItem = () => {
           // Important: open the next modal *after* the current one closes.
           // Otherwise, closing the current modal will clear modalHost and the
@@ -1467,42 +1455,10 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
       )
     : null;
 
-  // Notes section (inline)
-  // Flush any unsaved changes from existing textareas before re-rendering
-  const existingTextareas = document.querySelectorAll('.inlineNote__input');
-  if (existingTextareas.length) {
-    const savePromises = [];
-    for (const ta of existingTextareas) {
-      const noteId = ta.dataset.noteId;
-      if (!noteId) continue;
-      try {
-        const stored = await db.projectNotes.get(noteId);
-        const current = (ta.value || '').trim();
-        const storedText = (stored && stored.text) ? stored.text.trim() : '';
-        if (stored && current !== storedText) {
-          console.log('Saving unsaved text for note (flushed):', noteId, 'text:', current);
-          savePromises.push(db.projectNotes.put({ ...stored, text: current }));
-        }
-      } catch (err) {
-        console.error('Error reading note for flush:', noteId, err);
-      }
-    }
-    if (savePromises.length) {
-      try {
-        await Promise.all(savePromises);
-        console.log('Flushed unsaved note saves before render');
-      } catch (err) {
-        console.error('Error flushing note saves before render:', err);
-      }
-    }
-  }
-
   let notesList = null;
   if (projectNotes.length > 0) {
-    console.log('Rendering project notes:', projectNotes.map(n => ({ id: n.id, text: n.text })));
     notesList = el('div', { class: 'notesList' },
       ...projectNotes.map(note => {
-        console.log('Rendering note:', note.id, 'text:', note.text);
         const existingTa = document.querySelector(`.inlineNote__input[data-note-id="${note.id}"]`);
         const currentValue = existingTa ? existingTa.value : note.text;
         const textarea = el('textarea', {
@@ -1530,9 +1486,8 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
           saving = true;
           try {
             const trimmed = (value || '').trim();
-            console.log('Saving note text:', trimmed);
             await db.projectNotes.put({ ...note, text: trimmed });
-            console.log('Saved successfully');
+            return true;
           } catch (error) {
             console.error('Error saving note:', error);
           } finally {
@@ -1689,231 +1644,6 @@ export function openProjectAddMenu(ctx, project) {
     closeModal = modalRef.close;
 }
 
-function renderChecklist({ todos, modalHost, onToggleCompleted, onDelete, onDeleteAllCompleted, onTap, onEdit }) {
-  const active = todos.filter(todo => !todo.completed);
-  const done = todos.filter(todo => todo.completed);
-
-  // Load collapsed state from localStorage
-  const storageKey = 'checklist-completed-collapsed';
-  let isCollapsed = localStorage.getItem(storageKey) === 'true';
-
-  const makeRow = (todo, completed) => {
-    let startX = 0;
-    let currentX = 0;
-    let swiping = false;
-    const SWIPE_THRESHOLD = 80;
-
-    const textSpan = el('span', { 
-      class: 'checklist__text',
-      style: 'cursor: pointer;'
-    }, todo.title);
-
-    const row = el('div', {
-      class: completed ? 'checklist__item checklist__item--done' : 'checklist__item',
-      style: 'position: relative; overflow: hidden;'
-    },
-      el('span', { 
-        class: completed ? 'checklist__circle checklist__circle--done' : 'checklist__circle',
-        onClick: (e) => {
-          e.stopPropagation();
-          onToggleCompleted?.(todo, !completed);
-        }
-      }, completed ? '✓' : ''),
-      textSpan,
-      todo.protected ? el('span', { class: 'icon-protected', 'aria-label': 'Protected' }, '🔒') : null
-    );
-
-    // Long press to show actions menu
-    let pressTimer = null;
-    let longPressTriggered = false;
-    let pressStartTime = 0;
-    let pressStartPos = { x: 0, y: 0 };
-    
-    const cancelPressTimer = () => {
-      if (pressTimer) {
-        clearTimeout(pressTimer);
-        pressTimer = null;
-      }
-    };
-    
-    const handlePressStart = (e) => {
-      if (swiping) return;
-      longPressTriggered = false;
-      pressStartTime = Date.now();
-      pressStartPos = { x: e.clientX, y: e.clientY };
-      
-      pressTimer = setTimeout(() => {
-        longPressTriggered = true;
-        hapticLight();
-        // Show actions modal with Edit and Delete
-        openModal(modalHost, {
-          title: todo.title,
-          content: el('div', { class: 'small' }, 'Choose an action'),
-          actions: [
-            { label: t('edit'), class: 'btn', onClick: () => { 
-              // Use setTimeout to let the modal close first before opening the edit modal
-              setTimeout(() => onEdit?.(todo), 50);
-              return true; 
-            } },
-            { label: t('delete'), class: 'btn btn--danger', onClick: () => { onDelete?.(todo, row); return true; } },
-            { label: t('cancel'), class: 'btn btn--ghost', onClick: () => true }
-          ]
-        });
-      }, LONG_PRESS_DURATION);
-    };
-
-    const handlePressEnd = (e) => {
-      const pressDuration = Date.now() - pressStartTime;
-      const moveDistance = e ? Math.hypot(e.clientX - pressStartPos.x, e.clientY - pressStartPos.y) : 999;
-      
-      cancelPressTimer();
-      
-      // If it was a quick tap (less than 300ms) and no movement, trigger tap
-      if (pressDuration < 300 && moveDistance < 10 && !swiping && !longPressTriggered) {
-        setTimeout(() => {
-          if (!longPressTriggered) {
-            hapticLight();
-            onTap?.(todo);
-          }
-        }, 0);
-      }
-      
-      // Reset longPressTriggered after a short delay
-      setTimeout(() => {
-        longPressTriggered = false;
-      }, 100);
-    };
-
-    // Swipe left to delete
-    const handleTouchStart = (e) => {
-      startX = e.touches[0].clientX;
-      currentX = startX;
-      swiping = false;
-    };
-
-    const handleTouchMove = (e) => {
-      currentX = e.touches[0].clientX;
-      const diff = startX - currentX;
-      
-      if (diff > 20) {
-        swiping = true;
-        cancelPressTimer(); // Cancel long press if swiping
-        const translateX = Math.min(diff, SWIPE_THRESHOLD + 20);
-        row.style.transform = `translateX(-${translateX}px)`;
-        row.style.transition = 'none';
-      }
-    };
-
-    const handleTouchEnd = () => {
-      const diff = startX - currentX;
-      
-      if (diff > SWIPE_THRESHOLD) {
-        // Swipe detected - delete
-        row.style.transition = 'transform 200ms ease';
-        row.style.transform = 'translateX(-100%)';
-        setTimeout(() => {
-          hapticLight();
-          onDelete?.(todo, row);
-        }, 150);
-      } else {
-        // Reset position
-        row.style.transition = 'transform 200ms ease';
-        row.style.transform = 'translateX(0)';
-      }
-      swiping = false;
-    };
-
-    textSpan.addEventListener('pointerdown', handlePressStart);
-    textSpan.addEventListener('pointerup', handlePressEnd);
-    textSpan.addEventListener('pointercancel', () => {
-      cancelPressTimer();
-      longPressTriggered = false;
-    });
-    textSpan.addEventListener('pointerleave', cancelPressTimer);
-
-    row.addEventListener('touchstart', handleTouchStart, { passive: true });
-    row.addEventListener('touchmove', handleTouchMove, { passive: true });
-    row.addEventListener('touchend', handleTouchEnd);
-
-    return row;
-  };
-
-  const container = el('div', { class: 'checklist' });
-  active.forEach(todo => container.appendChild(makeRow(todo, false)));
-  
-  if (done.length) {
-    // Create collapsible completed section
-    let pressTimer = null;
-    
-    const dividerBtn = el('button', { 
-      type: 'button',
-      class: 'todo-divider__text',
-      style: 'cursor: pointer;'
-    }, `Completed (${done.length})`);
-    
-    // Single tap to toggle collapse, long press (1 sec) to delete all
-    const handlePressStart = () => {
-      pressTimer = setTimeout(() => {
-        // Long press detected - delete all completed
-        hapticLight();
-        onDeleteAllCompleted?.();
-      }, 1000);
-    };
-
-    const handlePressEnd = () => {
-      if (pressTimer) {
-        clearTimeout(pressTimer);
-        pressTimer = null;
-      }
-    };
-
-    dividerBtn.addEventListener('click', () => {
-      // Single click - toggle collapse
-      isCollapsed = !isCollapsed;
-      localStorage.setItem(storageKey, isCollapsed);
-      updateCompletedVisibility();
-    });
-
-    dividerBtn.addEventListener('pointerdown', handlePressStart);
-    dividerBtn.addEventListener('pointerup', handlePressEnd);
-    dividerBtn.addEventListener('pointercancel', handlePressEnd);
-    dividerBtn.addEventListener('pointerleave', handlePressEnd);
-
-    const divider = el('div', { class: 'todo-divider' }, dividerBtn);
-    container.appendChild(divider);
-
-    // Collapsed stack representation (thin lines)
-    const stack = el('div', { 
-      class: 'completedStack',
-      style: isCollapsed ? '' : 'display: none;'
-    });
-    const lineCount = Math.min(done.length, 15);
-    for (let i = 0; i < lineCount; i++) {
-      stack.appendChild(el('div', { class: 'completedStack__line' }));
-    }
-    container.appendChild(stack);
-
-    // Completed items
-    const completedItems = [];
-    done.forEach(todo => {
-      const row = makeRow(todo, true);
-      if (isCollapsed) row.style.display = 'none';
-      completedItems.push(row);
-      container.appendChild(row);
-    });
-
-    // Function to update visibility
-    const updateCompletedVisibility = () => {
-      stack.style.display = isCollapsed ? '' : 'none';
-      completedItems.forEach(item => {
-        item.style.display = isCollapsed ? 'none' : '';
-      });
-    };
-  }
-  
-  return container;
-}
-
 function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated, useSuggestions = false, enableQtyUnits = false }) {
   const input = el('textarea', { 
     class: 'input input--title', 
@@ -1936,10 +1666,10 @@ function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated, useSug
       el('button', { 
         type: 'button', 
         class: 'btn btn--small', 
-        onClick: () => { 
+        onClick: (e) => { 
           selectedUnit = t(key) || key; 
           unitButtons.forEach(btn => btn.classList.remove('btn--primary')); 
-          event.target.classList.add('btn--primary'); 
+          e.target.classList.add('btn--primary'); 
         } 
       }, t(key) || key)
     );

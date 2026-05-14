@@ -34,19 +34,23 @@ function parseHash(hash) {
 
 export const router = {
   _handler: null,
-  _queue: Promise.resolve(),
+  _pending: null,
   init({ onRoute }) {
     this._handler = onRoute;
     window.addEventListener('hashchange', () => this.refresh());
     this.refresh();
   },
   refresh() {
-    this._queue = this._queue
-      .then(async () => {
-        const route = parseHash(location.hash);
-        if (this._handler) await this._handler(route);
-      })
-      .catch((err) => console.error('Router refresh failed:', err));
-    return this._queue;
+    // Cancel any pending navigation and start fresh
+    if (this._pending) {
+      // Allow the old promise to settle but don't chain on it
+      this._pending.catch(() => {});
+    }
+    this._pending = (async () => {
+      const route = parseHash(location.hash);
+      if (this._handler) await this._handler(route);
+    })();
+    this._pending.catch((err) => console.error('Router refresh failed:', err));
+    return this._pending;
   }
 };

@@ -27,10 +27,6 @@ export function renderTodoList({
 }) {
   const list = el('div', { class: 'list' });
 
-  const FADE_OUT_MS = 1200;
-  const SHIFT_DOWN_MS = 1500;
-  const FADE_IN_MS = 1200;
-
   // Separate active and recently completed todos
   const activeTodos = todos.filter(todo => !todo.completed);
   const completedTodos = todos.filter(todo => todo.completed);

@@ -300,23 +300,6 @@ export async function endRecurringSeries(seriesId, db) {
  * Process all recurring tasks on app load - spawn any due tasks.
  * @param {object} db - Database instance
  */
-export async function processRecurringTasks(db) {
-  // This function is called on app load to check if any recurring
-  // tasks need to spawn new instances. The logic is:
-  // - Check all active (non-archived) recurring todos
-  // - If a recurring task is completed but was the "template", spawn next
-  // - Actually, our model: when you complete a task, we immediately spawn next
-  // So this function mainly handles edge cases like app being closed
-  
-  // For simplicity, our model is:
-  // 1. User completes a recurring task
-  // 2. We immediately calculate and create the next instance
-  // 3. The next instance only shows in Inbox when its dueDate arrives
-  
-  // No special processing needed on app load for now.
-  // The visibility is handled by the Inbox filter.
-}
-
 /**
  * Get human-readable recurrence description.
  * @param {object} todo - Todo with recurrence settings

@@ -10,8 +10,8 @@ import { createNextRecurringInstance } from '../logic/recurrence.js';
 const EDIT_COMPRESS_SPEC = { maxSize: 1280, quality: 0.8 };
 const THUMB_COMPRESS_SPEC = { maxSize: 320, quality: 0.6 };
 
-function templateN(key, n) {
-  return n === 1 ? t(key, { n }) : t('inboxBeforeDays', { n });
+function inboxBeforeLabel(n) {
+  return n === 1 ? t('inboxBeforeDay', { n }) : t('inboxBeforeDays', { n });
 }
 
 function priorityOptions(select, value) {
@@ -72,9 +72,9 @@ export async function openTodoEditor({
   inboxSelect.innerHTML = `
     <option value="null">${t('inboxBeforeNever')}</option>
     <option value="0">${t('inboxBeforeOnDue')}</option>
-    <option value="1">${templateN('inboxBeforeDay', 1)}</option>
-    <option value="2">${templateN('inboxBeforeDays', 2)}</option>
-    <option value="3">${templateN('inboxBeforeDays', 3)}</option>
+    <option value="1">${inboxBeforeLabel(1)}</option>
+    <option value="2">${inboxBeforeLabel(2)}</option>
+    <option value="3">${inboxBeforeLabel(3)}</option>
     <option value="custom">${t('inboxBeforeCustom')}</option>
   `;
   inboxSelect.value = inboxBeforeVal === null ? 'null' : String(inboxBeforeVal);
