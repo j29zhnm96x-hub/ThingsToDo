@@ -97,15 +97,17 @@ export async function burstConfetti(x, y) {
     let vy = -Math.abs(Math.sin(spreadAngle) * speed) - 120; // strong upward kick
     const maxGravity = 160;
     let px = x, py = y;
-    let totalTime = 0;
     let opacity = 1;
+    let lastTime = 0;
+    let totalElapsed = 0;
 
     function animate(time) {
-      const dt = Math.min((time - startTime) / 1000, 3);
-      startTime = time;
-      totalTime += dt;
-      // Gravity ramps up: almost none at start, full after ~30% into flight
-      const gravityFactor = Math.min(totalTime * 2.5, 1);
+      if (!lastTime) lastTime = time;
+      const dt = Math.min((time - lastTime) / 1000, 0.05);
+      lastTime = time;
+      totalElapsed += dt;
+      // Gravity ramps up: almost none at start, full after ~0.4s
+      const gravityFactor = Math.min(totalElapsed * 2.5, 1);
       vy += maxGravity * gravityFactor * dt;
       px += vx * dt;
       py += vy * dt;
