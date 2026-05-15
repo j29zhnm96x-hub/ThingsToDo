@@ -182,10 +182,6 @@ export function initApp(root) {
         topbarTitle.textContent = t('inbox');
         appendDateToTopbar(topbarActions);
         topbarActions.append(
-          el('button', { class: 'topbar__addBtn', type: 'button', 'aria-label': t('addTask'), onClick: () => { 
-            hapticLight(); 
-            openInboxAddMenu(ctx, modalHost);
-          } }, '+'),
           el('button', { class: 'topbar__addBtn', type: 'button', 'aria-label': t('search'), onClick: () => { hapticLight(); location.hash = '#search'; } }, '🔍')
         );
         await renderInbox(ctx);
@@ -295,7 +291,7 @@ export function initApp(root) {
             }, 1800);
           }
         }
-        // Update quick add button visibility — only on inbox page
+        // Update quick add button visibility — inbox and project pages
         updateQuickAddButton(quickAddBtn, ctx.db, route.group);
       }, 100);
     }

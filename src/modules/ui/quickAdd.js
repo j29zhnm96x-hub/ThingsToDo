@@ -22,11 +22,11 @@ export function createQuickAddButton(ctx) {
 
 /**
  * Show/hide the quick add button.
- * Only visible on inbox page AND when enableQuickAdd setting is on.
+ * Visible on inbox and projects pages, respects enableQuickAdd setting.
  */
 export async function updateQuickAddButton(btn, db, routeGroup) {
   if (!btn || !db) return;
-  if (routeGroup !== 'inbox') {
+  if (routeGroup !== 'inbox' && routeGroup !== 'projects') {
     btn.style.display = 'none';
     return;
   }
