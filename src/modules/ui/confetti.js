@@ -90,28 +90,25 @@ export async function burstConfetti(x, y) {
     `;
     container.appendChild(dot);
 
-    // Firework-style burst
-    const spreadAngle = (Math.PI / 4) + (Math.random() - 0.5) * 1.6;
-    const speed = 280 + Math.random() * 220;
+    // Heavy burst: shoots up briefly, then gravity slams down
+    const spreadAngle = (Math.PI / 4) + (Math.random() - 0.5) * 1.4;
+    const speed = 200 + Math.random() * 160;
     let vx = Math.cos(spreadAngle) * speed;
-    let vy = -Math.abs(Math.sin(spreadAngle) * speed) - 180;
-    const gravity = 280;
+    let vy = -Math.abs(Math.sin(spreadAngle) * speed) - 140;
+    const gravity = 500;
     let px = x, py = y;
     let prevTime = 0;
-    let gravDelay = 0;
     let opacity = 1;
 
     function animate(time) {
       if (!prevTime) prevTime = time;
       const dt = Math.min((time - prevTime) / 1000, 0.05);
       prevTime = time;
-      gravDelay += dt;
-      // Quick gravity onset
-      const gravFactor = Math.min(Math.max(0, gravDelay - 0.08) * 4, 1);
-      vy += gravity * gravFactor * dt;
+      // Gravity hits almost immediately — heavy feel
+      vy += gravity * dt;
       px += vx * dt;
       py += vy * dt;
-      opacity -= dt * 0.6;
+      opacity -= dt * 0.7;
       if (opacity <= 0 || py > window.innerHeight + 50) {
         dot.remove();
         return;
