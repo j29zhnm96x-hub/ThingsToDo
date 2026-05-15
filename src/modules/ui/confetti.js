@@ -91,7 +91,7 @@ export async function burstConfetti(x, y) {
     container.appendChild(dot);
 
     let startTime = performance.now();
-    const duration = 1200 + Math.random() * 800;
+    const duration = 800 + Math.random() * 400;
 
     function animate(time) {
       const elapsed = time - startTime;
@@ -100,17 +100,11 @@ export async function burstConfetti(x, y) {
         dot.remove();
         return;
       }
-      // Arc upward first, then fall toward target: quadratic bezier
-      const cpx = x + (tx - x) * 0.3;
-      const cpy = y - (80 + Math.random() * 60); // control point above start
-      const t = progress;
-      const u = 1 - t;
-      const px = u * u * x + 2 * u * t * cpx + t * t * tx;
-      const py = u * u * y + 2 * u * t * cpy + t * t * ty;
-      dot.style.left = `${px}px`;
-      dot.style.top = `${py}px`;
-      dot.style.opacity = `${Math.max(0, 1 - progress * 1.0)}`;
-      dot.style.transform = `rotate(${progress * 720}deg) scale(${1 + t * 0.8})`;
+      const ease = 1 - Math.pow(1 - progress, 2);
+      dot.style.left = `${x + (tx - x) * ease}px`;
+      dot.style.top = `${y + (ty - y) * ease}px`;
+      dot.style.opacity = `${Math.max(0, 1 - progress * 1.2)}`;
+      dot.style.transform = `rotate(${progress * 360}deg) scale(${1 + progress * 0.5})`;
       requestAnimationFrame(animate);
     }
     requestAnimationFrame(animate);
