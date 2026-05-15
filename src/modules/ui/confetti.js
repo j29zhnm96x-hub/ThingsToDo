@@ -11,13 +11,19 @@ function getPaletteColors() {
   return [c1, c2];
 }
 
-let enabled = true;
-let soundEnabled = true;
-let loaded = false;
-
 let audioCtx = null;
+
+async function shouldPlay() {
+  try {
+    const { db } = await import('../data/db.js');
+    const s = await db.settings.get();
+    return { visual: s.enableConfetti !== false, sound: s.enableConfettiSound !== false };
+  } catch {
+    return { visual: true, sound: true };
+  }
+}
+
 async function playSound() {
-  if (!soundEnabled) return;
   try {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const resp = await fetch('./assets/confetti_sound.mp3');
@@ -25,29 +31,20 @@ async function playSound() {
     const audio = await audioCtx.decodeAudioData(buf);
     const src = audioCtx.createBufferSource();
     src.buffer = audio;
-    src.connect(audioCtx.destination);
+    const gain = audioCtx.createGain();
+    gain.gain.value = 0.5; // 50% volume
+    src.connect(gain);
+    gain.connect(audioCtx.destination);
     src.start();
   } catch {
     // Silently fail — sound is optional
   }
 }
 
-async function loadSetting() {
-  if (loaded) return;
-  try {
-    const { db } = await import('../data/db.js');
-    const settings = await db.settings.get();
-    enabled = settings.enableConfetti !== false;
-    soundEnabled = settings.enableConfettiSound !== false;
-  } catch {
-    // Fall back to default (enabled)
-  }
-  loaded = true;
-}
-
-export function burstConfetti(x, y) {
-  if (!enabled) return;
-  playSound();
+export async function burstConfetti(x, y) {
+  const flags = await shouldPlay();
+  if (!flags.visual) return;
+  if (flags.sound) playSound();
   const COLORS = getPaletteColors();
   const count = 12;
   const container = document.body;
@@ -102,6 +99,3 @@ export function burstFromElement(el) {
   const rect = el.getBoundingClientRect();
   burstConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2);
 }
-
-// Load setting on first import
-loadSetting();
