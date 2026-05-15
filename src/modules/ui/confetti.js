@@ -32,7 +32,7 @@ async function playSound() {
     const src = audioCtx.createBufferSource();
     src.buffer = audio;
     const gain = audioCtx.createGain();
-    gain.gain.value = 0.5; // 50% volume
+    gain.gain.value = 0.25; // 25% volume
     src.connect(gain);
     gain.connect(audioCtx.destination);
     src.start();
