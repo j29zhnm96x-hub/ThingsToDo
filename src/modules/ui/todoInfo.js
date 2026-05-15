@@ -71,13 +71,12 @@ function daysLeft(isoOrNull) {
 }
 
 function daysLeftText(isoOrNull) {
-  if (!isoOrNull) return null;
-  const days = daysUntil(isoOrNull);
+  const days = daysLeft(isoOrNull);
   if (days === null) return null;
-  if (days < 0) return `${Math.abs(days)} ${t('daysOverdue')}`;
-  if (days === 0) return t('dueToday');
-  if (days === 1) return t('dueTomorrow');
-  return t('daysLeft', { n: days });
+  if (days < 0) return `${Math.abs(days)} day${Math.abs(days) !== 1 ? 's' : ''} overdue`;
+  if (days === 0) return 'Due today';
+  if (days === 1) return 'Due tomorrow';
+  return `${days} days left`;
 }
 
 function daysLeftClass(isoOrNull) {
@@ -111,14 +110,14 @@ export async function openTodoInfo({ todo, db, modalHost, onEdit }) {
 
   // Priority badge
   const priorityEl = el('div', { class: 'todoInfo__row' },
-    el('span', { class: 'todoInfo__label' }, t('priority')),
+    el('span', { class: 'todoInfo__label' }, 'Priority'),
     el('span', { class: 'todoInfo__value', style: { color: priorityColor, fontWeight: '700' } }, priorityLabel)
   );
 
   // Due date
   const dueDateEl = dueDateFormatted
     ? el('div', { class: 'todoInfo__row' },
-        el('span', { class: 'todoInfo__label' }, t('dueDate')),
+        el('span', { class: 'todoInfo__label' }, 'Due date'),
         el('div', { class: 'todoInfo__value' },
           el('span', {}, dueDateFormatted),
           daysLeftStr ? el('span', { class: `dueTag ${daysLeftCls}` }, daysLeftStr) : null
@@ -132,7 +131,7 @@ export async function openTodoInfo({ todo, db, modalHost, onEdit }) {
     const notesTextEl = el('div', { class: 'todoInfo__notes' }, todo.notes);
     attachLongPressCopy(notesTextEl, () => [todo.title, todo.notes].filter(Boolean).join('\n\n'));
     notesEl = el('div', { class: 'todoInfo__section' },
-      el('div', { class: 'todoInfo__label' }, t('notes')),
+      el('div', { class: 'todoInfo__label' }, 'Notes'),
       notesTextEl
     );
   }
@@ -157,11 +156,11 @@ export async function openTodoInfo({ todo, db, modalHost, onEdit }) {
         class: 'thumb thumb--clickable',
         onClick: () => openImageViewer([...fullImageUrls], index)
       },
-        el('img', { src: thumbUrl, alt: att.name || t('attachment'), loading: 'lazy', decoding: 'async' })
+        el('img', { src: thumbUrl, alt: att.name || 'Attachment', loading: 'lazy', decoding: 'async' })
       );
     });
     imagesEl = el('div', { class: 'todoInfo__section' },
-      el('div', { class: 'todoInfo__label' }, t('imagesLabel')),
+      el('div', { class: 'todoInfo__label' }, 'Images'),
       el('div', { class: 'thumbGrid' }, ...thumbs)
     );
   }
@@ -183,7 +182,7 @@ export async function openTodoInfo({ todo, db, modalHost, onEdit }) {
     const img = el('img', { 
       class: 'imageViewer__img', 
       src: urls[currentIndex], 
-      alt: t('attachment')
+      alt: 'Image'
     });
 
     // Counter element (e.g., "1 / 3")
@@ -356,7 +355,7 @@ export async function openTodoInfo({ todo, db, modalHost, onEdit }) {
     const closeBtn = el('button', { 
       class: 'imageViewer__close', 
       type: 'button',
-      'aria-label': t('close')
+      'aria-label': 'Close'
     }, '×');
 
     const overlay = el('div', { class: 'imageViewer' },
@@ -388,8 +387,8 @@ export async function openTodoInfo({ todo, db, modalHost, onEdit }) {
 
   // Status
   const statusEl = el('div', { class: 'todoInfo__row' },
-    el('span', { class: 'todoInfo__label' }, t('status')),
-    el('span', { class: 'todoInfo__value' }, todo.completed ? t('completed') : t('active'))
+    el('span', { class: 'todoInfo__label' }, 'Status'),
+    el('span', { class: 'todoInfo__value' }, todo.completed ? 'Completed' : 'Active')
   );
 
   const content = el('div', { class: 'stack' },
@@ -403,11 +402,11 @@ export async function openTodoInfo({ todo, db, modalHost, onEdit }) {
   );
 
   openModal(modalHost, {
-    title: t('todoDetails'),
+    title: 'Todo Details',
     content,
     actions: [
-      { label: t('edit'), class: 'btn', onClick: () => { onEdit?.(todo); return true; } },
-      { label: t('close'), class: 'btn btn--primary', onClick: () => true }
+      { label: 'Edit', class: 'btn', onClick: () => { onEdit?.(todo); return true; } },
+      { label: 'Close', class: 'btn btn--primary', onClick: () => true }
     ],
     onClose: () => {
       // Revoke object URLs

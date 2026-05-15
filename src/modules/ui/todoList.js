@@ -137,44 +137,6 @@ export function renderTodoList({
     ),
     row2);
 
-    // Swipe gesture support (togglable via enableSwipe setting in Settings > Behaviors)
-    let swipeStartX = 0, swipeCurrentX = 0, swiping = false;
-    const SWIPE_THRESHOLD = 80;
-    item.addEventListener('touchstart', (e) => {
-      swipeStartX = e.touches[0].clientX;
-      swipeCurrentX = swipeStartX;
-      swiping = false;
-    }, { passive: true });
-    item.addEventListener('touchmove', (e) => {
-      swipeCurrentX = e.touches[0].clientX;
-      const diff = swipeStartX - swipeCurrentX;
-      if (Math.abs(diff) > 15) {
-        swiping = true;
-        e.preventDefault();
-        const tx = Math.max(-120, Math.min(0, -diff));
-        item.style.transition = 'none';
-        item.style.transform = `translateX(${tx}px)`;
-        item.style.opacity = `${1 - Math.abs(tx) / 200}`;
-      }
-    }, { passive: false });
-    item.addEventListener('touchend', () => {
-      if (!swiping) return;
-      const diff = swipeStartX - swipeCurrentX;
-      item.style.transition = 'transform 250ms ease, opacity 250ms ease';
-      if (diff > SWIPE_THRESHOLD && !todo.completed && mode !== 'archive') {
-        item.style.transform = 'translateX(-100%)';
-        item.style.opacity = '0';
-        setTimeout(() => {
-          burstFromElement(item);
-          onToggleCompleted?.(todo, true);
-        }, 200);
-      } else {
-        item.style.transform = '';
-        item.style.opacity = '';
-      }
-      swiping = false;
-    }, { passive: true });
-
     return item;
   }
 

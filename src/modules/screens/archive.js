@@ -29,7 +29,7 @@ export async function renderArchive(ctx) {
   const binBtn = el('button', { 
     class: 'topbar__addBtn', 
     type: 'button', 
-    'aria-label': t('bin'), 
+    'aria-label': 'Bin', 
     onClick: () => openBinModal(ctx, { onRestore: () => renderArchive(ctx) }) 
   }, '🗑️');
   topbarActions.append(binBtn);
@@ -54,7 +54,7 @@ export async function renderArchive(ctx) {
   for (const t of archived) {
     const date = t.completedAt ? new Date(t.completedAt).toLocaleDateString(undefined, {
       weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
-    }) : t('unknownDate');
+    }) : 'Unknown date';
     
     if (!groups.has(date)) groups.set(date, []);
     groups.get(date).push(t);
@@ -80,7 +80,7 @@ export async function renderArchive(ctx) {
   const collapseBtn = el('button', {
       class: 'topbar__addBtn',
       type: 'button',
-      'aria-label': allCollapsed ? t('expandAll') : t('collapseAll'),
+      'aria-label': allCollapsed ? 'Expand all' : 'Collapse all',
       style: 'margin-right: 12px;', 
       onClick: () => {
         hapticLight();
@@ -126,11 +126,11 @@ export async function renderArchive(ctx) {
         const unprotected = groupTodos.filter(t => !t.protected);
         const protectedCount = groupTodos.length - unprotected.length;
 
-         if (unprotected.length === 0 && protectedCount > 0) {
-              openModal(modalHost, {
-                title: t('groupProtected'),
-                content: el('div', {}, t('groupProtectedMsg')),
-                actions: [{ label: t('ok'), class: 'btn btn--primary', onClick: () => true }]
+        if (unprotected.length === 0 && protectedCount > 0) {
+             openModal(modalHost, {
+                title: 'Group Protected',
+                content: el('div', {}, 'All tasks in this group are protected and cannot be deleted.'),
+                actions: [{ label: 'OK', class: 'btn btn--primary', onClick: () => true }]
               });
              return;
         }
@@ -138,7 +138,7 @@ export async function renderArchive(ctx) {
         const ok = await confirm(modalHost, {
           title: 'Delete group?',
           message: `Delete ${unprotected.length} archived todos from ${date}?` + (protectedCount ? ` (${protectedCount} protected items will be kept)` : ''),
-          confirmLabel: t('delete'),
+          confirmLabel: 'Delete',
           danger: true
         });
         
@@ -213,7 +213,7 @@ export async function renderArchive(ctx) {
           projects,
           includeInbox: true,
           initial,
-          confirmLabel: t('restoreItem')
+          confirmLabel: 'Restore'
         });
         if (dest === undefined) return;
         await restoreTodo(db, todo, dest);
@@ -256,7 +256,7 @@ export async function renderArchive(ctx) {
         const ok = await confirm(modalHost, {
           title: t('deleteArchivedTodo') || 'Delete archived todo?',
           message: t('deleteArchivedTodoMsg') || 'This will permanently delete the todo and its images.',
-          confirmLabel: t('delete') || t('delete'),
+          confirmLabel: t('delete') || 'Delete',
           danger: true
         });
         if (!ok) return;
@@ -268,7 +268,7 @@ export async function renderArchive(ctx) {
         actions: [
           { label: 'Edit', class: 'btn', onClick: () => (ctx.openTodoEditor({ mode: 'edit', todoId: todo.id, projectId: todo.projectId, db }), true) },
           { label: 'Share…', class: 'btn', onClick: async () => { const { exportTodoToFile } = await import('../utils/share.js'); await exportTodoToFile(db, todo); return true; } },
-          { label: t('restoreItem'), class: 'btn', onClick: async () => {
+          { label: 'Restore', class: 'btn', onClick: async () => {
             const initial = todo.archivedFromProjectId && projectsById.has(todo.archivedFromProjectId)
               ? todo.archivedFromProjectId
               : null;
@@ -277,7 +277,7 @@ export async function renderArchive(ctx) {
               projects,
               includeInbox: true,
               initial,
-              confirmLabel: t('restoreItem')
+              confirmLabel: 'Restore'
             });
             if (dest !== undefined) {
               await restoreTodo(db, todo, dest);
@@ -285,7 +285,7 @@ export async function renderArchive(ctx) {
             }
             return true;
           } },
-          { label: t('delete') || t('delete'), class: 'btn btn--danger', onClick: async () => {
+          { label: t('delete') || 'Delete', class: 'btn btn--danger', onClick: async () => {
             if (todo.protected) {
               openModal(modalHost, {
                 title: t('taskProtected') || 'Task Protected',
@@ -321,7 +321,7 @@ export async function renderArchive(ctx) {
             const ok = await confirm(modalHost, {
               title: t('deleteArchivedTodo') || 'Delete archived todo?',
               message: t('deleteArchivedTodoMsg') || 'This will permanently delete the todo and its images.',
-              confirmLabel: t('delete') || t('delete'),
+              confirmLabel: t('delete') || 'Delete',
               danger: true
             });
             if (ok) {
