@@ -8,6 +8,7 @@ import { renderSettings } from './screens/settings.js';
 import { renderHelp } from './screens/help.js';
 import { renderSearch } from './screens/search.js';
 import { renderStats } from './screens/stats.js';
+import { renderDebug } from './screens/debug.js';
 import { openTodoEditor } from './ui/todoEditor.js';
 import { createQuickAddButton, updateQuickAddButton } from './ui/quickAdd.js';
 import { el } from './ui/dom.js';
@@ -266,6 +267,12 @@ export function initApp(root) {
           el('button', { class: 'topbar__backBtn', type: 'button', 'aria-label': t('back'), onClick: () => { hapticLight(); location.hash = '#settings'; } }, '←')
         );
         await renderHelp(ctx);
+      } else if (route.name === 'debug') {
+        topbarTitle.textContent = 'Debug';
+        topbarActions.append(
+          el('button', { class: 'topbar__backBtn', type: 'button', 'aria-label': t('back'), onClick: () => { hapticLight(); location.hash = '#settings'; } }, '←')
+        );
+        await renderDebug(ctx);
       } else {
         location.hash = '#inbox';
       }

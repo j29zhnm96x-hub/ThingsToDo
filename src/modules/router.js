@@ -28,6 +28,7 @@ function parseHash(hash) {
     return { name: 'search', group: 'search', params: { scope } };
   }
   if (name === 'help') return { name: 'help', group: 'settings', params: {} };
+  if (name === 'debug') return { name: 'debug', group: 'settings', params: {} };
 
   return { name: 'inbox', group: 'inbox', params: {} };
 }
