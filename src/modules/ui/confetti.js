@@ -1,7 +1,15 @@
 // Subtle confetti burst on task completion
 // Small colored particles burst from the checkbox position
+// Colors are derived from the current theme palette (--accent / --accent2).
 
-const COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+function getPaletteColors() {
+  const style = getComputedStyle(document.documentElement);
+  const c1 = style.getPropertyValue('--accent').trim();
+  const c2 = style.getPropertyValue('--accent2').trim();
+  // fallback if CSS variables aren't resolved yet
+  if (!c1 || !c2) return ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+  return [c1, c2];
+}
 
 let enabled = true;
 let loaded = false;
@@ -20,6 +28,7 @@ async function loadSetting() {
 
 export function burstConfetti(x, y) {
   if (!enabled) return;
+  const COLORS = getPaletteColors();
   const count = 12;
   const container = document.body;
 
