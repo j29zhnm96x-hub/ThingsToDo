@@ -189,7 +189,6 @@ export function initApp(root) {
         topbarTitle.textContent = t('projects');
         appendDateToTopbar(topbarActions);
         topbarActions.append(
-          el('button', { class: 'topbar__addBtn', type: 'button', 'aria-label': t('newProject'), onClick: () => { hapticLight(); openCreateProject({ db, modalHost, onCreated: () => router.refresh() }); } }, '+'),
           el('button', { class: 'topbar__addBtn', type: 'button', 'aria-label': t('search'), onClick: () => { hapticLight(); location.hash = '#search'; } }, '🔍')
         );
         await renderProjects(ctx);

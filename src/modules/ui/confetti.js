@@ -49,14 +49,24 @@ export async function burstConfetti(x, y) {
   const count = 12;
   const container = document.body;
 
+  const cx = window.innerWidth / 2;
+  const cy = window.innerHeight / 2;
+  const dx = cx - x;
+  const dy = cy - y;
+  const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+
   for (let i = 0; i < count; i++) {
     const dot = document.createElement('div');
     const color = COLORS[Math.floor(Math.random() * COLORS.length)];
     const size = 4 + Math.random() * 4;
-    const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
-    const velocity = 40 + Math.random() * 60;
-    const vx = Math.cos(angle) * velocity;
-    const vy = Math.sin(angle) * velocity - 20;
+    // Spread perpendicular to center direction for a fan effect
+    const spread = (Math.random() - 0.5) * 60;
+    const perpX = -dy / dist * spread;
+    const perpY = dx / dist * spread;
+    // Each particle moves a random portion of the distance to center
+    const travel = 0.4 + Math.random() * 0.3;
+    const tx = x + dx * travel + perpX;
+    const ty = y + dy * travel + perpY;
 
     dot.style.cssText = `
       position: fixed;
@@ -74,7 +84,7 @@ export async function burstConfetti(x, y) {
     container.appendChild(dot);
 
     let startTime = performance.now();
-    const duration = 500 + Math.random() * 300;
+    const duration = 350 + Math.random() * 200;
 
     function animate(time) {
       const elapsed = time - startTime;
@@ -84,9 +94,9 @@ export async function burstConfetti(x, y) {
         return;
       }
       const ease = 1 - Math.pow(1 - progress, 3);
-      dot.style.left = `${x + vx * ease}px`;
-      dot.style.top = `${y + vy * ease + 100 * ease * ease}px`;
-      dot.style.opacity = `${1 - progress}`;
+      dot.style.left = `${x + (tx - x) * ease}px`;
+      dot.style.top = `${y + (ty - y) * ease}px`;
+      dot.style.opacity = `${Math.max(0, 1 - progress * 1.3)}`;
       dot.style.transform = `rotate(${progress * 360}deg)`;
       requestAnimationFrame(animate);
     }
