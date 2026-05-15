@@ -1,14 +1,23 @@
-// Subtle confetti burst on task completion
-// Small colored particles burst from the checkbox position
-// Colors are derived from the current theme palette (--accent / --accent2).
+// Confetti burst on task completion.
+// Particles converge from the checkbox toward screen center,
+// using random shades of the current theme palette accent color.
 
-function getPaletteColors() {
+function hexToRgb(hex) {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return m ? { r: parseInt(m[1], 16), g: parseInt(m[2], 16), b: parseInt(m[3], 16) } : null;
+}
+
+function randomShade(baseColor) {
+  const rgb = hexToRgb(baseColor);
+  if (!rgb) return baseColor;
+  // vary each channel between 70% and 130% of original, clamped 0-255
+  const vary = (v) => Math.round(Math.min(255, Math.max(0, v * (0.7 + Math.random() * 0.6))));
+  return `rgb(${vary(rgb.r)}, ${vary(rgb.g)}, ${vary(rgb.b)})`;
+}
+
+function getAccentColor() {
   const style = getComputedStyle(document.documentElement);
-  const c1 = style.getPropertyValue('--accent').trim();
-  const c2 = style.getPropertyValue('--accent2').trim();
-  // fallback if CSS variables aren't resolved yet
-  if (!c1 || !c2) return ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
-  return [c1, c2];
+  return style.getPropertyValue('--accent').trim() || '#22c55e';
 }
 
 let audioCtx = null;
@@ -45,8 +54,8 @@ export async function burstConfetti(x, y) {
   const flags = await shouldPlay();
   if (!flags.visual) return;
   if (flags.sound) playSound();
-  const COLORS = getPaletteColors();
-  const count = 12;
+  const accent = getAccentColor();
+  const count = 18;
   const container = document.body;
 
   const cx = window.innerWidth / 2;
@@ -57,14 +66,12 @@ export async function burstConfetti(x, y) {
 
   for (let i = 0; i < count; i++) {
     const dot = document.createElement('div');
-    const color = COLORS[Math.floor(Math.random() * COLORS.length)];
-    const size = 4 + Math.random() * 4;
-    // Spread perpendicular to center direction for a fan effect
-    const spread = (Math.random() - 0.5) * 60;
+    const color = randomShade(accent);
+    const size = 6 + Math.random() * 8;
+    const spread = (Math.random() - 0.5) * 80;
     const perpX = -dy / dist * spread;
     const perpY = dx / dist * spread;
-    // Each particle moves a random portion of the distance to center
-    const travel = 0.4 + Math.random() * 0.3;
+    const travel = 0.3 + Math.random() * 0.35;
     const tx = x + dx * travel + perpX;
     const ty = y + dy * travel + perpY;
 
@@ -84,7 +91,7 @@ export async function burstConfetti(x, y) {
     container.appendChild(dot);
 
     let startTime = performance.now();
-    const duration = 350 + Math.random() * 200;
+    const duration = 600 + Math.random() * 400;
 
     function animate(time) {
       const elapsed = time - startTime;
@@ -96,8 +103,8 @@ export async function burstConfetti(x, y) {
       const ease = 1 - Math.pow(1 - progress, 3);
       dot.style.left = `${x + (tx - x) * ease}px`;
       dot.style.top = `${y + (ty - y) * ease}px`;
-      dot.style.opacity = `${Math.max(0, 1 - progress * 1.3)}`;
-      dot.style.transform = `rotate(${progress * 360}deg)`;
+      dot.style.opacity = `${Math.max(0, 1 - progress * 1.1)}`;
+      dot.style.transform = `rotate(${progress * 360}deg) scale(${1 + progress * 0.5})`;
       requestAnimationFrame(animate);
     }
     requestAnimationFrame(animate);
