@@ -90,21 +90,36 @@ export async function burstConfetti(x, y) {
     `;
     container.appendChild(dot);
 
-    let startTime = performance.now();
-    const duration = 1600 + Math.random() * 800;
+    // Firework-style: fan upward-right, gravity kicks in after a moment
+    const spreadAngle = (Math.PI / 4) + (Math.random() - 0.5) * 1.4;
+    const speed = 200 + Math.random() * 180;
+    let vx = Math.cos(spreadAngle) * speed;
+    let vy = -Math.abs(Math.sin(spreadAngle) * speed) - 140;
+    const gravity = 160;
+    let px = x, py = y;
+    let prevTime = 0;
+    let gravDelay = 0;
+    let opacity = 1;
 
     function animate(time) {
-      const elapsed = time - startTime;
-      const progress = elapsed / duration;
-      if (progress >= 1) {
+      if (!prevTime) prevTime = time;
+      const dt = Math.min((time - prevTime) / 1000, 0.05);
+      prevTime = time;
+      gravDelay += dt;
+      // Gravity starts weak and reaches full after ~0.5s
+      const gravFactor = Math.min(Math.max(0, gravDelay - 0.3) * 2, 1);
+      vy += gravity * gravFactor * dt;
+      px += vx * dt;
+      py += vy * dt;
+      opacity -= dt * 0.4;
+      if (opacity <= 0 || py > window.innerHeight + 50) {
         dot.remove();
         return;
       }
-      const ease = 1 - Math.pow(1 - progress, 2);
-      dot.style.left = `${x + (tx - x) * ease}px`;
-      dot.style.top = `${y + (ty - y) * ease}px`;
-      dot.style.opacity = `${Math.max(0, 1 - progress * 1.2)}`;
-      dot.style.transform = `rotate(${progress * 360}deg) scale(${1 + progress * 0.5})`;
+      dot.style.left = `${px}px`;
+      dot.style.top = `${py}px`;
+      dot.style.opacity = `${Math.max(0, opacity)}`;
+      dot.style.transform = `rotate(${px * 2}deg) scale(${1 + dt * 0.4})`;
       requestAnimationFrame(animate);
     }
     requestAnimationFrame(animate);
