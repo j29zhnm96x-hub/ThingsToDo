@@ -55,7 +55,7 @@ export async function burstConfetti(x, y) {
   if (!flags.visual) return;
   if (flags.sound) playSound();
   const accent = getAccentColor();
-  const count = 18;
+  const count = 36;
   const container = document.body;
 
   const cx = window.innerWidth / 2;
@@ -67,7 +67,7 @@ export async function burstConfetti(x, y) {
   for (let i = 0; i < count; i++) {
     const dot = document.createElement('div');
     const color = randomShade(accent);
-    const size = 6 + Math.random() * 8;
+    const size = 3 + Math.random() * 5;
     const spread = (Math.random() - 0.5) * 80;
     const perpX = -dy / dist * spread;
     const perpY = dx / dist * spread;
@@ -91,7 +91,7 @@ export async function burstConfetti(x, y) {
     container.appendChild(dot);
 
     let startTime = performance.now();
-    const duration = 800 + Math.random() * 400;
+    const duration = 1600 + Math.random() * 800;
 
     function animate(time) {
       const elapsed = time - startTime;
