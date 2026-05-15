@@ -12,7 +12,25 @@ function getPaletteColors() {
 }
 
 let enabled = true;
+let soundEnabled = true;
 let loaded = false;
+
+let audioCtx = null;
+async function playSound() {
+  if (!soundEnabled) return;
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const resp = await fetch('./assets/confetti_sound.mp3');
+    const buf = await resp.arrayBuffer();
+    const audio = await audioCtx.decodeAudioData(buf);
+    const src = audioCtx.createBufferSource();
+    src.buffer = audio;
+    src.connect(audioCtx.destination);
+    src.start();
+  } catch {
+    // Silently fail — sound is optional
+  }
+}
 
 async function loadSetting() {
   if (loaded) return;
@@ -20,6 +38,7 @@ async function loadSetting() {
     const { db } = await import('../data/db.js');
     const settings = await db.settings.get();
     enabled = settings.enableConfetti !== false;
+    soundEnabled = settings.enableConfettiSound !== false;
   } catch {
     // Fall back to default (enabled)
   }
@@ -28,6 +47,7 @@ async function loadSetting() {
 
 export function burstConfetti(x, y) {
   if (!enabled) return;
+  playSound();
   const COLORS = getPaletteColors();
   const count = 12;
   const container = document.body;

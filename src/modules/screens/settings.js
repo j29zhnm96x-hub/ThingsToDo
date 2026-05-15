@@ -34,6 +34,7 @@ export async function renderSettings(ctx) {
   const voiceQuality = settings.voiceQuality || 'low'; // Default to low
   const groupActiveTasks = settings.groupActiveTasks === true;
   const enableConfetti = settings.enableConfetti !== false; // Default true
+  const enableConfettiSound = settings.enableConfettiSound !== false; // Default true
   const enableSwipe = settings.enableSwipe === true; // Default false
 
   const themeToggle = el('input', {
@@ -146,6 +147,11 @@ export async function renderSettings(ctx) {
     const next = { ...await db.settings.get(), enableConfetti: confettiToggle.checked };
     await db.settings.put(next);
   });
+  const confettiSoundToggle = el('input', { type: 'checkbox', checked: enableConfettiSound ? 'checked' : null, 'aria-label': t('enableConfettiSound') });
+  confettiSoundToggle.addEventListener('change', async () => {
+    const next = { ...await db.settings.get(), enableConfettiSound: confettiSoundToggle.checked };
+    await db.settings.put(next);
+  });
   const swipeToggle = el('input', { type: 'checkbox', checked: enableSwipe ? 'checked' : null, 'aria-label': t('enableSwipe') });
   swipeToggle.addEventListener('change', async () => {
     const next = { ...await db.settings.get(), enableSwipe: swipeToggle.checked };
@@ -208,6 +214,10 @@ export async function renderSettings(ctx) {
       el('div', { class: 'row' },
         el('div', { class: 'small' }, t('enableConfetti')),
         confettiToggle
+      ),
+      el('div', { class: 'row' },
+        el('div', { class: 'small' }, t('enableConfettiSound')),
+        confettiSoundToggle
       ),
       el('div', { class: 'row' },
         el('div', { class: 'small' }, t('enableSwipe')),
