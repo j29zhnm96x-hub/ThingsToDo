@@ -1,6 +1,6 @@
 import { el, clear } from '../ui/dom.js';
 import { t } from '../utils/i18n.js';
-import { getTodayStats, getStreakData, getWeeklyData, getMonthlyData, getCompletionRate, getProductiveDay } from '../stats.js';
+import { getTodayStats, getStreakData, getWeeklyData, getCompletionRate, getProductiveDay } from '../stats.js';
 
 export async function renderStats(ctx) {
   const { main, db } = ctx;
@@ -9,11 +9,10 @@ export async function renderStats(ctx) {
   const container = el('div', { class: 'stats' });
 
   // Load all data in parallel
-  const [today, streak, weekly, monthly, rate, bestDay] = await Promise.all([
+  const [today, streak, weekly, rate, bestDay] = await Promise.all([
     getTodayStats(db),
     getStreakData(db, 30),
     getWeeklyData(db),
-    getMonthlyData(db),
     getCompletionRate(db),
     getProductiveDay(db)
   ]);
@@ -75,42 +74,7 @@ export async function renderStats(ctx) {
     )
   ));
 
-  // ── Card 4: Monthly Heatmap ──
-  const maxMonthCount = Math.max(...monthly.map(m => m.count), 1);
-  const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  // Group by weekday rows
-  const rows = weekdays.map((name, dayIdx) => {
-    const cells = monthly.filter(m => m.weekday === dayIdx);
-    return { name, cells };
-  });
-
-  container.append(card(
-    '🗓️', t('thisMonth'),
-    el('div', { class: 'stats-heatmap' },
-      ...rows.map(row =>
-        el('div', { class: 'stats-heatmap-row' },
-          el('span', { class: 'stats-heatmap-label' }, row.name),
-          el('div', { class: 'stats-heatmap-cells' },
-            ...row.cells.map(m => {
-              const intensity = m.count / maxMonthCount;
-              const level = intensity === 0 ? 0 : Math.min(Math.ceil(intensity * 5), 5);
-              return el('div', {
-                class: `stats-cell level-${level}${m.count > 0 ? ' has' : ''}`,
-                title: `${m.date}: ${m.count} tasks`
-              });
-            })
-          )
-        )
-      )
-    ),
-    el('div', { class: 'stats-heatmap-legend' },
-      el('span', {}, 'Less'),
-      ...[0, 1, 2, 3, 4, 5].map(l => el('div', { class: `stats-cell level-${l}` })),
-      el('span', {}, 'More')
-    )
-  ));
-
-  // ── Card 5: Overall Progress ──
+  // ── Card 4: Overall Progress ──
   const ringColor = rate.percent >= 50 ? '#22c55e' : rate.percent >= 25 ? '#f59e0b' : '#ef4444';
   container.append(card(
     '📈', t('overallProgress'),
