@@ -106,8 +106,8 @@ export async function burstConfetti(x, y) {
       const dt = Math.min((time - prevTime) / 1000, 0.05);
       prevTime = time;
       gravDelay += dt;
-      // Gravity starts weak and reaches full after ~0.5s
-      const gravFactor = Math.min(Math.max(0, gravDelay - 0.3) * 2, 1);
+      // No gravity for first 0.5s, then ramps up to full over 0.5s
+      const gravFactor = Math.min(Math.max(0, gravDelay - 0.5) * 2, 1);
       vy += gravity * gravFactor * dt;
       px += vx * dt;
       py += vy * dt;
