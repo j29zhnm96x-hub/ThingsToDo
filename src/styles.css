@@ -2600,8 +2600,8 @@ html, body {
 /* ── Quick Add Floating Button ── */
 .quickAdd-btn {
   position: fixed;
-  right: 24px;
-  bottom: calc(80px + var(--safe-bottom, 0px));
+  right: 39px;
+  bottom: calc(95px + var(--safe-bottom, 0px));
   width: 52px;
   height: 52px;
   border-radius: 14px;
