@@ -35,7 +35,6 @@ export async function renderSettings(ctx) {
   const groupActiveTasks = settings.groupActiveTasks === true;
   const enableConfetti = settings.enableConfetti !== false; // Default true
   const enableSwipe = settings.enableSwipe === true; // Default false
-  const enableQuickAdd = settings.enableQuickAdd !== false; // Default true
 
   const themeToggle = el('input', {
     type: 'checkbox',
@@ -152,12 +151,6 @@ export async function renderSettings(ctx) {
     const next = { ...await db.settings.get(), enableSwipe: swipeToggle.checked };
     await db.settings.put(next);
   });
-  const quickAddToggle = el('input', { type: 'checkbox', checked: enableQuickAdd ? 'checked' : null, 'aria-label': t('enableQuickAdd') });
-  quickAddToggle.addEventListener('change', async () => {
-    const next = { ...await db.settings.get(), enableQuickAdd: quickAddToggle.checked };
-    await db.settings.put(next);
-  });
-
   const resetBtn = el('button', { class: 'btn btn--danger', type: 'button', onClick: resetData }, t('clearAllData'));
   const manageSuggestionsBtn = el('button', { class: 'btn', type: 'button', onClick: openSuggestionHistoryModal }, t('clearSuggestionHistory') || 'Clear suggestion history');
 
@@ -219,10 +212,6 @@ export async function renderSettings(ctx) {
       el('div', { class: 'row' },
         el('div', { class: 'small' }, t('enableSwipe')),
         swipeToggle
-      ),
-      el('div', { class: 'row' },
-        el('div', { class: 'small' }, t('enableQuickAdd')),
-        quickAddToggle
       )
     ),
     el('div', { class: 'card stack' },
