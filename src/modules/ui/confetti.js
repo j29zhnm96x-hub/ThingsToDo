@@ -92,21 +92,24 @@ export async function burstConfetti(x, y) {
 
     // Firework-style burst: fan upward-right, gravity pulls down
     const spreadAngle = (Math.PI / 4) + (Math.random() - 0.5) * 1.2; // upward-right fan
-    const speed = 200 + Math.random() * 160;
+    const speed = 220 + Math.random() * 180;
     let vx = Math.cos(spreadAngle) * speed;
-    let vy = -Math.abs(Math.sin(spreadAngle) * speed) - 80; // always upward
-    const gravity = 140;
+    let vy = -Math.abs(Math.sin(spreadAngle) * speed) - 120; // strong upward kick
+    const maxGravity = 160;
     let px = x, py = y;
-    let startTime = performance.now();
+    let totalTime = 0;
     let opacity = 1;
 
     function animate(time) {
       const dt = Math.min((time - startTime) / 1000, 3);
       startTime = time;
-      vy += gravity * dt;
+      totalTime += dt;
+      // Gravity ramps up: almost none at start, full after ~30% into flight
+      const gravityFactor = Math.min(totalTime * 2.5, 1);
+      vy += maxGravity * gravityFactor * dt;
       px += vx * dt;
       py += vy * dt;
-      opacity -= dt * 0.5;
+      opacity -= dt * 0.45;
       if (opacity <= 0 || py > window.innerHeight + 50) {
         dot.remove();
         return;
