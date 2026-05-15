@@ -292,7 +292,7 @@ export function initApp(root) {
           }
         }
         // Update quick add button visibility — inbox and project pages
-        updateQuickAddButton(quickAddBtn, route.group);
+        updateQuickAddButton(quickAddBtn, route.group, route.name);
       }, 100);
     }
   });

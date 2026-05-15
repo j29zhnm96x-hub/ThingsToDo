@@ -24,7 +24,12 @@ export function createQuickAddButton(ctx) {
  * Show/hide the quick add button.
  * Visible on inbox and projects pages — always shown there.
  */
-export function updateQuickAddButton(btn, routeGroup) {
+export function updateQuickAddButton(btn, routeGroup, routeName) {
   if (!btn) return;
+  // Hide on individual project detail pages (has its own + button)
+  if (routeName === 'project') {
+    btn.style.display = 'none';
+    return;
+  }
   btn.style.display = (routeGroup === 'inbox' || routeGroup === 'projects') ? '' : 'none';
 }
