@@ -2629,6 +2629,10 @@ html[data-theme='light'] .quickAdd-btn {
 html[data-theme='dark'] .quickAdd-btn {
   color: white;
 }
+/* Keep list items from hiding behind the floating + button */
+.main .list {
+  padding-bottom: 70px;
+}
 
 /* ── View Toggle Pills ── */
 .pill-btn {
