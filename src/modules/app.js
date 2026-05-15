@@ -107,6 +107,7 @@ export function initApp(root) {
     modalHost,
     // Always pass `db` so create/edit both work.
     openTodoEditor: (opts) => openTodoEditor({ ...opts, db, modalHost, onChange: () => router.refresh() }),
+    openInboxAddMenu: (mh) => openInboxAddMenu(ctx, mh),
     db
   };
 
@@ -294,8 +295,8 @@ export function initApp(root) {
             }, 1800);
           }
         }
-        // Update quick add button visibility
-        updateQuickAddButton(quickAddBtn, ctx.db);
+        // Update quick add button visibility — only on inbox page
+        updateQuickAddButton(quickAddBtn, ctx.db, route.group);
       }, 100);
     }
   });
