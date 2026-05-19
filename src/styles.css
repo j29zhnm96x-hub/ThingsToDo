@@ -2630,35 +2630,6 @@ html[data-theme='light'] .quickAdd-btn {
 html[data-theme='dark'] .quickAdd-btn {
   color: white;
 }
-/* Inline + button in the view-toggle row (inbox) */
-.quickAdd-btn-inline {
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
-  border: none;
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
-  color: white;
-  font-size: 30px;
-  font-weight: 600;
-  line-height: 1;
-  box-shadow: 0 2px 10px var(--glow);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: transform 150ms ease, box-shadow 150ms ease;
-}
-.quickAdd-btn-inline:active {
-  transform: scale(0.92);
-}
-html[data-theme='light'] .quickAdd-btn-inline {
-  color: white;
-  box-shadow: 0 2px 12px rgba(99, 102, 241, 0.3);
-}
-html[data-theme='dark'] .quickAdd-btn-inline {
-  color: white;
-}
 /* ── View Toggle Pills ── */
 .pill-btn {
   padding: 6px 16px;

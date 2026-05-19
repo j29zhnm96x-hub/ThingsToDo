@@ -21,15 +21,10 @@ export function createQuickAddButton(ctx) {
 }
 
 /**
- * Show/hide the quick add button.
- * Visible on projects listing page only — inbox has its own inline + button.
+ * Show/hide the floating + button.
+ * Only visible on the inbox page.
  */
 export function updateQuickAddButton(btn, routeGroup, routeName) {
   if (!btn) return;
-  // Hide on inbox (has inline + in view toggle) and on project detail (has its own +)
-  if (routeName === 'inbox' || routeName === 'project') {
-    btn.style.display = 'none';
-    return;
-  }
-  btn.style.display = (routeGroup === 'projects') ? '' : 'none';
+  btn.style.display = routeName === 'inbox' ? '' : 'none';
 }

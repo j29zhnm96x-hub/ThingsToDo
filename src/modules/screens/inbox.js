@@ -46,16 +46,7 @@ export async function renderInbox(ctx) {
       renderInbox(ctx);
     }
   }, t('today'));
-  const addInlineBtn = el('button', {
-    class: 'quickAdd-btn-inline',
-    type: 'button',
-    'aria-label': t('addTask'),
-    style: { marginLeft: 'auto' },
-    onClick: () => {
-      if (ctx.openInboxAddMenu) ctx.openInboxAddMenu(ctx.modalHost);
-    }
-  }, '+');
-  const viewToggle = el('div', { class: 'view-toggle', style: 'display:flex;align-items:center;gap:6px;margin-bottom:12px' }, toggleAll, toggleToday, addInlineBtn);
+  const viewToggle = el('div', { class: 'view-toggle', style: 'display:flex;gap:6px;margin-bottom:12px' }, toggleAll, toggleToday);
 
   const allTodos = await db.todos.listActive();
 
