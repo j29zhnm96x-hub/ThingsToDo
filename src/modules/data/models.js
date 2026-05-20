@@ -52,7 +52,7 @@ export function newTodo({ title, projectId, pageId = null }) {
     archivedAt: null,
     archivedFromProjectId: null,
     showInInbox: false,
-    inboxBefore: 0,
+    inboxBefore: null, // null = never, 0 = on due date, N = N days before
     order: 0,
     // Recurrence fields
     recurrenceType: null, // 'daily' | 'weekly' | 'monthly' | 'yearly' | null
