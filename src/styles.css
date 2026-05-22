@@ -1,30 +1,34 @@
 :root {
   /* Priority colors */
-  --pUrgent: #ff0000; /* Urgent */
-  --p0: #ef4444; /* Highest (red) */
-  --p1: #f97316; /* High (orange) */
-  --p2: #eab308; /* Medium (yellow) */
-  --p3: #22c55e; /* Low (green) */
+  --pUrgent: #ff0000;
+  --p0: #ef4444;
+  --p1: #f97316;
+  --p2: #eab308;
+  --p3: #22c55e;
 
-  /* Dark Mode - Rich Deep Ocean Theme */
-  --bg: #0a0f1a;
-  --bg-gradient: linear-gradient(135deg, #0a0f1a 0%, #0d1526 50%, #111d2e 100%);
-  --surface: #101828;
-  --surface2: #152033;
-  --surface3: #1a2840;
-  --text: #f1f5f9;
-  --muted: #94a3b8;
-  --border: #1e3a5f;
-  --danger: #ef4444;
-  --ok: #22c55e;
-  --accent: #06b6d4; /* Cyan accent */
-  --accent2: #8b5cf6; /* Purple secondary */
-  --glow: rgba(6, 182, 212, 0.3);
+  /* Dark Mode - Midnight Iris Theme */
+  --bg: #0c0a14;
+  --bg-gradient: linear-gradient(135deg, #0c0a14 0%, #110e1c 50%, #161225 100%);
+  --surface: #131020;
+  --surface2: #19152a;
+  --surface3: #211c35;
+  --text: #eeecf4;
+  --muted: #9690a8;
+  --border: #2a263e;
+  --danger: #f87171;
+  --ok: #4ade80;
+  --accent: #a78bfa;
+  --accent2: #818cf8;
+  --glow: rgba(167, 139, 250, 0.18);
 
   /* Bar colors */
-  --topbar-bg: linear-gradient(180deg, #0d1526 0%, #101828 100%);
-  --tabbar-bg: linear-gradient(0deg, #080d16 0%, #0d1526 100%);
-  --modal-bg: linear-gradient(145deg, #121c2d 0%, #0f172a 100%);
+  --topbar-bg: linear-gradient(180deg, #110e1c 0%, #131020 100%);
+  --tabbar-bg: linear-gradient(0deg, #0a0812 0%, #110e1c 100%);
+  --modal-bg: linear-gradient(145deg, #161225 0%, #110e1c 100%);
+
+  /* Field overrides for dark */
+  --field: #0c0a14;
+  --field-focus: #19152a;
 }
 
 .notesList {
@@ -175,8 +179,8 @@
   --field-focus: #152033;
 
   /* Card effects */
-  --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 40px rgba(6, 182, 212, 0.05);
-  --card-hover-shadow: 0 8px 30px rgba(0, 0, 0, 0.5), 0 0 50px rgba(6, 182, 212, 0.1);
+  --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.45), 0 0 40px rgba(167, 139, 250, 0.04);
+  --card-hover-shadow: 0 8px 30px rgba(0, 0, 0, 0.55), 0 0 50px rgba(167, 139, 250, 0.08);
 
   --radius: 16px;
   --tap: 44px;
