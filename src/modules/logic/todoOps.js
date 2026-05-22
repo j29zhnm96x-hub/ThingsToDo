@@ -171,23 +171,35 @@ export async function autoEmptyBin(db) {
  * @param {object} todo - The todo being completed
  * @returns {object|null} - The next recurring instance if created, or null
  */
+// Track in-progress completions to prevent duplicate recurring instances
+const completing = new Set();
+
 export async function completeTodo(db, todo) {
-  // Mark as completed
-  const completedTodo = {
-    ...todo,
-    completed: true,
-    completedAt: new Date().toISOString()
-  };
-  
-  await db.todos.put(completedTodo);
-  
-  // If this is a recurring task, create the next instance
-  if (todo.recurrenceType) {
-    const nextInstance = await createNextRecurringInstance(completedTodo, db);
-    return nextInstance;
+  // Guard against double-completion from ghost taps / re-render races
+  if (completing.has(todo.id)) return null;
+  completing.add(todo.id);
+  try {
+    const current = await db.todos.get(todo.id);
+    if (current && current.completed) return null;
+
+    const completedTodo = {
+      ...todo,
+      completed: true,
+      completedAt: new Date().toISOString()
+    };
+    
+    await db.todos.put(completedTodo);
+    
+    // If this is a recurring task, create the next instance
+    if (todo.recurrenceType) {
+      const nextInstance = await createNextRecurringInstance(completedTodo, db);
+      return nextInstance;
+    }
+    
+    return null;
+  } finally {
+    completing.delete(todo.id);
   }
-  
-  return null;
 }
 
 /**
