@@ -55,12 +55,6 @@ export function parseBulkAddTextWithPage(raw = '') {
     } else if (first.endsWith(':')) {
       pageName = first.slice(0, -1).trim();
       itemsText = lines.slice(1).join('\n');
-    } else {
-      // If first line is short and the rest look like items, treat it as page name
-      if (first.length <= 60) {
-        pageName = first;
-        itemsText = lines.slice(1).join('\n');
-      }
     }
   } else {
     // Single-line input: look for `Name: item, item` pattern
