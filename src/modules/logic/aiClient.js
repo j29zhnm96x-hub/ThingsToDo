@@ -40,7 +40,7 @@ Return ONLY valid JSON — no markdown, no explanation.
 
 Rules:
 - priority must be one of: URGENT, P0, P1, P2, P3 (default P2)
-- dueDate must be ISO date string (YYYY-MM-DD) or null
+- dueDate must be ISO date string (YYYY-MM-DD) or null. Use the current date provided in context to calculate relative dates like "tomorrow", "next week", "Monday", "June 15th" etc.
 - If user mentions urgency or deadlines, set appropriate priority
 - If user mentions a "project", "list", or "category" with sub-items, create a project
 - If items have sub-items or checkboxes, use checklist type project with pages
@@ -69,7 +69,11 @@ Response format:
 }`;
 
 function buildSystemPrompt(context) {
-  const ctxLines = [];
+  const today = new Date();
+  const dateStr = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const ctxLines = [
+    `Today is ${dateStr}. Use this as the reference for relative dates like "tomorrow", "next week", "Monday", etc.`
+  ];
   if (context.mode === 'inbox') {
     ctxLines.push('Current context: Inbox — create tasks here, or create new projects (top-level).');
   } else if (context.mode === 'project') {
