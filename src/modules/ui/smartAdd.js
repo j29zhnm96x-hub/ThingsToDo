@@ -107,12 +107,20 @@ export async function openSmartAdd(ctx, context) {
       recognition.interimResults = true;
       recognition.continuous = true;
 
+      // Track final results separately so long speech accumulates instead of overwriting
+      let finalTranscript = '';
+
       recognition.onresult = (event) => {
-        let transcript = '';
+        let interimTranscript = '';
         for (let i = event.resultIndex; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript;
+          const result = event.results[i];
+          if (result.isFinal) {
+            finalTranscript += result[0].transcript + ' ';
+          } else {
+            interimTranscript += result[0].transcript;
+          }
         }
-        textarea.value = transcript;
+        textarea.value = (finalTranscript + interimTranscript).trim();
         textarea.dispatchEvent(new Event('input'));
       };
 
