@@ -308,7 +308,17 @@ export const db = {
       const dbi = await getDb();
       const api = storeApi(dbi, 'settings');
       const existing = await api.get('settings');
-      return existing || { id: 'settings', createdAt: nowIso(), updatedAt: nowIso() };
+      return existing || {
+        id: 'settings',
+        createdAt: nowIso(),
+        updatedAt: nowIso(),
+        aiEnabled: false,
+        aiProvider: 'deepseek',
+        aiEndpoint: 'https://api.deepseek.com/v1',
+        aiApiKey: '',
+        aiModel: 'deepseek-chat',
+        aiSystemPrompt: ''
+      };
     },
     async put(settings) {
       const dbi = await getDb();

@@ -19,6 +19,7 @@ import { t } from './utils/i18n.js';
 import { openModal } from './ui/modal.js';
 import { openRecordingModal } from './ui/voiceMemo.js';
 import { openBulkAddModal } from './ui/bulkAdd.js';
+import { openSmartAdd } from './ui/smartAdd.js';
 import { newTodo } from './data/models.js';
 
 let topbarDateIntervalId = null;
@@ -108,6 +109,7 @@ export function initApp(root) {
     // Always pass `db` so create/edit both work.
     openTodoEditor: (opts) => openTodoEditor({ ...opts, db, modalHost, onChange: () => router.refresh() }),
     openInboxAddMenu: (mh) => openInboxAddMenu(ctx, mh),
+    openSmartAdd: (context) => openSmartAdd(ctx, context),
     db
   };
 
@@ -298,10 +300,13 @@ export function initApp(root) {
   });
 }
 // Inbox add menu (task or voice memo)
-function openInboxAddMenu(ctx, modalHost) {
+async function openInboxAddMenu(ctx, modalHost) {
   let closeModal = null;
 
-  const content = el('div', { class: 'stack' },
+  const settings = await ctx.db.settings.get();
+  const aiEnabled = settings.aiEnabled === true;
+
+  const buttons = [
     el('button', {
       class: 'btn btn--primary',
       style: { justifyContent: 'flex-start', padding: '16px' },
@@ -326,21 +331,36 @@ function openInboxAddMenu(ctx, modalHost) {
           }
         });
       }
-    }, '📋 ' + (t('addMultipleTasks') || 'Add Multiple Tasks')),
-    el('button', {
+    }, '📋 ' + (t('addMultipleTasks') || 'Add Multiple Tasks'))
+  ];
+
+  // Conditionally add Smart Add if AI is enabled
+  if (aiEnabled) {
+    buttons.push(el('button', {
       class: 'btn',
       style: { justifyContent: 'flex-start', padding: '16px' },
       onClick: () => {
         closeModal?.();
-        openRecordingModal({
-          modalHost,
-          db,
-          projectId: null,
-          onSaved: () => router.refresh()
-        });
+        ctx.openSmartAdd({ mode: 'inbox' });
       }
-    }, '🎤 ' + t('voiceMemo'))
-  );
+    }, '🤖 ' + t('aiSmartAdd')));
+  }
+
+  buttons.push(el('button', {
+    class: 'btn',
+    style: { justifyContent: 'flex-start', padding: '16px' },
+    onClick: () => {
+      closeModal?.();
+      openRecordingModal({
+        modalHost,
+        db,
+        projectId: null,
+        onSaved: () => router.refresh()
+      });
+    }
+  }, '🎤 ' + t('voiceMemo')));
+
+  const content = el('div', { class: 'stack' }, ...buttons);
 
   const modalRef = openModal(modalHost, {
     title: t('addToInbox') || 'Add to Inbox',

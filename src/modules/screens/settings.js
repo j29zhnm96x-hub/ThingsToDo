@@ -7,6 +7,7 @@ import { showToast } from '../ui/toast.js';
 import { t, getLang, setLang, languageNames, getAvailableLanguages } from '../utils/i18n.js';
 import { router } from '../router.js';
 import { checkForUpdates, getUpdateInfo, showUpdateOverlayAndReload } from '../updater.js';
+import { AI_PROVIDERS, verifyConnection } from '../logic/aiClient.js';
 
 async function blobToDataUrl(blob) {
   return new Promise((resolve, reject) => {
@@ -36,6 +37,14 @@ export async function renderSettings(ctx) {
   const enableConfetti = settings.enableConfetti !== false; // Default true
   const enableConfettiSound = settings.enableConfettiSound !== false; // Default true
   const enableSwipe = settings.enableSwipe === true; // Default false
+
+  // AI settings
+  const aiEnabled = settings.aiEnabled === true;
+  const aiProvider = settings.aiProvider || 'deepseek';
+  const aiEndpoint = settings.aiEndpoint || AI_PROVIDERS.deepseek.endpoint;
+  const aiApiKey = settings.aiApiKey || '';
+  const aiModel = settings.aiModel || AI_PROVIDERS.deepseek.model;
+  const aiSystemPrompt = settings.aiSystemPrompt || '';
 
   const themeToggle = el('input', {
     type: 'checkbox',
@@ -223,6 +232,116 @@ export async function renderSettings(ctx) {
         el('div', { class: 'small' }, t('enableSwipe')),
         swipeToggle
       )
+    ),
+
+    // AI Assistant section
+    el('div', { class: 'card stack' },
+      el('div', { style: { fontWeight: '700' } }, t('aiSettings')),
+      el('div', { class: 'row' },
+        el('div', { class: 'small' }, t('aiEnable')),
+        buildToggle(aiEnabled, async (val) => {
+          await db.settings.put({ ...await db.settings.get(), aiEnabled: val });
+          renderSettings(ctx);
+        })
+      ),
+      aiEnabled ? el('div', { class: 'stack', style: { gap: '10px', marginTop: '8px' } },
+        // Provider selector
+        el('label', { class: 'label' },
+          el('span', {}, t('aiProvider')),
+          buildProviderSelect(aiProvider, (newProvider) => {
+            const info = AI_PROVIDERS[newProvider];
+            const endpointEl = document.getElementById('aiEndpoint');
+            const modelEl = document.getElementById('aiModel');
+            if (endpointEl && info) endpointEl.value = info.endpoint;
+            if (modelEl && info) modelEl.value = info.model;
+            // Save provider change
+            db.settings.get().then(s => {
+              s.aiProvider = newProvider;
+              if (info) {
+                s.aiEndpoint = info.endpoint;
+                s.aiModel = info.model;
+              }
+              db.settings.put(s);
+            });
+          })
+        ),
+        // Endpoint
+        el('label', { class: 'label' },
+          el('span', {}, t('aiEndpoint')),
+          el('input', {
+            id: 'aiEndpoint',
+            class: 'input',
+            type: 'text',
+            value: aiEndpoint,
+            placeholder: 'https://api.deepseek.com/v1',
+            onBlur: async (e) => {
+              await db.settings.put({ ...await db.settings.get(), aiEndpoint: e.target.value });
+            }
+          })
+        ),
+        // API Key
+        el('label', { class: 'label' },
+          el('span', {}, t('aiApiKey')),
+          el('div', { style: { display: 'flex', gap: '8px', alignItems: 'center' } },
+            el('input', {
+              id: 'aiApiKey',
+              class: 'input',
+              type: 'password',
+              style: { flex: '1' },
+              value: aiApiKey,
+              placeholder: 'sk-...',
+              onBlur: async (e) => {
+                await db.settings.put({ ...await db.settings.get(), aiApiKey: e.target.value });
+              }
+            }),
+            el('button', {
+              id: 'aiVerifyBtn',
+              type: 'button',
+              class: 'btn',
+              style: { flexShrink: '0' },
+              onClick: async (e) => {
+                const btn = e.target;
+                const origText = btn.textContent;
+                btn.textContent = t('aiVerifying');
+                btn.disabled = true;
+                const s = await db.settings.get();
+                const result = await verifyConnection(s);
+                btn.textContent = origText;
+                btn.disabled = false;
+                showToast(result.ok ? t('aiVerified') : (t('aiVerifyFailed') + ': ' + result.message));
+              }
+            }, t('aiVerify'))
+          )
+        ),
+        // Model
+        el('label', { class: 'label' },
+          el('span', {}, t('aiModel')),
+          el('input', {
+            id: 'aiModel',
+            class: 'input',
+            type: 'text',
+            value: aiModel,
+            placeholder: 'deepseek-chat',
+            onBlur: async (e) => {
+              await db.settings.put({ ...await db.settings.get(), aiModel: e.target.value });
+            }
+          })
+        ),
+        // Sign-up help box
+        buildSignupHelp(aiProvider),
+        // Advanced: Custom prompt
+        el('details', { style: { marginTop: '4px' } },
+          el('summary', { class: 'small', style: { cursor: 'pointer', color: 'var(--muted)' } }, t('aiSystemPrompt')),
+          el('textarea', {
+            class: 'input',
+            style: { width: '100%', minHeight: '60px', marginTop: '8px', padding: '8px', borderRadius: '8px', boxSizing: 'border-box' },
+            placeholder: 'Optional: customize how the AI parses your requests',
+            onBlur: async (e) => {
+              await db.settings.put({ ...await db.settings.get(), aiSystemPrompt: e.target.value });
+            }
+          }, aiSystemPrompt)
+        )
+      ) : null
     ),
     el('div', { class: 'card stack' },
       el('div', { style: { fontWeight: '700' } }, t('theme')),
@@ -559,6 +678,59 @@ export async function renderSettings(ctx) {
         }
       ]
     });
+  }
+
+  function buildToggle(checked, onChange) {
+    const input = el('input', {
+      type: 'checkbox',
+      checked: checked ? 'checked' : null,
+      'aria-label': 'Toggle'
+    });
+    input.addEventListener('change', () => onChange(input.checked));
+    return input;
+  }
+
+  function buildProviderSelect(current, onChange) {
+    const select = el('select', {
+      class: 'select',
+      'aria-label': t('aiProvider'),
+      onChange: (e) => onChange(e.target.value)
+    });
+    for (const [key, info] of Object.entries(AI_PROVIDERS)) {
+      select.append(el('option', {
+        value: key,
+        selected: key === current ? 'selected' : null
+      }, info.label + ' — ' + info.desc));
+    }
+    // Add custom option
+    select.append(el('option', {
+      value: 'custom',
+      selected: !AI_PROVIDERS[current] ? 'selected' : null
+    }, 'Custom'));
+    return select;
+  }
+
+  function buildSignupHelp(provider) {
+    const info = AI_PROVIDERS[provider];
+    if (!info) {
+      // Custom provider — no signup help available
+      return el('div', { class: 'small', style: { color: 'var(--muted)', marginTop: '8px', padding: '10px', background: 'var(--card)', borderRadius: '8px' } },
+        t('aiNeedKey')
+      );
+    }
+    return el('div', { class: 'stack', style: { gap: '6px', marginTop: '8px', padding: '12px', background: 'var(--card)', borderRadius: '8px', border: '1px solid var(--border)' } },
+      el('div', { style: { fontWeight: '500', fontSize: '13px' } }, t('aiNeedKey')),
+      el('div', { class: 'small' }, t('aiSignupStep1', { url: info.signupUrl })),
+      el('div', { class: 'small' }, t('aiSignupStep2')),
+      el('div', { class: 'small' }, t('aiSignupStep3')),
+      el('div', { class: 'small' }, t('aiSignupStep4')),
+      el('button', {
+        type: 'button',
+        class: 'btn',
+        style: { marginTop: '4px', alignSelf: 'flex-start' },
+        onClick: () => window.open(info.signupUrl, '_blank', 'noopener')
+      }, t('aiOpenSite'))
+    );
   }
 
   async function resetData() {

@@ -17,6 +17,7 @@ import { showToast } from '../ui/toast.js';
 import { openBulkAddModal, parseBulkAddTextWithPage } from '../ui/bulkAdd.js';
 import { t } from '../utils/i18n.js';
 import { renderVoiceMemoList, openRecordingModal } from '../ui/voiceMemo.js';
+import { openSmartAdd } from '../ui/smartAdd.js';
 import { isDueNowOrPast } from '../logic/recurrence.js';
 
 import { compressAttachmentsForArchive } from '../logic/attachments.js';
@@ -35,14 +36,18 @@ async function buildProjectsById(db) {
   return { projects, map };
 }
 
-function openChecklistAddMenu(ctx, {
+async function openChecklistAddMenu(ctx, {
   project,
   currentPageId,
   firstPageId,
+  currentPageName,
   onRefresh
 }) {
   const { modalHost, db } = ctx;
   let closeModal = null;
+
+  const settings = await db.settings.get();
+  const aiEnabled = settings.aiEnabled === true;
 
     const openBulkAddForChecklist = () => {
       closeModal?.();
@@ -116,7 +121,7 @@ function openChecklistAddMenu(ctx, {
       });
     };
 
-  const content = el('div', { class: 'stack' },
+  const checklistButtons = [
     el('button', {
       class: 'btn btn--primary',
       style: { justifyContent: 'flex-start', padding: '16px' },
@@ -138,7 +143,25 @@ function openChecklistAddMenu(ctx, {
       style: { justifyContent: 'flex-start', padding: '16px' },
       onClick: openBulkAddForChecklist
     }, '📋 ' + (t('addMultiple') || 'Add Multiple'))
-  );
+  ];
+
+  if (aiEnabled) {
+    checklistButtons.push(el('button', {
+      class: 'btn',
+      style: { justifyContent: 'flex-start', padding: '16px' },
+      onClick: () => {
+        closeModal?.();
+        openSmartAdd(ctx, {
+          mode: 'checklist',
+          project,
+          pageId: currentPageId,
+          pageName: currentPageName || 'Untitled'
+        });
+      }
+    }, '🤖 ' + t('aiSmartAdd')));
+  }
+
+  const content = el('div', { class: 'stack' }, ...checklistButtons);
 
   const modalRef = openModal(modalHost, {
     title: t('addToChecklist') || 'Add to Checklist',
@@ -958,6 +981,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
           project,
           currentPageId,
           firstPageId,
+          currentPageName: (currentPage || {}).name,
           onRefresh: () => renderProjectDetail(ctx, projectId)
         });
       }
@@ -1553,23 +1577,25 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
 }
 
 // New function to handle the "+" menu
-export function openProjectAddMenu(ctx, project) {
+export async function openProjectAddMenu(ctx, project) {
     const { modalHost, db } = ctx;
 
     // We'll assign this after opening the modal so content buttons can close it.
     let closeModal = null;
 
-    const content = el('div', { class: 'stack' }, 
+    const settings = await db.settings.get();
+    const aiEnabled = settings.aiEnabled === true;
+
+    const buttons = [
         el('button', { 
             class: 'btn btn--primary',
             style: { justifyContent: 'flex-start', padding: '16px' }, 
             onClick: () => {
-               // Close modal synchronously, then open editor
                closeModal?.();
                ctx.openTodoEditor({ mode: 'create', projectId: project.id });
             }
         }, '📄 ' + t('newTask')),
-          el('button', {
+        el('button', {
             class: 'btn',
             style: { justifyContent: 'flex-start', padding: '16px' },
             onClick: () => {
@@ -1585,13 +1611,12 @@ export function openProjectAddMenu(ctx, project) {
                 }
               });
             }
-          }, '📋 ' + (t('addMultipleTasks') || 'Add Multiple Tasks')),
-         el('button', { 
+        }, '📋 ' + (t('addMultipleTasks') || 'Add Multiple Tasks')),
+        el('button', { 
             class: 'btn', 
             style: { justifyContent: 'flex-start', padding: '16px' }, 
             onClick: () => {
                closeModal?.();
-               // Open Create Project with parentId preset
                openCreateProject({ 
                    db, 
                    modalHost, 
@@ -1599,7 +1624,24 @@ export function openProjectAddMenu(ctx, project) {
                    onCreated: () => renderProjectDetail(ctx, project.id)
                });
             }
-        }, '📁 ' + t('newSubProject')),
+        }, '📁 ' + t('newSubProject'))
+    ];
+
+    if (aiEnabled) {
+      buttons.push(el('button', {
+        class: 'btn',
+        style: { justifyContent: 'flex-start', padding: '16px' },
+        onClick: () => {
+          closeModal?.();
+          openSmartAdd(ctx, {
+            mode: 'project',
+            project
+          });
+        }
+      }, '🤖 ' + t('aiSmartAdd')));
+    }
+
+    buttons.push(
         el('button', { 
             class: 'btn', 
             style: { justifyContent: 'flex-start', padding: '16px' }, 
@@ -1617,7 +1659,6 @@ export function openProjectAddMenu(ctx, project) {
           class: 'btn', 
           style: { justifyContent: 'flex-start', padding: '16px' }, 
           onClick: () => {
-             // Close the modal synchronously, then create the note in background.
              closeModal?.();
              (async () => {
                try {
@@ -1631,6 +1672,8 @@ export function openProjectAddMenu(ctx, project) {
           }
         }, '📝 ' + (t('note') || 'Note'))
     );
+
+    const content = el('div', { class: 'stack' }, ...buttons);
 
     const modalRef = openModal(modalHost, {
         title: t('addToProject') || 'Add to Project',
