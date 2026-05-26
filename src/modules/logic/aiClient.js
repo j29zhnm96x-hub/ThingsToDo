@@ -33,7 +33,7 @@ export const AI_PROVIDERS = {
 };
 
 const DEFAULT_SYSTEM_PROMPT = `You are an AI assistant for a task management app called "ThingsToDo".
-The app supports: tasks (with title, notes, priority, dueDate), projects (default type with tasks/sub-projects or checklist type with pages/items), checklist pages with items, sub-projects, and project notes.
+The app supports: tasks (with title, notes, priority, dueDate, recurrence, protected, linkToInbox), projects (default type with tasks/sub-projects or checklist type with pages/items), checklist pages with items, sub-projects, and project notes.
 
 Given a user's natural language request, extract ALL actionable items and structure them as JSON.
 Return ONLY valid JSON — no markdown, no explanation.
@@ -47,10 +47,13 @@ Rules:
 - Keep titles concise but descriptive
 - Include notes for important context
 - Extract EVERY actionable item — do not skip anything
+- If user says "every day/week/month/year" or "daily/weekly/monthly/yearly" or "every Monday" etc, set recurrenceType ("daily"/"weekly"/"monthly"/"yearly") and for weekly, set recurrenceDays as array of day numbers (0=Sun, 1=Mon...6=Sat)
+- If user says "protect this" or "don't delete" or "important keep", set protected: true
+- If user says "show in my inbox" or "link to inbox", set showInInbox: true
 
 Response format:
 {
-  "tasks": [{ "title": "...", "notes": "", "priority": "P2", "dueDate": null }],
+  "tasks": [{ "title": "...", "notes": "", "priority": "P2", "dueDate": null, "recurrenceType": null, "recurrenceDays": null, "protected": false, "showInInbox": false }],
   "projects": [{
     "name": "...",
     "type": "default"|"checklist",
@@ -159,7 +162,11 @@ export function validateStructure(parsed) {
           title: String(t.title).trim(),
           notes: t.notes || '',
           priority: validatePriority(t.priority),
-          dueDate: t.dueDate || null
+          dueDate: t.dueDate || null,
+          recurrenceType: validateRecurrenceType(t.recurrenceType),
+          recurrenceDays: t.recurrenceDays || null,
+          protected: t.protected === true,
+          showInInbox: t.showInInbox === true
         });
       }
     }
@@ -219,7 +226,11 @@ function validateProject(p) {
           title: String(t.title).trim(),
           notes: t.notes || '',
           priority: validatePriority(t.priority),
-          dueDate: t.dueDate || null
+          dueDate: t.dueDate || null,
+          recurrenceType: validateRecurrenceType(t.recurrenceType),
+          recurrenceDays: t.recurrenceDays || null,
+          protected: t.protected === true,
+          showInInbox: t.showInInbox === true
         });
       }
     }
@@ -256,6 +267,12 @@ function validatePriority(p) {
   const valid = ['URGENT', 'P0', 'P1', 'P2', 'P3'];
   if (valid.includes(p)) return p;
   return 'P2';
+}
+
+function validateRecurrenceType(r) {
+  const valid = ['daily', 'weekly', 'monthly', 'yearly'];
+  if (valid.includes(r)) return r;
+  return null;
 }
 
 export async function verifyConnection(settings) {

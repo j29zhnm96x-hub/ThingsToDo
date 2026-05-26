@@ -438,9 +438,7 @@ async function createSelected(ctx, context, selected) {
         title: item.data.title,
         projectId: context.mode === 'inbox' ? null : context.project?.id || null
       });
-      todo.notes = item.data.notes || '';
-      todo.dueDate = item.data.dueDate || null;
-      if (item.data.priority) todo.priority = item.data.priority;
+      applyTodoFields(todo, item.data);
       await db.todos.put(todo);
       results.push(todo);
     }
@@ -462,9 +460,7 @@ async function createSelected(ctx, context, selected) {
       if (projData.tasks && projData.tasks.length) {
         for (const taskData of projData.tasks) {
           const todo = newTodo({ title: taskData.title, projectId: proj.id });
-          todo.notes = taskData.notes || '';
-          todo.dueDate = taskData.dueDate || null;
-          if (taskData.priority) todo.priority = taskData.priority;
+          applyTodoFields(todo, taskData);
           await db.todos.put(todo);
           results.push(todo);
         }
@@ -484,9 +480,7 @@ async function createSelected(ctx, context, selected) {
           if (spData.tasks && spData.tasks.length) {
             for (const taskData of spData.tasks) {
               const todo = newTodo({ title: taskData.title, projectId: proj.id });
-              todo.notes = taskData.notes || '';
-              todo.dueDate = taskData.dueDate || null;
-              if (taskData.priority) todo.priority = taskData.priority;
+              applyTodoFields(todo, taskData);
               await db.todos.put(todo);
               results.push(todo);
             }
@@ -559,6 +553,20 @@ async function createSelected(ctx, context, selected) {
   return results;
 }
 
+function applyTodoFields(todo, data) {
+  todo.notes = data.notes || '';
+  todo.dueDate = data.dueDate || null;
+  if (data.priority) todo.priority = data.priority;
+  if (data.protected === true) todo.protected = true;
+  if (data.showInInbox === true) todo.showInInbox = true;
+  if (data.recurrenceType) {
+    todo.recurrenceType = data.recurrenceType;
+    if (data.recurrenceType === 'weekly' && data.recurrenceDays) {
+      todo.recurrenceDetails = { days: data.recurrenceDays };
+    }
+  }
+}
+
 async function createSubProjectsRecursive(db, parentProject, subProjects, results) {
   for (const spData of subProjects) {
     const sp = newProject({
@@ -572,9 +580,7 @@ async function createSubProjectsRecursive(db, parentProject, subProjects, result
     if (spData.tasks && spData.tasks.length) {
       for (const taskData of spData.tasks) {
         const todo = newTodo({ title: taskData.title, projectId: parentProject.id });
-        todo.notes = taskData.notes || '';
-        todo.dueDate = taskData.dueDate || null;
-        if (taskData.priority) todo.priority = taskData.priority;
+        applyTodoFields(todo, taskData);
         await db.todos.put(todo);
         results.push(todo);
       }
