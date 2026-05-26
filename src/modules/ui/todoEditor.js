@@ -101,7 +101,6 @@ export async function openTodoEditor({
     if (!dueInput.value) inboxSelect.value = '0';
   });
 
-  const completedInput = el('input', { type: 'checkbox', checked: todo.completed ? 'checked' : null, 'aria-label': t('completed') });
   const protectedInput = el('input', { type: 'checkbox', checked: todo.protected ? 'checked' : null, 'aria-label': t('protectTask') });
 
   // --- Recurrence UI ---
@@ -335,10 +334,6 @@ export async function openTodoEditor({
     el('label', { class: 'label' }, el('span', {}, t('repeat') || 'Repeat'), recurrenceSelect),
     recurrenceDetailsContainer,
     el('label', { class: 'label' },
-      el('span', {}, t('completed')),
-      completedInput
-    ),
-    el('label', { class: 'label' },
       el('span', {}, t('protectTask')),
       protectedInput
     ),
@@ -373,7 +368,6 @@ export async function openTodoEditor({
     todo.title = title;
     todo.notes = notesInput.value || '';
     todo.priority = prioritySelect.value;
-    todo.completed = !!completedInput.checked;
     todo.protected = !!protectedInput.checked;
 
     // Recurrence settings
