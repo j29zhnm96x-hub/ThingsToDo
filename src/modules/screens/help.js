@@ -92,6 +92,8 @@ export function renderHelp(ctx) {
       sectionEls[idx].contentEl.style.display = '';
       sectionEls[idx].arrow.textContent = '▼';
       openIndex = idx;
+      // Scroll the section to the top so user sees the header + content
+      sectionEls[idx].card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   }
 
