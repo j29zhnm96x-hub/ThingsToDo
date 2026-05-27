@@ -66,7 +66,7 @@ export function renderHelp(ctx) {
 
     const card = el('div', {
       class: 'card',
-      style: `border-left: 4px solid ${s.color}; position: relative; overflow: hidden;`
+      style: `border-left: 4px solid ${s.color}; position: relative; overflow: hidden; scroll-margin-top: 80px;`
     },
       watermark,
       header,
@@ -96,14 +96,9 @@ export function renderHelp(ctx) {
     sectionEls[idx].arrow.textContent = '▼';
     openIndex = idx;
 
-    // Let the browser lay out the new content, then scroll into view
-    // Account for the fixed topbar (~56px) so header isn't hidden under it
-    requestAnimationFrame(() => {
-      const rect = sectionEls[idx].card.getBoundingClientRect();
-      const topbarH = (document.querySelector('.topbar')?.offsetHeight || 56) + 8;
-      const scrollTarget = window.scrollY + rect.top - topbarH;
-      window.scrollTo({ top: scrollTarget, behavior: 'smooth' });
-    });
+    // Scroll the section into view so the user sees the header at the top
+    // scroll-margin-top (80px) on the card keeps it below the fixed topbar
+    sectionEls[idx].card.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   // Search filtering: match against title + content plain text
