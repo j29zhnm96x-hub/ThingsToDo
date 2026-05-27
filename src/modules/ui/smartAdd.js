@@ -6,7 +6,7 @@ import { openModal } from './modal.js';
 import { showToast } from './toast.js';
 import { t } from '../utils/i18n.js';
 import { router } from '../router.js';
-import { buildPrompt, callAI, parseResponse, validateStructure } from '../logic/aiClient.js';
+import { buildPrompt, callAI, parseResponse, validateStructure, getSpeechLocale } from '../logic/aiClient.js';
 import { newTodo, newProject, newChecklistPage, newProjectNote } from '../data/models.js';
 
 let abortController = null;
@@ -14,6 +14,9 @@ let abortController = null;
 export async function openSmartAdd(ctx, context) {
   const { modalHost, db } = ctx;
   const settings = await db.settings.get();
+
+  // Capture app language for speech recognition and AI responses
+  const appLang = settings.lang || 'en';
 
   // Check if AI is configured
   if (!settings.aiEnabled || !settings.aiApiKey) {
@@ -68,22 +71,25 @@ export async function openSmartAdd(ctx, context) {
   );
 
   function buildContextInfo() {
+    const base = { lang: appLang };
     if (context.mode === 'inbox') {
-      return { mode: 'inbox' };
+      return { ...base, mode: 'inbox' };
     } else if (context.mode === 'project') {
       return {
+        ...base,
         mode: 'project',
         projectName: context.project.name,
         projectType: context.project.type || 'default'
       };
     } else if (context.mode === 'checklist') {
       return {
+        ...base,
         mode: 'checklist',
         projectName: context.project.name,
         pageName: context.pageName || 'Untitled'
       };
     }
-    return { mode: 'inbox' };
+    return { ...base, mode: 'inbox' };
   }
 
   function toggleMicrophone() {
@@ -158,9 +164,7 @@ export async function openSmartAdd(ctx, context) {
   }
 
   function getLangForSpeech() {
-    const lang = navigator.language || 'en-US';
-    // SpeechRecognition works best with full locale codes
-    return lang;
+    return getSpeechLocale(appLang);
   }
 
   // --- State 2: Loading ---

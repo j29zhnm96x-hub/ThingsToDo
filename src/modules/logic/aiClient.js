@@ -50,6 +50,7 @@ Rules:
 - If user says "every day/week/month/year" or "daily/weekly/monthly/yearly" or "every Monday" etc, set recurrenceType ("daily"/"weekly"/"monthly"/"yearly") and for weekly, set recurrenceDays as array of day numbers (0=Sun, 1=Mon...6=Sat)
 - If user says "protect this" or "don't delete" or "important keep", set protected: true
 - If user says "show in my inbox" or "link to inbox", set showInInbox: true
+- The user's language is provided in context. Respond in EXACTLY that language — titles, notes, project names, and page names must all be in the user's language, not English.
 
 Response format:
 {
@@ -68,11 +69,18 @@ Response format:
   "notes": [{ "text": "..." }]
 }`;
 
+export function getSpeechLocale(lang) {
+  const map = { en: 'en-US', hr: 'hr-HR', it: 'it-IT', de: 'de-DE', es: 'es-ES' };
+  return map[lang] || navigator.language || 'en-US';
+}
+
 function buildSystemPrompt(context) {
   const today = new Date();
   const dateStr = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const userLang = context.lang || 'en';
   const ctxLines = [
-    `Today is ${dateStr}. Use this as the reference for relative dates like "tomorrow", "next week", "Monday", etc.`
+    `Today is ${dateStr}. Use this as the reference for relative dates like "tomorrow", "next week", "Monday", etc.`,
+    `The user's language is: ${userLang}. ALL titles, notes, project names, page names must be in ${userLang}, not English.`
   ];
   if (context.mode === 'inbox') {
     ctxLines.push('Current context: Inbox — create tasks here, or create new projects (top-level).');
