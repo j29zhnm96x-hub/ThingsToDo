@@ -37,7 +37,7 @@ export function renderHelp(ctx) {
   const searchInput = el('input', {
     class: 'input',
     type: 'text',
-    placeholder: (t('searchPlaceholder') || 'Search...'),
+    placeholder: t('helpSearch'),
     style: { width: '100%', marginBottom: '8px', padding: '12px', borderRadius: '12px', boxSizing: 'border-box' }
   });
 
@@ -59,9 +59,9 @@ export function renderHelp(ctx) {
       arrow
     );
 
-    // Top-right watermark icon
+    // Background watermark (positioned fully off-card to avoid overlapping header)
     const watermark = el('div', {
-      style: 'position: absolute; top: -16px; right: -16px; font-size: 64px; opacity: 0.06; pointer-events: none;'
+      style: 'position: absolute; top: -40px; right: -30px; font-size: 72px; opacity: 0.05; pointer-events: none;'
     }, s.icon);
 
     const card = el('div', {
