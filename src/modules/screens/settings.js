@@ -45,6 +45,7 @@ export async function renderSettings(ctx) {
   const aiApiKey = settings.aiApiKey || '';
   const aiModel = settings.aiModel || AI_PROVIDERS.deepseek.model;
   const aiSystemPrompt = settings.aiSystemPrompt || '';
+  const quickVoiceAdd = settings.quickVoiceAdd === true;
 
   const themeToggle = el('input', {
     type: 'checkbox',
@@ -330,7 +331,14 @@ export async function renderSettings(ctx) {
         // Sign-up help box
         buildSignupHelp(aiProvider),
         // Advanced: Custom prompt
-        el('details', { style: { marginTop: '4px' } },
+        el('div', { class: 'row', style: { marginTop: '8px' } },
+          el('div', { class: 'small' }, t('aiQuickVoice')),
+          buildToggle(quickVoiceAdd, async (val) => {
+            await db.settings.put({ ...await db.settings.get(), quickVoiceAdd: val });
+          })
+        ),
+        el('div', { class: 'small', style: { color: 'var(--muted)' } }, t('aiQuickVoiceDesc')),
+        el('details', { style: { marginTop: '8px' } },
           el('summary', { class: 'small', style: { cursor: 'pointer', color: 'var(--muted)' } }, t('aiSystemPrompt')),
           el('textarea', {
             class: 'input',

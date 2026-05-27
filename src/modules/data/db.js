@@ -317,7 +317,8 @@ export const db = {
         aiEndpoint: 'https://api.deepseek.com/v1',
         aiApiKey: '',
         aiModel: 'deepseek-chat',
-        aiSystemPrompt: ''
+        aiSystemPrompt: '',
+        quickVoiceAdd: false
       };
     },
     async put(settings) {

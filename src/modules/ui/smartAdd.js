@@ -400,6 +400,11 @@ export async function openSmartAdd(ctx, context) {
 
   // Start with input modal
   openInputModal();
+
+  // Auto-start microphone if context requests it (long-press quick voice)
+  if (context.startMic) {
+    setTimeout(() => startListening(), 300);
+  }
 }
 
 // --- Not configured modal ---
