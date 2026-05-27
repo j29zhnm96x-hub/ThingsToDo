@@ -82,19 +82,28 @@ export function renderHelp(ctx) {
       sectionEls[idx].contentEl.style.display = 'none';
       sectionEls[idx].arrow.textContent = '▶';
       openIndex = -1;
-    } else {
-      // Close previous if any
-      if (openIndex >= 0) {
-        sectionEls[openIndex].contentEl.style.display = 'none';
-        sectionEls[openIndex].arrow.textContent = '▶';
-      }
-      // Open new
-      sectionEls[idx].contentEl.style.display = '';
-      sectionEls[idx].arrow.textContent = '▼';
-      openIndex = idx;
-      // Scroll the section to the top so user sees the header + content
-      sectionEls[idx].card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      return;
     }
+
+    // Close previous if any
+    if (openIndex >= 0) {
+      sectionEls[openIndex].contentEl.style.display = 'none';
+      sectionEls[openIndex].arrow.textContent = '▶';
+    }
+
+    // Open new
+    sectionEls[idx].contentEl.style.display = '';
+    sectionEls[idx].arrow.textContent = '▼';
+    openIndex = idx;
+
+    // Let the browser lay out the new content, then scroll into view
+    // Account for the fixed topbar (~56px) so header isn't hidden under it
+    requestAnimationFrame(() => {
+      const rect = sectionEls[idx].card.getBoundingClientRect();
+      const topbarH = (document.querySelector('.topbar')?.offsetHeight || 56) + 8;
+      const scrollTarget = window.scrollY + rect.top - topbarH;
+      window.scrollTo({ top: scrollTarget, behavior: 'smooth' });
+    });
   }
 
   // Search filtering: match against title + content plain text
