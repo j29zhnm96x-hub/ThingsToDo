@@ -6,7 +6,7 @@ import { openModal } from './modal.js';
 import { showToast } from './toast.js';
 import { t, getLang } from '../utils/i18n.js';
 import { router } from '../router.js';
-import { buildPrompt, callAI, parseResponse, validateStructure, getSpeechLocale } from '../logic/aiClient.js';
+import { buildPrompt, callAI, parseResponse, validateStructure, getSpeechLocale, buildExistingProjectsContext } from '../logic/aiClient.js';
 import { newTodo, newProject, newChecklistPage, newProjectNote } from '../data/models.js';
 
 let abortController = null;
@@ -70,26 +70,29 @@ export async function openSmartAdd(ctx, context) {
     )
   );
 
-  function buildContextInfo() {
+  async function buildContextInfo() {
     const base = { lang: appLang };
+    const existingProjects = await buildExistingProjectsContext(db);
     if (context.mode === 'inbox') {
-      return { ...base, mode: 'inbox' };
+      return { ...base, mode: 'inbox', existingProjects };
     } else if (context.mode === 'project') {
       return {
         ...base,
         mode: 'project',
         projectName: context.project.name,
-        projectType: context.project.type || 'default'
+        projectType: context.project.type || 'default',
+        existingProjects
       };
     } else if (context.mode === 'checklist') {
       return {
         ...base,
         mode: 'checklist',
         projectName: context.project.name,
-        pageName: context.pageName || 'Untitled'
+        pageName: context.pageName || 'Untitled',
+        existingProjects
       };
     }
-    return { ...base, mode: 'inbox' };
+    return { ...base, mode: 'inbox', existingProjects };
   }
 
   function toggleMicrophone() {
@@ -250,6 +253,22 @@ export async function openSmartAdd(ctx, context) {
       previewItems.push(createPreviewRow(cb, '📋', cp.name, t('aiChecklistPage'), items));
     }
 
+    // Add to Project (existing project, add tasks)
+    for (const ap of parsed.addToProject) {
+      const cb = createCheckbox(true);
+      checkboxes.push(cb);
+      const sub = ap.tasks.map(t => '  · ' + t.title).join('\n');
+      previewItems.push(createPreviewRow(cb, '📌', ap.projectName, '→ ' + t('aiProject'), sub));
+    }
+
+    // Add to Checklist Page (existing project+page, add items)
+    for (const acp of parsed.addToChecklistPage) {
+      const cb = createCheckbox(true);
+      checkboxes.push(cb);
+      const sub = acp.items.map(i => '  · ' + i.title).join('\n');
+      previewItems.push(createPreviewRow(cb, '📌', acp.projectName + ' › ' + acp.pageName, '→ ' + t('aiChecklistPage'), sub));
+    }
+
     // Notes
     for (const n of parsed.notes) {
       const cb = createCheckbox(true);
@@ -293,6 +312,14 @@ export async function openSmartAdd(ctx, context) {
           }
           for (const cp of parsed.checklistPages) {
             if (cbArray[idx]?.checked) selected.push({ type: 'checklistPage', data: cp });
+            idx++;
+          }
+          for (const ap of parsed.addToProject) {
+            if (cbArray[idx]?.checked) selected.push({ type: 'addToProject', data: ap });
+            idx++;
+          }
+          for (const acp of parsed.addToChecklistPage) {
+            if (cbArray[idx]?.checked) selected.push({ type: 'addToChecklistPage', data: acp });
             idx++;
           }
           for (const n of parsed.notes) {
@@ -340,7 +367,7 @@ export async function openSmartAdd(ctx, context) {
   }
 
   function countItems(parsed) {
-    return parsed.tasks.length + parsed.projects.length + parsed.checklistPages.length + parsed.notes.length;
+    return parsed.tasks.length + parsed.projects.length + parsed.checklistPages.length + parsed.notes.length + parsed.addToProject.length + parsed.addToChecklistPage.length;
   }
 
   function clearContent(content) {
@@ -362,8 +389,8 @@ export async function openSmartAdd(ctx, context) {
     showLoading();
 
     try {
-      const contextInfo = buildContextInfo();
-      const { systemPrompt, userPrompt } = buildPrompt(contextInfo, text);
+      const contextInfo = await buildContextInfo();
+      const { systemPrompt, userPrompt } = await buildPrompt(contextInfo, text);
       const settings = await db.settings.get();
       const raw = await callAI(settings, systemPrompt, userPrompt);
       const parsed = parseResponse(raw);
@@ -544,6 +571,80 @@ async function createSelected(ctx, context, selected) {
             await db.todos.put(todo);
             results.push(todo);
           }
+        }
+      }
+    }
+
+    else if (item.type === 'addToProject') {
+      // Find existing project by name (case-insensitive)
+      const projects = await db.projects.list();
+      const match = projects.find(p => p.name.toLowerCase() === item.data.projectName.toLowerCase());
+      if (match) {
+        for (const taskData of item.data.tasks) {
+          const todo = newTodo({ title: taskData.title, projectId: match.id });
+          applyTodoFields(todo, taskData);
+          await db.todos.put(todo);
+          results.push(todo);
+        }
+      } else {
+        // Project not found — create it as a new project with these tasks
+        const proj = newProject({ name: item.data.projectName, type: 'default' });
+        await db.projects.put(proj);
+        results.push(proj);
+        for (const taskData of item.data.tasks) {
+          const todo = newTodo({ title: taskData.title, projectId: proj.id });
+          applyTodoFields(todo, taskData);
+          await db.todos.put(todo);
+          results.push(todo);
+        }
+      }
+    }
+
+    else if (item.type === 'addToChecklistPage') {
+      // Find existing project by name
+      const projects = await db.projects.list();
+      const matchProj = projects.find(p => p.name.toLowerCase() === item.data.projectName.toLowerCase());
+      if (matchProj) {
+        // Find the page by name
+        const pages = await db.checklistPages.listByProject(matchProj.id);
+        const matchPage = pages.find(p => (p.name || '').toLowerCase() === item.data.pageName.toLowerCase());
+        const pageId = matchPage ? matchPage.id : null;
+        if (!matchPage) {
+          // Create the page if it doesn't exist
+          const newPage = newChecklistPage({ projectId: matchProj.id, name: item.data.pageName });
+          newPage.order = pages.length;
+          await db.checklistPages.put(newPage);
+          const items = item.data.items;
+          for (let j = 0; j < items.length; j++) {
+            const todo = newTodo({ title: items[j].title, projectId: matchProj.id, pageId: newPage.id });
+            todo.order = j;
+            todo.notes = items[j].notes || '';
+            await db.todos.put(todo);
+            results.push(todo);
+          }
+        } else {
+          for (const itemData of item.data.items) {
+            const todo = newTodo({ title: itemData.title, projectId: matchProj.id, pageId });
+            todo.notes = itemData.notes || '';
+            await db.todos.put(todo);
+            results.push(todo);
+          }
+        }
+      } else {
+        // Project not found — fallback: create checklist project with the page
+        const proj = newProject({ name: item.data.projectName, type: 'checklist' });
+        await db.projects.put(proj);
+        results.push(proj);
+        const page = newChecklistPage({ projectId: proj.id, name: item.data.pageName });
+        page.order = 0;
+        await db.checklistPages.put(page);
+        results.push(page);
+        for (let j = 0; j < item.data.items.length; j++) {
+          const todo = newTodo({ title: item.data.items[j].title, projectId: proj.id, pageId: page.id });
+          todo.order = j;
+          todo.notes = item.data.items[j].notes || '';
+          await db.todos.put(todo);
+          results.push(todo);
         }
       }
     }

@@ -44,6 +44,8 @@ Rules:
 - If user mentions urgency or deadlines, set appropriate priority
 - If user mentions a "project", "list", or "category" with sub-items, create a project
 - If items have sub-items or checkboxes, use checklist type project with pages
+- A list of existing projects is provided in context. If the user references an existing project by name (e.g. "add to project Imanje"), use "addToProject" or "addToChecklistPage" instead of creating a new project.
+- If the user says "add [items] to [project]" and the project exists, use addToProject (for adding tasks) or addToChecklistPage (for adding checklist items to a specific page).
 - Keep titles concise but descriptive
 - Include notes for important context
 - Extract EVERY actionable item — do not skip anything
@@ -68,7 +70,9 @@ Response format:
     "pages": [{ "name": "...", "items": [{ "title": "...", "qty": null, "unit": null }] }]
   }],
   "checklistPages": [{ "name": "...", "items": [{ "title": "..." }] }],
-  "notes": [{ "text": "..." }]
+  "notes": [{ "text": "..." }],
+  "addToProject": [{ "projectName": "...", "tasks": [{ "title": "...", "priority": "P2" }] }],
+  "addToChecklistPage": [{ "projectName": "...", "pageName": "...", "items": [{ "title": "..." }] }]
 }`;
 
 export function getSpeechLocale(lang) {
@@ -94,10 +98,40 @@ function buildSystemPrompt(context) {
   return ctxLines.join('\n');
 }
 
-export function buildPrompt(context, userText) {
+export async function buildExistingProjectsContext(db) {
+  try {
+    const projects = await db.projects.list();
+    if (!projects || projects.length === 0) return '';
+
+    const lines = ['Existing projects in your account:'];
+    for (const proj of projects.slice(0, 30)) {
+      const pages = await db.checklistPages?.listByProject?.(proj.id) || [];
+      const tasks = await db.todos?.listByProject?.(proj.id) || [];
+      const type = proj.type === 'checklist' ? 'checklist' : 'default';
+      const details = [`- "${proj.name}" (${type})`];
+      if (pages.length) {
+        const pageNames = pages.map(p => '"' + (p.name || 'Untitled') + '"').join(', ');
+        details.push(`  pages: ${pageNames}`);
+      }
+      if (tasks.length) {
+        const taskTitles = tasks.slice(0, 5).map(t => '"' + t.title + '"').join(', ');
+        details.push(`  tasks: ${taskTitles}`);
+      }
+      lines.push(details.join('\n'));
+    }
+    return lines.join('\n');
+  } catch {
+    return '';
+  }
+}
+
+export async function buildPrompt(context, userText) {
   const systemPrompt = DEFAULT_SYSTEM_PROMPT;
   const contextPrompt = buildSystemPrompt(context);
-  const userPrompt = `Context:\n${contextPrompt}\n\nUser request:\n${userText}`;
+  const existingProjectsStr = context.existingProjects || '';
+  const userPrompt = existingProjectsStr
+    ? `Context:\n${contextPrompt}\n\n${existingProjectsStr}\n\nUser request:\n${userText}`
+    : `Context:\n${contextPrompt}\n\nUser request:\n${userText}`;
   return { systemPrompt, userPrompt };
 }
 
@@ -167,7 +201,7 @@ export function parseResponse(raw) {
 }
 
 export function validateStructure(parsed) {
-  const result = { tasks: [], projects: [], checklistPages: [], notes: [] };
+  const result = { tasks: [], projects: [], checklistPages: [], notes: [], addToProject: [], addToChecklistPage: [] };
 
   if (parsed.tasks && Array.isArray(parsed.tasks)) {
     for (const t of parsed.tasks) {
@@ -214,6 +248,39 @@ export function validateStructure(parsed) {
     for (const n of parsed.notes) {
       if (n?.text) {
         result.notes.push({ text: String(n.text).trim() });
+      }
+    }
+  }
+
+  if (parsed.addToProject && Array.isArray(parsed.addToProject)) {
+    for (const ap of parsed.addToProject) {
+      if (ap?.projectName && ap?.tasks?.length) {
+        result.addToProject.push({
+          projectName: String(ap.projectName).trim(),
+          tasks: ap.tasks.filter(t => t?.title).map(t => ({
+            title: capitalizeFirst(String(t.title).trim()),
+            notes: t.notes || '',
+            priority: validatePriority(t.priority),
+            dueDate: t.dueDate || null,
+            protected: t.protected === true,
+            showInInbox: t.showInInbox === true
+          }))
+        });
+      }
+    }
+  }
+
+  if (parsed.addToChecklistPage && Array.isArray(parsed.addToChecklistPage)) {
+    for (const acp of parsed.addToChecklistPage) {
+      if (acp?.projectName && acp?.pageName && acp?.items?.length) {
+        result.addToChecklistPage.push({
+          projectName: String(acp.projectName).trim(),
+          pageName: String(acp.pageName).trim(),
+          items: acp.items.filter(i => i?.title).map(i => ({
+            title: capitalizeFirst(String(i.title).trim()),
+            notes: i.notes || ''
+          }))
+        });
       }
     }
   }
