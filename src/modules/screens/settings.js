@@ -137,8 +137,11 @@ export async function renderSettings(ctx) {
   const langSelect = el('select', {
     class: 'select',
     'aria-label': t('language'),
-    onChange: (e) => {
+    onChange: async (e) => {
       setLang(e.target.value);
+      const s = await db.settings.get();
+      s.lang = e.target.value;
+      await db.settings.put(s);
       router.refresh();
     }
   }, ...getAvailableLanguages().map(code =>

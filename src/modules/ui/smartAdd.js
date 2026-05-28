@@ -4,7 +4,7 @@
 import { el } from './dom.js';
 import { openModal } from './modal.js';
 import { showToast } from './toast.js';
-import { t } from '../utils/i18n.js';
+import { t, getLang } from '../utils/i18n.js';
 import { router } from '../router.js';
 import { buildPrompt, callAI, parseResponse, validateStructure, getSpeechLocale } from '../logic/aiClient.js';
 import { newTodo, newProject, newChecklistPage, newProjectNote } from '../data/models.js';
@@ -16,7 +16,7 @@ export async function openSmartAdd(ctx, context) {
   const settings = await db.settings.get();
 
   // Capture app language for speech recognition and AI responses
-  const appLang = settings.lang || 'en';
+  const appLang = getLang();
 
   // Check if AI is configured
   if (!settings.aiEnabled || !settings.aiApiKey) {
