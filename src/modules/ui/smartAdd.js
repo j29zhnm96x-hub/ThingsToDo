@@ -7,6 +7,7 @@ import { showToast } from './toast.js';
 import { t, getLang } from '../utils/i18n.js';
 import { router } from '../router.js';
 import { buildPrompt, callAI, parseResponse, validateStructure, getSpeechLocale, buildExistingProjectsContext } from '../logic/aiClient.js';
+import { tryParse } from '../logic/localParser.js';
 import { newTodo, newProject, newChecklistPage, newProjectNote } from '../data/models.js';
 
 let abortController = null;
@@ -390,6 +391,13 @@ export async function openSmartAdd(ctx, context) {
 
     try {
       const contextInfo = await buildContextInfo();
+      // Try local parser first for simple commands (faster, free, works offline)
+      const localResult = tryParse(text, contextInfo);
+      if (localResult) {
+        showPreview(localResult);
+        return;
+      }
+      // Fall back to AI for complex requests
       const { systemPrompt, userPrompt } = await buildPrompt(contextInfo, text);
       const settings = await db.settings.get();
       const raw = await callAI(settings, systemPrompt, userPrompt);
