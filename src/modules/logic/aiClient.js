@@ -51,6 +51,8 @@ Rules:
 - If user says "protect this" or "don't delete" or "important keep", set protected: true
 - If user says "show in my inbox" or "link to inbox", set showInInbox: true
 - The user's language is provided in context. Respond in EXACTLY that language — titles, notes, project names, and page names must all be in the user's language, not English.
+- Capitalize the first letter of EVERY title, project name, page name, and checklist item. For example \"Kupovina\", not \"kupovina\". This is a strict rule — first letter must be uppercase.
+- Use proper Unicode characters for special letters in the user's language (e.g. Croatian: š, đ, č, ć, ž — never use ASCII substitutes like s, d, c, z).
 
 Response format:
 {
@@ -171,7 +173,7 @@ export function validateStructure(parsed) {
     for (const t of parsed.tasks) {
       if (t?.title) {
         result.tasks.push({
-          title: String(t.title).trim(),
+          title: capitalizeFirst(String(t.title).trim()),
           notes: t.notes || '',
           priority: validatePriority(t.priority),
           dueDate: t.dueDate || null,
@@ -196,9 +198,9 @@ export function validateStructure(parsed) {
     for (const cp of parsed.checklistPages) {
       if (cp?.name || cp?.items?.length) {
         result.checklistPages.push({
-          name: cp.name || 'Untitled',
+          name: capitalizeFirst(cp.name || 'Untitled'),
           items: (cp.items || []).filter(i => i?.title).map(i => ({
-            title: String(i.title).trim(),
+            title: capitalizeFirst(String(i.title).trim()),
             notes: i.notes || '',
             qty: i.qty || null,
             unit: i.unit || null
@@ -221,7 +223,7 @@ export function validateStructure(parsed) {
 
 function validateProject(p) {
   const project = {
-    name: String(p.name).trim(),
+    name: capitalizeFirst(String(p.name).trim()),
     type: p.type === 'checklist' ? 'checklist' : 'default',
     tasks: [],
     subProjects: [],
@@ -235,7 +237,7 @@ function validateProject(p) {
     for (const t of p.tasks) {
       if (t?.title) {
         project.tasks.push({
-          title: String(t.title).trim(),
+          title: capitalizeFirst(String(t.title).trim()),
           notes: t.notes || '',
           priority: validatePriority(t.priority),
           dueDate: t.dueDate || null,
@@ -260,9 +262,9 @@ function validateProject(p) {
     for (const page of p.pages) {
       if (page?.name || page?.items?.length) {
         project.pages.push({
-          name: page.name || 'Untitled',
+          name: capitalizeFirst(page.name || 'Untitled'),
           items: (page.items || []).filter(i => i?.title).map(i => ({
-            title: String(i.title).trim(),
+            title: capitalizeFirst(String(i.title).trim()),
             notes: i.notes || '',
             qty: i.qty || null,
             unit: i.unit || null
@@ -273,6 +275,11 @@ function validateProject(p) {
   }
 
   return project;
+}
+
+function capitalizeFirst(str) {
+  if (!str) return str;
+  return str.charAt(0).toLocaleUpperCase() + str.slice(1);
 }
 
 function validatePriority(p) {
