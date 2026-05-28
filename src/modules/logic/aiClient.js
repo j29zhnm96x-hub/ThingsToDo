@@ -46,6 +46,7 @@ Rules:
 - If items have sub-items or checkboxes, use checklist type project with pages
 - A list of existing projects is provided in context. If the user references an existing project by name (e.g. "add to project Imanje"), use "addToProject" or "addToChecklistPage" instead of creating a new project.
 - If the user says "add [items] to [project]" and the project exists, use addToProject (for adding tasks) or addToChecklistPage (for adding checklist items to a specific page).
+- If the user says "move [task] to [project]" or "premjesti [task] u [project]", use moveTasks. The task title and target project name are shown in context. Do NOT create a new task — use moveTasks instead.
 - Keep titles concise but descriptive
 - Include notes for important context
 - Extract EVERY actionable item — do not skip anything
@@ -72,7 +73,8 @@ Response format:
   "checklistPages": [{ "name": "...", "items": [{ "title": "..." }] }],
   "notes": [{ "text": "..." }],
   "addToProject": [{ "projectName": "...", "tasks": [{ "title": "...", "priority": "P2" }] }],
-  "addToChecklistPage": [{ "projectName": "...", "pageName": "...", "items": [{ "title": "..." }] }]
+  "addToChecklistPage": [{ "projectName": "...", "pageName": "...", "items": [{ "title": "..." }] }],
+  "moveTasks": [{ "taskTitle": "...", "targetProject": "...", "targetPage": null }]
 }`;
 
 export function getSpeechLocale(lang) {
@@ -114,7 +116,7 @@ export async function buildExistingProjectsContext(db) {
         details.push(`  pages: ${pageNames}`);
       }
       if (tasks.length) {
-        const taskTitles = tasks.slice(0, 5).map(t => '"' + t.title + '"').join(', ');
+        const taskTitles = tasks.slice(0, 15).map(t => '"' + t.title + '"').join(', ');
         details.push(`  tasks: ${taskTitles}`);
       }
       lines.push(details.join('\n'));
@@ -201,7 +203,7 @@ export function parseResponse(raw) {
 }
 
 export function validateStructure(parsed) {
-  const result = { tasks: [], projects: [], checklistPages: [], notes: [], addToProject: [], addToChecklistPage: [] };
+  const result = { tasks: [], projects: [], checklistPages: [], notes: [], addToProject: [], addToChecklistPage: [], moveTasks: [] };
 
   if (parsed.tasks && Array.isArray(parsed.tasks)) {
     for (const t of parsed.tasks) {
@@ -280,6 +282,18 @@ export function validateStructure(parsed) {
             title: capitalizeFirst(String(i.title).trim()),
             notes: i.notes || ''
           }))
+        });
+      }
+    }
+  }
+
+  if (parsed.moveTasks && Array.isArray(parsed.moveTasks)) {
+    for (const mt of parsed.moveTasks) {
+      if (mt?.taskTitle && mt?.targetProject) {
+        result.moveTasks.push({
+          taskTitle: String(mt.taskTitle).trim(),
+          targetProject: String(mt.targetProject).trim(),
+          targetPage: mt.targetPage ? String(mt.targetPage).trim() : null
         });
       }
     }

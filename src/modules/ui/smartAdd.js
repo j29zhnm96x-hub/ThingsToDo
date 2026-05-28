@@ -270,6 +270,13 @@ export async function openSmartAdd(ctx, context) {
       previewItems.push(createPreviewRow(cb, '📌', acp.projectName + ' › ' + acp.pageName, '→ ' + t('aiChecklistPage'), sub));
     }
 
+    // Move tasks
+    for (const mt of parsed.moveTasks) {
+      const cb = createCheckbox(true);
+      checkboxes.push(cb);
+      previewItems.push(createPreviewRow(cb, '↗️', mt.taskTitle, '→ ' + mt.targetProject, mt.targetPage ? 'tab: ' + mt.targetPage : ''));
+    }
+
     // Notes
     for (const n of parsed.notes) {
       const cb = createCheckbox(true);
@@ -323,6 +330,10 @@ export async function openSmartAdd(ctx, context) {
             if (cbArray[idx]?.checked) selected.push({ type: 'addToChecklistPage', data: acp });
             idx++;
           }
+          for (const mt of parsed.moveTasks) {
+            if (cbArray[idx]?.checked) selected.push({ type: 'moveTask', data: mt });
+            idx++;
+          }
           for (const n of parsed.notes) {
             if (cbArray[idx]?.checked) selected.push({ type: 'note', data: n });
             idx++;
@@ -368,7 +379,7 @@ export async function openSmartAdd(ctx, context) {
   }
 
   function countItems(parsed) {
-    return parsed.tasks.length + parsed.projects.length + parsed.checklistPages.length + parsed.notes.length + parsed.addToProject.length + parsed.addToChecklistPage.length;
+    return parsed.tasks.length + parsed.projects.length + parsed.checklistPages.length + parsed.notes.length + parsed.addToProject.length + parsed.addToChecklistPage.length + parsed.moveTasks.length;
   }
 
   function clearContent(content) {
@@ -653,6 +664,30 @@ async function createSelected(ctx, context, selected) {
           todo.notes = item.data.items[j].notes || '';
           await db.todos.put(todo);
           results.push(todo);
+        }
+      }
+    }
+
+    else if (item.type === 'moveTask') {
+      const { taskTitle, targetProject, targetPage } = item.data;
+      // Find the task by title (case-insensitive, first exact match, then partial)
+      const allTodos = await db.todos.listActive();
+      const matchTask = allTodos.find(t => t.title.toLowerCase() === taskTitle.toLowerCase())
+        || allTodos.find(t => t.title.toLowerCase().includes(taskTitle.toLowerCase()));
+      if (matchTask) {
+        // Find the target project
+        const projects = await db.projects.list();
+        const matchProj = projects.find(p => p.name.toLowerCase() === targetProject.toLowerCase());
+        if (matchProj) {
+          matchTask.projectId = matchProj.id;
+          // If target page specified, find it
+          if (targetPage) {
+            const pages = await db.checklistPages.listByProject(matchProj.id);
+            const matchPage = pages.find(p => (p.name || '').toLowerCase() === targetPage.toLowerCase());
+            if (matchPage) matchTask.pageId = matchPage.id;
+          }
+          await db.todos.put(matchTask);
+          results.push(matchTask);
         }
       }
     }
