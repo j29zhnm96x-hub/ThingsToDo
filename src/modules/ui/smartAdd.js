@@ -493,6 +493,10 @@ async function createSelected(ctx, context, selected) {
         title: item.data.title,
         projectId: context.mode === 'inbox' ? null : context.project?.id || null
       });
+      // When in a checklist page, assign to the current page
+      if (context.mode === 'checklist' && context.pageId) {
+        todo.pageId = context.pageId;
+      }
       applyTodoFields(todo, item.data);
       await db.todos.put(todo);
       results.push(todo);

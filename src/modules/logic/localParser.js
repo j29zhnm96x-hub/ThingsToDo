@@ -56,10 +56,7 @@ function hasAIRouteKeyword(text) {
 export function tryParse(text, context) {
   if (!text || !text.trim()) return null;
 
-  // Only handle inbox mode — project/checklist contexts have too many variables
-  if (context.mode !== 'inbox') return null;
-
-  // If any AI-route keyword is found, pass to AI
+  // If any AI-route keyword is found, pass to AI (works in all modes)
   if (hasAIRouteKeyword(text)) return null;
 
   // If text is more than 80 chars, it's probably a sentence → AI

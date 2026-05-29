@@ -47,6 +47,9 @@ Rules:
 - A list of existing projects is provided in context. If the user references an existing project by name (e.g. "add to project Imanje"), use "addToProject" or "addToChecklistPage" instead of creating a new project.
 - If the user says "add [items] to [project]" and the project exists, use addToProject (for adding tasks) or addToChecklistPage (for adding checklist items to a specific page).
 - If the user says "move [task] to [project]" or "premjesti [task] u [project]", use moveTasks. The task title and target project name are shown in context. Do NOT create a new task — use moveTasks instead.
+- The "Current context:" line tells you exactly where the user is. If they say "here", "this project", "this tab", "ovdje", "u ovom projektu", "u ovaj projekt" — use the current context. Do NOT create a new project or page for "here" commands. Just create tasks or items in the current location.
+- When in a default project: a simple "add X" or "napravi X" creates a task IN the current project, not in Inbox.
+- When in a checklist page: a simple "add X" or "dodaj X" adds items to the CURRENT page, not a new page.
 - Keep titles concise but descriptive
 - Include notes for important context
 - Extract EVERY actionable item — do not skip anything
