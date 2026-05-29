@@ -439,12 +439,10 @@ function stopAllTitleScrolls() {
   for (const [el, id] of scrollAnimations) {
     cancelAnimationFrame(id);
     el.style.textOverflow = '';
-    el.style.textOverflow = '';
     el.style.overflow = '';
     el.style.whiteSpace = '';
     el.style.transform = '';
-  };
-}
+  }
   scrollAnimations.clear();
 }
 
@@ -499,6 +497,7 @@ function startTitleScroll(titleEl) {
     const id = scrollAnimations.get(titleEl);
     if (id) cancelAnimationFrame(id);
     scrollAnimations.delete(titleEl);
+    titleEl.style.textOverflow = '';
     titleEl.style.overflow = '';
     titleEl.style.whiteSpace = '';
     titleEl.style.transform = '';
