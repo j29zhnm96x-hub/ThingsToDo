@@ -23,6 +23,8 @@ export function renderTodoList({
   collapsedPriorities,
   onLinkToggle,
   mode = 'inbox',
+  groupByPriority,
+  onReorder,
   scrollLongTitles = false
 }) {
   const list = el('div', { class: 'list' });
