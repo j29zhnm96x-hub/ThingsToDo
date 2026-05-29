@@ -414,4 +414,4 @@ export async function openTodoInfo({ todo, db, modalHost, onEdit }) {
 }
 
 // Export helper for use in todoList
-export { daysLeftText, daysLeftClass };
+export { daysLeftText, daysLeftClass, daysLeft };

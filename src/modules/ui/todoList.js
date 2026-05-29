@@ -1,6 +1,6 @@
 import { el, humanDue } from './dom.js';
 import { compareTodos } from '../logic/sorting.js';
-import { daysLeftText, daysLeftClass } from './todoInfo.js';
+import { daysLeftText, daysLeftClass, daysLeft } from './todoInfo.js';
 import { hapticLight, hapticSelection } from './haptic.js';
 import { t } from '../utils/i18n.js';
 import { burstFromElement } from './confetti.js';
@@ -158,10 +158,13 @@ export function renderTodoList({
         const labelKey = PRIORITY_LABEL_KEYS[p] || 'medium';
         const label = t(labelKey) || labelKey;
 
+        // Check if any task in this group is due today
+        const hasToday = groupTodos.some(t => daysLeft(t.dueDate) === 0);
         const colorClass = 'priority-pill--' + p.toLowerCase();
+        const todayClass = hasToday ? ' priority-pill--has-today' : '';
         const pill = el('button', {
           type: 'button',
-          class: 'priority-pill ' + colorClass + (isCollapsed ? ' priority-pill--collapsed' : ''),
+          class: 'priority-pill ' + colorClass + todayClass + (isCollapsed ? ' priority-pill--collapsed' : ''),
           'aria-label': label + (isCollapsed ? ' (collapsed)' : ''),
           onClick: () => { onGroupToggle?.(p); }
         },
