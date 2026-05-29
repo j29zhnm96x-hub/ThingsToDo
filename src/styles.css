@@ -1336,16 +1336,16 @@ html[data-theme='light'] .checklist-clearPage-btn {
    properly clips the left side while revealing new content on the right */
 @keyframes titleScroll {
   0%   { text-indent: 0; }
-  25%  { text-indent: 0; }
-  50%  { text-indent: calc(-1 * var(--scroll-dist)); }
-  75%  { text-indent: calc(-1 * var(--scroll-dist)); }
+  33%  { text-indent: 0; }
+  81%  { text-indent: calc(-1 * var(--scroll-dist)); }
+  90%  { text-indent: calc(-1 * var(--scroll-dist)); }
   100% { text-indent: 0; }
 }
 .title-scroll {
   text-overflow: clip;
   overflow: hidden;
   white-space: nowrap;
-  animation: titleScroll 14s ease-in-out infinite;
+  animation: titleScroll 10.5s ease-in-out infinite;
 }
 
 .todo__dueInline {
