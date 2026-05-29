@@ -1331,6 +1331,19 @@ html[data-theme='light'] .checklist-clearPage-btn {
   text-overflow: ellipsis;
 }
 
+/* Scroll animation for long task titles — CSS only, no JS rAF loop */
+@keyframes titleScroll {
+  0%   { transform: translateX(0); }
+  30%  { transform: translateX(0); }
+  50%  { transform: translateX(calc(-1 * var(--scroll-dist))); }
+  80%  { transform: translateX(calc(-1 * var(--scroll-dist))); }
+  100% { transform: translateX(0); }
+}
+.title-scroll {
+  text-overflow: clip;
+  animation: titleScroll 10s ease-in-out infinite;
+}
+
 .todo__dueInline {
   white-space: nowrap;
   margin-right: 2px;

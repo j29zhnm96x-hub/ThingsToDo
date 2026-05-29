@@ -24,7 +24,8 @@ export function renderTodoList({
   mode, // 'active' | 'archive'
   groupByPriority, // optional: group active tasks by priority
   collapsedPriorities, // optional: { URGENT: true, ... }
-  onGroupToggle // optional: (priority) => void
+  onGroupToggle, // optional: (priority) => void
+  scrollLongTitles = false
 }) {
   const list = el('div', { class: 'list' });
 
@@ -405,6 +406,24 @@ export function renderTodoList({
         list.insertBefore(dragged, placeholder);
       }
       cleanup();
+    });
+  }
+
+  // Apply CSS-based scroll animation to overflowing titles (no JS animation loop)
+  if (scrollLongTitles) {
+    // Use rAF just once to measure after DOM is laid out, not for animation
+    requestAnimationFrame(() => {
+      try {
+        const titleEls = list.querySelectorAll('.todo__title');
+        titleEls.forEach(el => {
+          const card = el.closest('.todo');
+          if (card?.dataset?.projectType === 'checklist') return;
+          if (el.scrollWidth > el.clientWidth) {
+            el.style.setProperty('--scroll-dist', (el.scrollWidth - el.clientWidth + 40) + 'px');
+            el.classList.add('title-scroll');
+          }
+        });
+      } catch (e) { /* non-critical */ }
     });
   }
 
