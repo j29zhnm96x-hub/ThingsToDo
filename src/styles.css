@@ -1331,24 +1331,21 @@ html[data-theme='light'] .checklist-clearPage-btn {
   text-overflow: ellipsis;
 }
 
-/* Scroll animation for long task titles — CSS only, no JS rAF loop */
+/* Scroll animation for long task titles — uses text-indent to shift text
+   without moving the element's clipping boundary, so parent overflow:hidden
+   properly clips the left side while revealing new content on the right */
 @keyframes titleScroll {
-  0%   { transform: translateX(0); }
-  30%  { transform: translateX(0); }
-  50%  { transform: translateX(calc(-1 * var(--scroll-dist))); }
-  80%  { transform: translateX(calc(-1 * var(--scroll-dist))); }
-  100% { transform: translateX(0); }
+  0%   { text-indent: 0; }
+  30%  { text-indent: 0; }
+  50%  { text-indent: calc(-1 * var(--scroll-dist)); }
+  80%  { text-indent: calc(-1 * var(--scroll-dist)); }
+  100% { text-indent: 0; }
 }
 .title-scroll {
   text-overflow: clip;
+  overflow: hidden;
+  white-space: nowrap;
   animation: titleScroll 10s ease-in-out infinite;
-}
-/* Allow card to show overflow content during title scroll */
-.card-scroll {
-  overflow: visible !important;
-}
-.card-scroll .todo__titleArea {
-  overflow: visible !important;
 }
 
 .todo__dueInline {
