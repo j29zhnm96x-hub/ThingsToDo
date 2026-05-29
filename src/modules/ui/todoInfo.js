@@ -73,10 +73,8 @@ function daysLeft(isoOrNull) {
 function daysLeftText(isoOrNull) {
   const days = daysLeft(isoOrNull);
   if (days === null) return null;
-  if (days < 0) return `${Math.abs(days)} day${Math.abs(days) !== 1 ? 's' : ''} overdue`;
-  if (days === 0) return 'Due today';
-  if (days === 1) return 'Due tomorrow';
-  return `${days} days left`;
+  // Compact format: "-3d" = overdue, "0d" = today, "5d" = days left
+  return `${days}d`;
 }
 
 function daysLeftClass(isoOrNull) {

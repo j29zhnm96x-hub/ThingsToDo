@@ -1759,35 +1759,41 @@ body.dragging-reorder .app {
 /* Days left tags */
 .dueTag {
   display: inline-block;
-  padding: 2px 8px;
-  border-radius: 6px;
-  font-size: 13px;
+  padding: 1px 5px;
+  border-radius: 5px;
+  font-size: 11px;
   font-weight: 600;
   background: rgba(148,163,184,0.15);
   color: var(--muted);
 }
 
-@keyframes flashOpacity {
+@keyframes flashFast {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.1; }
+}
+
+@keyframes flashSlow {
+  0%, 66% { opacity: 1; }
+  83% { opacity: 0.1; }
+  100% { opacity: 1; }
 }
 
 .dueTag--overdue {
   background: rgba(239,68,68,0.15);
   color: var(--p0);
-  animation: flashOpacity 2s ease-in-out infinite;
+  animation: flashFast 0.5s ease-in-out infinite;
 }
 
 .dueTag--today {
-  background: rgba(249,115,22,0.15);
-  color: var(--p1);
-  animation: flashOpacity 2s ease-in-out infinite;
+  background: rgba(239,68,68,0.15);
+  color: var(--p0);
+  animation: flashSlow 3s ease-in-out infinite;
 }
 
 .dueTag--soon {
   background: rgba(234,179,8,0.15);
   color: var(--p2);
-  animation: flashOpacity 2s ease-in-out infinite;
+  animation: flashFast 2s ease-in-out infinite;
 }
 
 /* Hide/stop blinking once completed */
