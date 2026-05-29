@@ -13,18 +13,17 @@ export function renderTodoList({
   projectsById,
   onToggleCompleted,
   onEdit,
+  onMenu,
   onMove,
   onArchive,
   onRestore,
   onDelete,
-  onMenu,
-  onLinkToggle,
-  onReorder,
   onTap,
-  mode, // 'active' | 'archive'
-  groupByPriority, // optional: group active tasks by priority
-  collapsedPriorities, // optional: { URGENT: true, ... }
-  onGroupToggle // optional: (priority) => void
+  onGroupToggle,
+  collapsedPriorities,
+  onLinkToggle,
+  mode = 'inbox',
+  scrollLongTitles = false
 }) {
   const list = el('div', { class: 'list' });
 
@@ -408,5 +407,93 @@ export function renderTodoList({
     });
   }
 
+  // Start title-scroll animation for overflowing titles
+  if (scrollLongTitles) {
+    // Cancel all previous scroll animations first
+    stopAllTitleScrolls();
+    requestAnimationFrame(() => {
+      const titleEls = list.querySelectorAll('.todo__title');
+      titleEls.forEach(el => {
+        // Only animate regular tasks, not checklist items
+        const todoCard = el.closest('.todo');
+        if (todoCard?.dataset?.projectType === 'checklist') return;
+        
+        if (el.scrollWidth > el.clientWidth) {
+          startTitleScroll(el);
+        }
+      });
+    });
+  } else {
+    stopAllTitleScrolls();
+  }
+
   return list;
+}
+
+// Scroll animation for long task titles
+const scrollAnimations = new Map();
+
+function stopAllTitleScrolls() {
+  for (const [el, id] of scrollAnimations) {
+    cancelAnimationFrame(id);
+    el.style.overflow = '';
+    el.style.whiteSpace = '';
+    el.style.transform = '';
+  }
+  scrollAnimations.clear();
+}
+
+function startTitleScroll(titleEl) {
+  // Clean up any existing animation on this element
+  const existing = scrollAnimations.get(titleEl);
+  if (existing) cancelAnimationFrame(existing);
+
+  const overflow = titleEl.scrollWidth - titleEl.clientWidth;
+  if (overflow <= 0) return;
+
+  titleEl.style.overflow = 'hidden';
+  titleEl.style.whiteSpace = 'nowrap';
+
+  const extraPad = 40; // show a little extra space at the end
+  const totalDist = overflow + extraPad;
+  const scrollTimeMs = (totalDist / 150) * 1000; // 150px/s scroll speed
+  const pauseStart = 3000;       // 3s at start
+  const pauseEnd = 2000;         // 2s at end
+  const returnTime = 400;        // 0.4s to return
+  const totalCycle = pauseStart + scrollTimeMs + pauseEnd + returnTime;
+
+  function animate(timestamp) {
+    const t = ((timestamp % totalCycle) / totalCycle) * totalCycle;
+
+    if (t < pauseStart) {
+      // Pause at start — show beginning
+      titleEl.style.transform = 'translateX(0)';
+    } else if (t < pauseStart + scrollTimeMs) {
+      // Scroll left with ease-in-out
+      const p = (t - pauseStart) / scrollTimeMs;
+      const eased = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+      titleEl.style.transform = `translateX(-${eased * totalDist}px)`;
+    } else if (t < pauseStart + scrollTimeMs + pauseEnd) {
+      // Pause at end
+      titleEl.style.transform = `translateX(-${totalDist}px)`;
+    } else {
+      // Return to start with ease-in-out
+      const p = (t - (pauseStart + scrollTimeMs + pauseEnd)) / returnTime;
+      const eased = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+      titleEl.style.transform = `translateX(-${(1 - eased) * totalDist}px)`;
+    }
+
+    scrollAnimations.set(titleEl, requestAnimationFrame(animate));
+  }
+
+  scrollAnimations.set(titleEl, requestAnimationFrame(animate));
+  // Store cleanup on element for when it gets removed
+  titleEl._stopScroll = () => {
+    const id = scrollAnimations.get(titleEl);
+    if (id) cancelAnimationFrame(id);
+    scrollAnimations.delete(titleEl);
+    titleEl.style.overflow = '';
+    titleEl.style.whiteSpace = '';
+    titleEl.style.transform = '';
+  };
 }

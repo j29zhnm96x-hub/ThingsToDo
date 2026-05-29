@@ -37,6 +37,7 @@ export async function renderSettings(ctx) {
   const enableConfetti = settings.enableConfetti !== false; // Default true
   const enableConfettiSound = settings.enableConfettiSound !== false; // Default true
   const enableSwipe = settings.enableSwipe === true; // Default false
+  const scrollLongTitles = settings.scrollLongTitles === true; // Default false
 
   // AI settings
   const aiEnabled = settings.aiEnabled === true;
@@ -235,6 +236,12 @@ export async function renderSettings(ctx) {
       el('div', { class: 'row' },
         el('div', { class: 'small' }, t('enableSwipe')),
         swipeToggle
+      ),
+      el('div', { class: 'row' },
+        el('div', { class: 'small' }, t('scrollLongTitles')),
+        buildToggle(scrollLongTitles, async (val) => {
+          await db.settings.put({ ...await db.settings.get(), scrollLongTitles: val });
+        })
       )
     ),
 

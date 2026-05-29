@@ -318,7 +318,8 @@ export const db = {
         aiApiKey: '',
         aiModel: 'deepseek-chat',
         aiSystemPrompt: '',
-        quickVoiceAdd: false
+        quickVoiceAdd: false,
+        scrollLongTitles: false
       };
     },
     async put(settings) {
