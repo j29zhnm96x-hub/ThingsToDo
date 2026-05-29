@@ -1343,6 +1343,10 @@ html[data-theme='light'] .checklist-clearPage-btn {
   text-overflow: clip;
   animation: titleScroll 10s ease-in-out infinite;
 }
+/* Allow card to show overflow content during title scroll */
+.card-scroll {
+  overflow: visible !important;
+}
 
 .todo__dueInline {
   white-space: nowrap;

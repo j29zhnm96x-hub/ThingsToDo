@@ -421,6 +421,7 @@ export function renderTodoList({
           if (el.scrollWidth > el.clientWidth) {
             el.style.setProperty('--scroll-dist', (el.scrollWidth - el.clientWidth + 40) + 'px');
             el.classList.add('title-scroll');
+            if (card) card.classList.add('card-scroll');
           }
         });
       } catch (e) { /* non-critical */ }
