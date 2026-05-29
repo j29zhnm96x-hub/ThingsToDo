@@ -1781,18 +1781,17 @@ body.dragging-reorder .app {
 .dueTag--overdue {
   background: rgba(239,68,68,0.15);
   color: var(--p0);
-  animation: flashFast 0.5s ease-in-out infinite;
 }
 
 .dueTag--today {
   background: rgba(239,68,68,0.15);
   color: var(--p0);
+  animation: flashSlow 3s ease-in-out infinite;
 }
 
 .dueTag--soon {
   background: rgba(234,179,8,0.15);
   color: var(--p2);
-  animation: flashFast 2s ease-in-out infinite;
 }
 
 /* Hide/stop blinking once completed */
