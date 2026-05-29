@@ -161,7 +161,7 @@ export function renderTodoList({
         // Check if any task in this group is due today
         const hasToday = groupTodos.some(t => daysLeft(t.dueDate) === 0);
         const colorClass = 'priority-pill--' + p.toLowerCase();
-        const todayClass = hasToday ? ' priority-pill--has-today' : '';
+        const todayClass = (hasToday && isCollapsed) ? ' priority-pill--has-today' : '';
         const pill = el('button', {
           type: 'button',
           class: 'priority-pill ' + colorClass + todayClass + (isCollapsed ? ' priority-pill--collapsed' : ''),

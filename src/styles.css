@@ -1721,13 +1721,13 @@ body.dragging-reorder .app {
   background: rgba(34, 197, 94, 0.06);
 }
 
-/* Red glow pulse when any task in this group is due today */
-@keyframes pulseToday {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); border-color: var(--border); }
-  50% { box-shadow: 0 0 12px 2px rgba(239,68,68,0.4); border-color: var(--p0); }
+/* Subtle border pulse when collapsed group has today tasks */
+@keyframes pulseBorder {
+  0%, 100% { border-color: var(--border); box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  50% { border-color: var(--border); box-shadow: 0 0 0 2px var(--border); }
 }
 .priority-pill--has-today {
-  animation: pulseToday 3s ease-in-out infinite;
+  animation: pulseBorder 1.5s ease-in-out infinite;
 }
 .priority-pill--p3 .priority-pill__label { color: var(--p3); }
 .priority-pill--p3 .priority-pill__count { background: rgba(34, 197, 94, 0.2); color: var(--p3); }
