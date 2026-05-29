@@ -1350,7 +1350,6 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
     todos,
     projectsById,
     mode: 'active',
-    scrollLongTitles: settings.scrollLongTitles === true,
     onTap: (todo) => openTodoInfo({
       todo,
       db,

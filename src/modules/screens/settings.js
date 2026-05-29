@@ -207,6 +207,33 @@ export async function renderSettings(ctx) {
     el('div', { class: 'card stack' },
       el('div', { style: { fontWeight: '700' } }, t('inbox')),
       el('div', { class: 'row' },
+        el('div', { class: 'small' }, t('groupActiveTasks')),
+        groupingToggle
+      )
+    ),
+    el('div', { class: 'card stack' },
+      el('div', { style: { fontWeight: '700' } }, t('voiceMemos')),
+      el('label', { class: 'label' },
+        el('span', {}, t('voiceRecordingQuality') || 'Recording quality'),
+        voiceQualitySelect
+      )
+    ),
+    el('div', { class: 'card stack' },
+      el('div', { style: { fontWeight: '700' } }, t('checklistOptions') || 'Checklists options'),
+      el('div', { class: 'small' }, t('manageSuggestionHistory') || 'Manage saved checklist suggestions'),
+      manageSuggestionsBtn
+    ),
+    el('div', { class: 'card stack' },
+      el('div', { style: { fontWeight: '700' } }, t('behaviors')),
+      el('div', { class: 'row' },
+        el('div', { class: 'small' }, t('enableConfetti')),
+        confettiToggle
+      ),
+      el('div', { class: 'row' },
+        el('div', { class: 'small' }, t('enableConfettiSound')),
+        confettiSoundToggle
+      ),
+      el('div', { class: 'row' },
         el('div', { class: 'small' }, t('enableSwipe')),
         swipeToggle
       ),
@@ -216,6 +243,123 @@ export async function renderSettings(ctx) {
           await db.settings.put({ ...await db.settings.get(), scrollLongTitles: val });
         })
       )
+    ),
+
+    // AI Assistant section
+    el('div', { class: 'card stack' },
+      el('div', { style: { fontWeight: '700' } }, t('aiSettings')),
+      el('div', { class: 'row' },
+        el('div', { class: 'small' }, t('aiEnable')),
+        buildToggle(aiEnabled, async (val) => {
+          await db.settings.put({ ...await db.settings.get(), aiEnabled: val });
+          renderSettings(ctx);
+        })
+      ),
+      aiEnabled ? el('div', { class: 'stack', style: { gap: '10px', marginTop: '8px' } },
+        // Provider selector
+        el('label', { class: 'label' },
+          el('span', {}, t('aiProvider')),
+          buildProviderSelect(aiProvider, (newProvider) => {
+            const info = AI_PROVIDERS[newProvider];
+            const endpointEl = document.getElementById('aiEndpoint');
+            const modelEl = document.getElementById('aiModel');
+            if (endpointEl && info) endpointEl.value = info.endpoint;
+            if (modelEl && info) modelEl.value = info.model;
+            // Save provider change
+            db.settings.get().then(s => {
+              s.aiProvider = newProvider;
+              if (info) {
+                s.aiEndpoint = info.endpoint;
+                s.aiModel = info.model;
+              }
+              db.settings.put(s);
+            });
+          })
+        ),
+        // Endpoint
+        el('label', { class: 'label' },
+          el('span', {}, t('aiEndpoint')),
+          el('input', {
+            id: 'aiEndpoint',
+            class: 'input',
+            type: 'text',
+            value: aiEndpoint,
+            placeholder: 'https://api.deepseek.com/v1',
+            onBlur: async (e) => {
+              await db.settings.put({ ...await db.settings.get(), aiEndpoint: e.target.value });
+            }
+          })
+        ),
+        // API Key
+        el('label', { class: 'label' },
+          el('span', {}, t('aiApiKey')),
+          el('div', { style: { display: 'flex', gap: '8px', alignItems: 'center' } },
+            el('input', {
+              id: 'aiApiKey',
+              class: 'input',
+              type: 'password',
+              style: { flex: '1' },
+              value: aiApiKey,
+              placeholder: 'sk-...',
+              onBlur: async (e) => {
+                await db.settings.put({ ...await db.settings.get(), aiApiKey: e.target.value });
+              }
+            }),
+            el('button', {
+              id: 'aiVerifyBtn',
+              type: 'button',
+              class: 'btn',
+              style: { flexShrink: '0' },
+              onClick: async (e) => {
+                const btn = e.target;
+                const origText = btn.textContent;
+                btn.textContent = t('aiVerifying');
+                btn.disabled = true;
+                const s = await db.settings.get();
+                const result = await verifyConnection(s);
+                btn.textContent = origText;
+                btn.disabled = false;
+                showToast(result.ok ? t('aiVerified') : (t('aiVerifyFailed') + ': ' + result.message));
+              }
+            }, t('aiVerify'))
+          )
+        ),
+        // Model
+        el('label', { class: 'label' },
+          el('span', {}, t('aiModel')),
+          el('input', {
+            id: 'aiModel',
+            class: 'input',
+            type: 'text',
+            value: aiModel,
+            placeholder: 'deepseek-chat',
+            onBlur: async (e) => {
+              await db.settings.put({ ...await db.settings.get(), aiModel: e.target.value });
+            }
+          })
+        ),
+        // Sign-up help box
+        buildSignupHelp(aiProvider),
+        // Advanced: Custom prompt
+        el('div', { class: 'row', style: { marginTop: '8px' } },
+          el('div', { class: 'small' }, t('aiQuickVoice')),
+          buildToggle(quickVoiceAdd, async (val) => {
+            await db.settings.put({ ...await db.settings.get(), quickVoiceAdd: val });
+          })
+        ),
+        el('div', { class: 'small', style: { color: 'var(--muted)' } }, t('aiQuickVoiceDesc')),
+        el('details', { style: { marginTop: '8px' } },
+          el('summary', { class: 'small', style: { cursor: 'pointer', color: 'var(--muted)' } }, t('aiSystemPrompt')),
+          el('textarea', {
+            class: 'input',
+            style: { width: '100%', minHeight: '60px', marginTop: '8px', padding: '8px', borderRadius: '8px', boxSizing: 'border-box' },
+            placeholder: 'Optional: customize how the AI parses your requests',
+            onBlur: async (e) => {
+              await db.settings.put({ ...await db.settings.get(), aiSystemPrompt: e.target.value });
+            }
+          }, aiSystemPrompt)
+        )
+      ) : null
     ),
     el('div', { class: 'card stack' },
       el('div', { style: { fontWeight: '700' } }, t('theme')),
