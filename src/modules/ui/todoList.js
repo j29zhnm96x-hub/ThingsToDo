@@ -438,10 +438,13 @@ const scrollAnimations = new Map();
 function stopAllTitleScrolls() {
   for (const [el, id] of scrollAnimations) {
     cancelAnimationFrame(id);
+    el.style.textOverflow = '';
+    el.style.textOverflow = '';
     el.style.overflow = '';
     el.style.whiteSpace = '';
     el.style.transform = '';
-  }
+  };
+}
   scrollAnimations.clear();
 }
 
@@ -453,6 +456,8 @@ function startTitleScroll(titleEl) {
   const overflow = titleEl.scrollWidth - titleEl.clientWidth;
   if (overflow <= 0) return;
 
+  // Disable ellipsis so the full text is revealed during scroll
+  titleEl.style.textOverflow = 'clip';
   titleEl.style.overflow = 'hidden';
   titleEl.style.whiteSpace = 'nowrap';
 
