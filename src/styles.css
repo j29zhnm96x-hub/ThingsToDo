@@ -1721,9 +1721,13 @@ body.dragging-reorder .app {
   background: rgba(34, 197, 94, 0.06);
 }
 
-/* Slow blink when any task in this group is due today */
+/* Red glow pulse when any task in this group is due today */
+@keyframes pulseToday {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); border-color: var(--border); }
+  50% { box-shadow: 0 0 12px 2px rgba(239,68,68,0.4); border-color: var(--p0); }
+}
 .priority-pill--has-today {
-  animation: flashSlow 3s ease-in-out infinite;
+  animation: pulseToday 3s ease-in-out infinite;
 }
 .priority-pill--p3 .priority-pill__label { color: var(--p3); }
 .priority-pill--p3 .priority-pill__count { background: rgba(34, 197, 94, 0.2); color: var(--p3); }
