@@ -1721,14 +1721,19 @@ body.dragging-reorder .app {
   background: rgba(34, 197, 94, 0.06);
 }
 
-/* Subtle border pulse when collapsed group has today tasks */
-@keyframes pulseBorder {
-  0%, 100% { border-color: var(--border); box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-  50% { border-color: var(--border); box-shadow: 0 0 0 2px var(--border); }
+/* Hard blink when collapsed group has today tasks — uses the pill's own label color */
+@keyframes blinkBorder {
+  0%, 49% { border-color: transparent; }
+  50%, 100% { border-color: var(--pill-blink); }
 }
 .priority-pill--has-today {
-  animation: pulseBorder 1.5s ease-in-out infinite;
+  animation: blinkBorder 1s step-end infinite;
 }
+.priority-pill--urgent.priority-pill--has-today { --pill-blink: #ff4444; }
+.priority-pill--p0.priority-pill--has-today     { --pill-blink: var(--p0); }
+.priority-pill--p1.priority-pill--has-today     { --pill-blink: var(--p1); }
+.priority-pill--p2.priority-pill--has-today     { --pill-blink: var(--p2); }
+.priority-pill--p3.priority-pill--has-today     { --pill-blink: var(--p3); }
 .priority-pill--p3 .priority-pill__label { color: var(--p3); }
 .priority-pill--p3 .priority-pill__count { background: rgba(34, 197, 94, 0.2); color: var(--p3); }
 .priority-pill--p3:active { background: rgba(34, 197, 94, 0.2); }
