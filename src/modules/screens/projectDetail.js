@@ -316,6 +316,10 @@ function openInboxBeforeModal(ctx, todo) {
 export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
   const { main, db, modalHost } = ctx;
 
+  // Load settings for scroll feature
+  const projSettings = await db.settings.get();
+  const scrollLT = projSettings.scrollLongTitles === true;
+
   // Flush any unsaved note edits BEFORE clearing the DOM
   const existingTextareas = document.querySelectorAll('.inlineNote__input');
   if (existingTextareas.length) {
@@ -1350,6 +1354,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
     todos,
     projectsById,
     mode: 'active',
+    scrollLongTitles: scrollLT,
     onTap: (todo) => openTodoInfo({
       todo,
       db,

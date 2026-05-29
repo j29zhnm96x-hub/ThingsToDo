@@ -1347,6 +1347,9 @@ html[data-theme='light'] .checklist-clearPage-btn {
 .card-scroll {
   overflow: visible !important;
 }
+.card-scroll .todo__titleArea {
+  overflow: visible !important;
+}
 
 .todo__dueInline {
   white-space: nowrap;
