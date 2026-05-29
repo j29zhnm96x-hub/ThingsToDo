@@ -13,19 +13,18 @@ export function renderTodoList({
   projectsById,
   onToggleCompleted,
   onEdit,
-  onMenu,
   onMove,
   onArchive,
   onRestore,
   onDelete,
-  onTap,
-  onGroupToggle,
-  collapsedPriorities,
+  onMenu,
   onLinkToggle,
-  mode = 'inbox',
-  groupByPriority,
   onReorder,
-  scrollLongTitles = false
+  onTap,
+  mode, // 'active' | 'archive'
+  groupByPriority, // optional: group active tasks by priority
+  collapsedPriorities, // optional: { URGENT: true, ... }
+  onGroupToggle // optional: (priority) => void
 }) {
   const list = el('div', { class: 'list' });
 

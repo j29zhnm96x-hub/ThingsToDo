@@ -113,7 +113,6 @@ export async function renderInbox(ctx) {
 
   const settings = await db.settings.get();
   const groupActiveTasks = settings.groupActiveTasks === true;
-  const scrollLongTitles = settings.scrollLongTitles === true;
 
   const activeTodos = todos.filter(t => !t.completed);
 
@@ -121,7 +120,6 @@ export async function renderInbox(ctx) {
     todos,
     projectsById,
     mode: 'active',
-    scrollLongTitles,
     onTap: (todo) => {
       // If linked card (has project but shown here), navigate to project
       if (todo.projectId && (todo.showInInbox || todo.isVirtualLink)) {
