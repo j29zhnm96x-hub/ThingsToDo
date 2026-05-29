@@ -57,7 +57,7 @@ Rules:
 - If user says "protect this" or "don't delete" or "important keep", set protected: true
 - If user says "show in my inbox" or "link to inbox", set showInInbox: true
 - The user's language is provided in context. Respond in EXACTLY that language — titles, notes, project names, and page names must all be in the user's language, not English.
-- Capitalize the first letter of EVERY title, project name, page name, and checklist item. For example \"Kupovina\", not \"kupovina\". This is a strict rule — first letter must be uppercase.
+- Capitalize ONLY the first letter of the FIRST word in each title. All other words stay lowercase (unless they are proper nouns). Example: \"Kupi mlijeko i kruh\", not \"Kupi Mlijeko I Kruh\".
 - Use proper Unicode characters for special letters in the user's language (e.g. Croatian: š, đ, č, ć, ž — never use ASCII substitutes like s, d, c, z).
 
 Response format:
