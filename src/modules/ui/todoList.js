@@ -410,24 +410,25 @@ export function renderTodoList({
   }
 
   // Start title-scroll animation for overflowing titles
-  if (scrollLongTitles) {
-    // Cancel all previous scroll animations first
-    stopAllTitleScrolls();
-    requestAnimationFrame(() => {
-      const titleEls = list.querySelectorAll('.todo__title');
-      titleEls.forEach(el => {
-        // Only animate regular tasks, not checklist items
-        const todoCard = el.closest('.todo');
-        if (todoCard?.dataset?.projectType === 'checklist') return;
-        
-        if (el.scrollWidth > el.clientWidth) {
-          startTitleScroll(el);
-        }
+  try {
+    if (scrollLongTitles) {
+      stopAllTitleScrolls();
+      requestAnimationFrame(() => {
+        try {
+          const titleEls = list.querySelectorAll('.todo__title');
+          titleEls.forEach(el => {
+            const todoCard = el.closest('.todo');
+            if (todoCard?.dataset?.projectType === 'checklist') return;
+            if (el.scrollWidth > el.clientWidth) {
+              startTitleScroll(el);
+            }
+          });
+        } catch (e) { /* scroll animation error - non-critical */ }
       });
-    });
-  } else {
-    stopAllTitleScrolls();
-  }
+    } else {
+      stopAllTitleScrolls();
+    }
+  } catch (e) { /* scroll init error - non-critical */ }
 
   return list;
 }
