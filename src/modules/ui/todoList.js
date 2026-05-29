@@ -442,6 +442,9 @@ function stopAllTitleScrolls() {
     el.style.overflow = '';
     el.style.whiteSpace = '';
     el.style.transform = '';
+    // Restore parent card overflow
+    const card = el.closest('.todo');
+    if (card) card.style.overflow = '';
   }
   scrollAnimations.clear();
 }
@@ -454,9 +457,13 @@ function startTitleScroll(titleEl) {
   const overflow = titleEl.scrollWidth - titleEl.clientWidth;
   if (overflow <= 0) return;
 
+  // Temporarily allow the parent card to show overflow content during scroll
+  const card = titleEl.closest('.todo');
+  if (card) card.style.overflow = 'visible';
+
   // Disable ellipsis so the full text is revealed during scroll
   titleEl.style.textOverflow = 'clip';
-  titleEl.style.overflow = 'hidden';
+  titleEl.style.overflow = 'visible';
   titleEl.style.whiteSpace = 'nowrap';
 
   const extraPad = 40; // show a little extra space at the end
@@ -501,5 +508,7 @@ function startTitleScroll(titleEl) {
     titleEl.style.overflow = '';
     titleEl.style.whiteSpace = '';
     titleEl.style.transform = '';
+    const card = titleEl.closest('.todo');
+    if (card) card.style.overflow = '';
   };
 }
