@@ -220,17 +220,41 @@ export function initApp(root) {
             }, '←')
           );
           if ((project.type ?? 'default') !== 'checklist') {
-            topbarActions.append(
-              el('button', { 
-                  class: 'topbar__addBtn', 
-                  type: 'button', 
-                  'aria-label': t('addItem'), 
-                  onClick: () => { 
-                      hapticLight(); 
-                      openProjectAddMenu(ctx, project);
-                  } 
-              }, '+')
-            );
+            const projAddBtn = el('button', { 
+                class: 'topbar__addBtn', 
+                type: 'button', 
+                'aria-label': t('addItem')
+            }, '+');
+            let projLongPressTimer = null;
+            let projIsLongPress = false;
+            projAddBtn.addEventListener('click', () => {
+              if (projIsLongPress) { projIsLongPress = false; return; }
+              hapticLight();
+              openProjectAddMenu(ctx, project);
+            });
+            projAddBtn.addEventListener('mousedown', () => {
+              projIsLongPress = false;
+              clearTimeout(projLongPressTimer);
+              projLongPressTimer = setTimeout(() => {
+                projIsLongPress = true;
+                hapticLight?.();
+                openSmartAdd(ctx, { mode: 'project', project, startMic: true });
+              }, 500);
+            });
+            projAddBtn.addEventListener('mouseup', () => clearTimeout(projLongPressTimer));
+            projAddBtn.addEventListener('mouseleave', () => clearTimeout(projLongPressTimer));
+            projAddBtn.addEventListener('touchstart', () => {
+              projIsLongPress = false;
+              clearTimeout(projLongPressTimer);
+              projLongPressTimer = setTimeout(() => {
+                projIsLongPress = true;
+                hapticLight?.();
+                openSmartAdd(ctx, { mode: 'project', project, startMic: true });
+              }, 500);
+            }, { passive: true });
+            projAddBtn.addEventListener('touchend', () => clearTimeout(projLongPressTimer));
+            projAddBtn.addEventListener('touchcancel', () => clearTimeout(projLongPressTimer));
+            topbarActions.append(projAddBtn);
           }
           topbarActions.append(
             el('button', { class: 'topbar__addBtn', type: 'button', 'aria-label': t('search'), onClick: () => { hapticLight(); location.hash = '#search'; } }, '🔍')
