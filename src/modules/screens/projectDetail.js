@@ -975,11 +975,39 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
     }, 'Add\npage'.split('\n').map(line => el('div', {}, line)));
     
     // --- Add Item Button (floating, above clear page) ---
+    let addLongPressTimer = null;
+    let addIsLongPress = false;
+    const ADD_LONG_PRESS_MS = 500;
+
+    function onAddPressStart() {
+      addIsLongPress = false;
+      clearTimeout(addLongPressTimer);
+      addLongPressTimer = setTimeout(() => {
+        addIsLongPress = true;
+        hapticLight?.();
+        openSmartAdd(ctx, {
+          mode: 'checklist',
+          project,
+          pageId: currentPageId,
+          pageName: (currentPage || {}).name || 'Untitled',
+          startMic: true
+        });
+      }, ADD_LONG_PRESS_MS);
+    }
+
+    function onAddPressEnd() {
+      clearTimeout(addLongPressTimer);
+    }
+
     const addItemBtn = el('button', {
       type: 'button',
       class: 'checklist-addItem-btn',
       'aria-label': t('addItem') || 'Add item',
       onClick: () => {
+        if (addIsLongPress) {
+          addIsLongPress = false;
+          return;
+        }
         hapticLight();
         openChecklistAddMenu(ctx, {
           project,
@@ -990,6 +1018,13 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
         });
       }
     }, '+');
+
+    addItemBtn.addEventListener('mousedown', onAddPressStart);
+    addItemBtn.addEventListener('mouseup', onAddPressEnd);
+    addItemBtn.addEventListener('mouseleave', onAddPressEnd);
+    addItemBtn.addEventListener('touchstart', onAddPressStart, { passive: true });
+    addItemBtn.addEventListener('touchend', onAddPressEnd);
+    addItemBtn.addEventListener('touchcancel', onAddPressEnd);
     
     // --- Clear Page Button (floating, above add item) ---
     const clearPageBtn = el('button', {
