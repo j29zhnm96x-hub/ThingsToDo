@@ -102,9 +102,25 @@ async function openChecklistAddMenu(ctx, {
               return Math.max(maxOrder, order);
             }, -1) + 1;
 
+            // Parse quantity/unit from each item title
+            function parseQtyFromTitle(raw) {
+              const unitPattern = '(kg|g|l|ml|pcs|pack|box|m|cm|pieces|liters|litres)';
+              const s = raw.trim();
+              const startMatch = s.match(new RegExp('^(\\d+(?:\\.\\d+)?)\\s*' + unitPattern + '\\s+(.+)', 'i'));
+              if (startMatch) return { qty: parseFloat(startMatch[1]), unit: startMatch[2].toLowerCase(), title: startMatch[3] };
+              const endMatch = s.match(new RegExp('^(.+)\\s+(\\d+(?:\\.\\d+)?)\\s*' + unitPattern + '$', 'i'));
+              if (endMatch) return { qty: parseFloat(endMatch[2]), unit: endMatch[3].toLowerCase(), title: endMatch[1] };
+              return null;
+            }
             const todosToCreate = items.map((title, index) => {
-              const todo = newTodo({ title: normalizeTitle(title), projectId: project.id, pageId: targetPageId });
+              const parsed = parseQtyFromTitle(title);
+              const itemTitle = normalizeTitle(parsed ? parsed.title : title);
+              const todo = newTodo({ title: itemTitle, projectId: project.id, pageId: targetPageId });
               todo.order = nextOrder + index;
+              if (parsed) {
+                todo.itemQuantity = parsed.qty;
+                todo.itemUnit = parsed.unit;
+              }
               return todo;
             });
 
@@ -1810,6 +1826,17 @@ function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated, useSug
     });
   }
 
+  // Parse "2kg milk" or "milk 2kg" patterns from the title
+  function parseQtyFromTitle(raw) {
+    // Pattern: number + optional space + unit at start or end
+    const unitPattern = '(kg|g|l|ml|pcs|pack|box|m|cm|pieces|liters|litres)';
+    const startMatch = raw.match(new RegExp('^(\\d+(?:\\.\\d+)?)\\s*' + unitPattern + '\\s+(.+)', 'i'));
+    if (startMatch) return { qty: parseFloat(startMatch[1]), unit: startMatch[2].toLowerCase(), title: startMatch[3] };
+    const endMatch = raw.match(new RegExp('^(.+)\\s+(\\d+(?:\\.\\d+)?)\\s*' + unitPattern + '$', 'i'));
+    if (endMatch) return { qty: parseFloat(endMatch[2]), unit: endMatch[3].toLowerCase(), title: endMatch[1] };
+    return null;
+  }
+
   const addItem = async () => {
     let title = input.value.trim();
     if (!title) {
@@ -1817,13 +1844,32 @@ function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated, useSug
       return false;
     }
     const baseTitle = title; // Store base title for suggestions
-    const qty = enableQtyUnits && qtyInput ? qtyInput.value.trim() : '';
-    if (qty && selectedUnit) {
-      title += ` (${qty} ${selectedUnit})`;
-    } else if (qty) {
-      title += ` (${qty})`;
+    let itemQuantity = null;
+    let itemUnit = null;
+
+    if (enableQtyUnits && qtyInput) {
+      // Manual quantity/unit inputs take priority
+      const qty = qtyInput.value.trim();
+      if (qty) {
+        itemQuantity = parseFloat(qty);
+        itemUnit = selectedUnit || null;
+      }
     }
-    await db.todos.put(newTodo({ title, projectId, pageId }));
+
+    // Auto-detect "2kg milk" / "milk 2kg" from title text
+    if (itemQuantity == null) {
+      const parsed = parseQtyFromTitle(title);
+      if (parsed) {
+        itemQuantity = parsed.qty;
+        itemUnit = parsed.unit;
+        title = parsed.title;
+      }
+    }
+
+    const todo = newTodo({ title: title.trim(), projectId, pageId });
+    todo.itemQuantity = itemQuantity;
+    todo.itemUnit = itemUnit;
+    await db.todos.put(todo);
     if (useSuggestions) {
       await db.checklistSuggestions.remember([baseTitle]);
     }
@@ -1944,10 +1990,15 @@ function renderChecklistWithDrag({ todos, modalHost, db, projectId, currentPageI
     let swiping = false;
     const SWIPE_THRESHOLD = 80;
 
+    const qtyLabel = (todo.itemQuantity != null && todo.itemUnit)
+      ? ` — ${todo.itemQuantity} ${todo.itemUnit}`
+      : todo.itemQuantity != null
+        ? ` — ${todo.itemQuantity}`
+        : '';
     const textSpan = el('span', { 
       class: 'checklist__text',
       style: 'cursor: pointer;'
-    }, todo.title);
+    }, todo.title + qtyLabel);
 
     const row = el('div', {
       class: completed ? 'checklist__item checklist__item--done pill' : 'checklist__item pill',
@@ -2225,40 +2276,72 @@ function renderChecklistWithDrag({ todos, modalHost, db, projectId, currentPageI
   return container;
 }
 
+const COMMON_UNITS = ['', 'kg', 'g', 'l', 'ml', 'pcs', 'pack', 'box', 'm', 'cm', 'Custom'];
+
 function openEditChecklistItem({ modalHost, db, todo, onSaved }) {
-  const input = el('textarea', { class: 'input input--title', 'aria-label': 'Item name' }, todo.title);
+  const input = el('textarea', { class: 'input input--title', 'aria-label': 'Item name', placeholder: 'Item name' }, todo.title);
   const autosizeEdit = () => { input.style.height = 'auto'; input.style.height = input.scrollHeight + 'px'; };
   input.addEventListener('input', autosizeEdit);
 
+  const qty = todo.itemQuantity ?? '';
+  const unit = todo.itemUnit || '';
+  const qtyInput = el('input', { type: 'number', class: 'input', min: '0', step: 'any', placeholder: 'Qty', style: 'width:80px', value: String(qty) });
+  const unitSelect = el('select', { class: 'select', 'aria-label': 'Unit' },
+    ...COMMON_UNITS.map(u => el('option', { value: u === 'Custom' ? '__custom__' : u, selected: unit === u ? 'selected' : null },
+      u === '' ? '—' : u
+    ))
+  );
+  const customUnitInput = el('input', {
+    type: 'text', class: 'input', placeholder: 'Unit', style: 'width:80px;display:none',
+    value: !COMMON_UNITS.includes(unit) && unit ? unit : ''
+  });
+
+  unitSelect.addEventListener('change', () => {
+    customUnitInput.style.display = unitSelect.value === '__custom__' ? '' : 'none';
+    if (unitSelect.value === '__custom__') setTimeout(() => customUnitInput.focus(), 100);
+  });
+
+  // If current unit is custom (not in preset list), show custom field
+  if (unit && !['', 'kg', 'g', 'l', 'ml', 'pcs', 'pack', 'box', 'm', 'cm'].includes(unit)) {
+    unitSelect.value = '__custom__';
+    customUnitInput.style.display = '';
+    customUnitInput.value = unit;
+  }
+
+  const qtyRow = el('div', { style: 'display:flex;gap:8px;align-items:center;margin-top:8px' },
+    el('span', { style: 'font-size:0.875rem;color:var(--muted)' }, 'Qty'),
+    qtyInput,
+    unitSelect,
+    customUnitInput
+  );
+
+  const content = el('div', {}, input, qtyRow);
+
   const saveItem = async () => {
     const title = input.value.trim();
-    if (!title) {
-      input.focus();
-      return false;
-    }
-    await db.todos.put({ ...todo, title });
+    if (!title) { input.focus(); return false; }
+    const q = parseFloat(qtyInput.value);
+    const itemQuantity = Number.isFinite(q) && q > 0 ? q : null;
+    const u = unitSelect.value === '__custom__' ? customUnitInput.value.trim() : unitSelect.value;
+    const itemUnit = u || null;
+    await db.todos.put({ ...todo, title, itemQuantity, itemUnit });
     onSaved?.();
     return true;
   };
 
   openModal(modalHost, {
     title: 'Edit item',
-    content: input,
+    content,
     align: 'top',
     headerActions: [
       { label: 'Save', class: 'btn btn--primary', onClick: saveItem }
     ],
     actions: [
       { label: 'Cancel', class: 'btn btn--ghost', onClick: () => true },
-      {
-        label: 'Save',
-        class: 'btn btn--primary',
-        onClick: saveItem
-      }
+      { label: 'Save', class: 'btn btn--primary', onClick: saveItem }
     ]
   });
 
-  // Focus immediately (synchronously) to trigger mobile keyboard during the user gesture.
   try { input.focus(); } catch (e) { /* ignore */ }
   setTimeout(autosizeEdit, 0);
 }

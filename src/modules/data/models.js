@@ -62,6 +62,8 @@ export function newTodo({ title, projectId, pageId = null }) {
     recurrenceCount: 0, // Number of times this has recurred
     seriesId: null, // UUID linking all instances in a series
     isRecurringInstance: false, // True if this was auto-created from recurrence
+    itemQuantity: null, // number — for checklist items (e.g. 2)
+    itemUnit: null,     // string — for checklist items (e.g. "kg", "pcs")
     createdAt: t,
     updatedAt: t
   };
