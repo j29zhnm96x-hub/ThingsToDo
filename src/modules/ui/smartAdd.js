@@ -566,7 +566,8 @@ async function createSelected(ctx, context, selected) {
               const item = newTodo({ title: itemData.title, projectId: proj.id, pageId: page.id });
               item.order = j;
               item.notes = itemData.notes || '';
-              if (itemData.qty) item.title = `${itemData.qty}x ${item.title}`;
+              if (itemData.qty) item.itemQuantity = parseFloat(itemData.qty);
+              if (itemData.unit) item.itemUnit = String(itemData.unit);
               await db.todos.put(item);
               results.push(item);
             }
@@ -585,16 +586,18 @@ async function createSelected(ctx, context, selected) {
         await db.checklistPages.put(page);
         results.push(page);
 
-        if (cpData.items && cpData.items.length) {
-          for (let j = 0; j < cpData.items.length; j++) {
-            const itemData = cpData.items[j];
-            const todo = newTodo({ title: itemData.title, projectId: context.project.id, pageId: page.id });
-            todo.order = j;
-            todo.notes = itemData.notes || '';
-            await db.todos.put(todo);
-            results.push(todo);
+          if (cpData.items && cpData.items.length) {
+            for (let j = 0; j < cpData.items.length; j++) {
+              const itemData = cpData.items[j];
+              const todo = newTodo({ title: itemData.title, projectId: context.project.id, pageId: page.id });
+              todo.order = j;
+              todo.notes = itemData.notes || '';
+              if (itemData.qty) todo.itemQuantity = parseFloat(itemData.qty);
+              if (itemData.unit) todo.itemUnit = String(itemData.unit);
+              await db.todos.put(todo);
+              results.push(todo);
+            }
           }
-        }
       }
     }
 
@@ -642,6 +645,8 @@ async function createSelected(ctx, context, selected) {
             const todo = newTodo({ title: items[j].title, projectId: matchProj.id, pageId: newPage.id });
             todo.order = j;
             todo.notes = items[j].notes || '';
+            if (items[j].qty) todo.itemQuantity = parseFloat(items[j].qty);
+            if (items[j].unit) todo.itemUnit = String(items[j].unit);
             await db.todos.put(todo);
             results.push(todo);
           }
@@ -649,6 +654,8 @@ async function createSelected(ctx, context, selected) {
           for (const itemData of item.data.items) {
             const todo = newTodo({ title: itemData.title, projectId: matchProj.id, pageId });
             todo.notes = itemData.notes || '';
+            if (itemData.qty) todo.itemQuantity = parseFloat(itemData.qty);
+            if (itemData.unit) todo.itemUnit = String(itemData.unit);
             await db.todos.put(todo);
             results.push(todo);
           }
@@ -663,9 +670,12 @@ async function createSelected(ctx, context, selected) {
         await db.checklistPages.put(page);
         results.push(page);
         for (let j = 0; j < item.data.items.length; j++) {
-          const todo = newTodo({ title: item.data.items[j].title, projectId: proj.id, pageId: page.id });
+          const itemData = item.data.items[j];
+          const todo = newTodo({ title: itemData.title, projectId: proj.id, pageId: page.id });
           todo.order = j;
-          todo.notes = item.data.items[j].notes || '';
+          todo.notes = itemData.notes || '';
+          if (itemData.qty) todo.itemQuantity = parseFloat(itemData.qty);
+          if (itemData.unit) todo.itemUnit = String(itemData.unit);
           await db.todos.put(todo);
           results.push(todo);
         }
