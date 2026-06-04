@@ -104,11 +104,13 @@ async function openChecklistAddMenu(ctx, {
 
             // Parse quantity/unit from each item title (multilingual)
             function parseQtyFromTitle(raw) {
-              const u = '(?:kg|g|ml|m|cm|kile?|kila?|lit(?:re?|ra?|ri?|ar?)|pcs|uds|kom(?:ad[au]?)?|pz|Stk|pack|paq|pak|conf|Pack|box|caja|kut|scat|Box|pieces|liters|litres)';
+              const unitPat = '(kg|g|ml|m|cm|kile?|kila?|lit(?:re?|ra?|ri?|ar?)|pcs|uds|kom(?:ad[au]?)?|pz|Stk|pack|paq|pak|conf|Pack|box|caja|kut|scat|Box|pieces|liters|litres)';
               const s = raw.trim();
-              const startMatch = s.match(new RegExp('^(\\d+(?:\\.\\d+)?)\\s*' + u + '\\s+(.+)', 'i'));
+              const startRe = new RegExp('^(\\d+(?:\\.\\d+)?)\\s*' + unitPat + '\\s+(.+)', 'i');
+              const startMatch = s.match(startRe);
               if (startMatch) return { qty: parseFloat(startMatch[1]), unit: normalizeUnit(startMatch[2]), title: startMatch[3] };
-              const endMatch = s.match(new RegExp('^(.+)\\s+(\\d+(?:\\.\\d+)?)\\s*' + u + '$', 'i'));
+              const endRe = new RegExp('^(.+)\\s+(\\d+(?:\\.\\d+)?)\\s*' + unitPat + '$', 'i');
+              const endMatch = s.match(endRe);
               if (endMatch) return { qty: parseFloat(endMatch[2]), unit: normalizeUnit(endMatch[3]), title: endMatch[1] };
               return null;
             }
@@ -1837,10 +1839,13 @@ function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated, useSug
   // Parse "2kg milk" or "milk 2kg" patterns from the title.
   // Recognizes unit names in all supported languages.
   function parseQtyFromTitle(raw) {
-    const u = '(?:kg|g|ml|m|cm|kile?|kila?|lit(?:re?|ra?|ri?|ar?)|pcs|uds|kom(?:ad[au]?)?|pz|Stk|pack|paq|pak|conf|Pack|box|caja|kut|scat|Box|pieces|liters|litres)';
-    const startMatch = raw.match(new RegExp('^(\\d+(?:\\.\\d+)?)\\s*' + u + '\\s+(.+)', 'i'));
+    // Capturing unit — the () group captures the unit text
+    const unitPat = '(kg|g|ml|m|cm|kile?|kila?|lit(?:re?|ra?|ri?|ar?)|pcs|uds|kom(?:ad[au]?)?|pz|Stk|pack|paq|pak|conf|Pack|box|caja|kut|scat|Box|pieces|liters|litres)';
+    const startRe = new RegExp('^(\\d+(?:\\.\\d+)?)\\s*' + unitPat + '\\s+(.+)', 'i');
+    const startMatch = raw.match(startRe);
     if (startMatch) return { qty: parseFloat(startMatch[1]), unit: normalizeUnit(startMatch[2]), title: startMatch[3] };
-    const endMatch = raw.match(new RegExp('^(.+)\\s+(\\d+(?:\\.\\d+)?)\\s*' + u + '$', 'i'));
+    const endRe = new RegExp('^(.+)\\s+(\\d+(?:\\.\\d+)?)\\s*' + unitPat + '$', 'i');
+    const endMatch = raw.match(endRe);
     if (endMatch) return { qty: parseFloat(endMatch[2]), unit: normalizeUnit(endMatch[3]), title: endMatch[1] };
     return null;
   }

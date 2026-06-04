@@ -73,10 +73,10 @@ Response format:
     }],
     "pages": [{ "name": "...", "items": [{ "title": "...", "qty": null, "unit": null }] }]
   }],
-  "checklistPages": [{ "name": "...", "items": [{ "title": "..." }] }],
+  "checklistPages": [{ "name": "...", "items": [{ "title": "...", "qty": null, "unit": null }] }],
   "notes": [{ "text": "..." }],
   "addToProject": [{ "projectName": "...", "tasks": [{ "title": "...", "priority": "P2" }] }],
-  "addToChecklistPage": [{ "projectName": "...", "pageName": "...", "items": [{ "title": "..." }] }],
+  "addToChecklistPage": [{ "projectName": "...", "pageName": "...", "items": [{ "title": "...", "qty": null, "unit": null }] }],
   "moveTasks": [{ "taskTitle": "...", "targetProject": "...", "targetPage": null }]
 }`;
 
