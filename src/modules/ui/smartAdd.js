@@ -405,7 +405,7 @@ export async function openSmartAdd(ctx, context) {
       // Try local parser first for simple commands (faster, free, works offline)
       const localResult = tryParse(text, contextInfo);
       if (localResult) {
-        showPreview(localResult);
+        showPreview(validateStructure(localResult));
         return;
       }
       // Fall back to AI for complex requests

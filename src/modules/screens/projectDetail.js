@@ -104,7 +104,7 @@ async function openChecklistAddMenu(ctx, {
 
             // Parse quantity/unit from each item title (multilingual)
             function parseQtyFromTitle(raw) {
-              const u = '(?:kg|g|ml|m|cm|pcs|uds|kom|pz|Stk|lit|l|pack|paq|pak|conf|Pack|box|caja|kut|scat|Box|pieces|liters|litres)';
+              const u = '(?:kg|g|ml|m|cm|kile?|kila?|lit(?:re?|ra?|ri?|ar?)|pcs|uds|kom(?:ad[au]?)?|pz|Stk|pack|paq|pak|conf|Pack|box|caja|kut|scat|Box|pieces|liters|litres)';
               const s = raw.trim();
               const startMatch = s.match(new RegExp('^(\\d+(?:\\.\\d+)?)\\s*' + u + '\\s+(.+)', 'i'));
               if (startMatch) return { qty: parseFloat(startMatch[1]), unit: normalizeUnit(startMatch[2]), title: startMatch[3] };
@@ -113,8 +113,12 @@ async function openChecklistAddMenu(ctx, {
               return null;
             }
             function normalizeUnit(u) {
-              const map = { uds:'pcs', kom:'pcs', pz:'pcs', stk:'pcs', pieces:'pcs', lit:'l', litres:'l', liters:'l', paq:'pack', pak:'pack', conf:'pack', caja:'box', kut:'box', scat:'box', kilogram:'kg', grams:'g' };
-              return map[u.toLowerCase()] || u.toLowerCase();
+              const lu = u.toLowerCase();
+              if (/^kile?$|^kila?$/.test(lu)) return 'kg';
+              if (/^lit(?:re?|ra?|ri?|ar?)$/.test(lu)) return 'l';
+              if (/^kom(?:ad[au]?)?$/.test(lu)) return 'pcs';
+              const map = { uds:'pcs', pz:'pcs', stk:'pcs', pieces:'pcs', litres:'l', liters:'l', paq:'pack', pak:'pack', conf:'pack', caja:'box', kut:'box', scat:'box', kilograms:'kg', grams:'g' };
+              return map[lu] || lu;
             }
             const todosToCreate = items.map((title, index) => {
               const parsed = parseQtyFromTitle(title);
@@ -1833,12 +1837,20 @@ function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated, useSug
   // Parse "2kg milk" or "milk 2kg" patterns from the title.
   // Recognizes unit names in all supported languages.
   function parseQtyFromTitle(raw) {
-    const u = '(?:kg|g|ml|m|cm|pcs|uds|kom|pz|Stk|lit|l|pack|paq|pak|conf|Pack|box|caja|kut|scat|Box|pieces|liters|litres)';
+    const u = '(?:kg|g|ml|m|cm|kile?|kila?|lit(?:re?|ra?|ri?|ar?)|pcs|uds|kom(?:ad[au]?)?|pz|Stk|pack|paq|pak|conf|Pack|box|caja|kut|scat|Box|pieces|liters|litres)';
     const startMatch = raw.match(new RegExp('^(\\d+(?:\\.\\d+)?)\\s*' + u + '\\s+(.+)', 'i'));
     if (startMatch) return { qty: parseFloat(startMatch[1]), unit: normalizeUnit(startMatch[2]), title: startMatch[3] };
     const endMatch = raw.match(new RegExp('^(.+)\\s+(\\d+(?:\\.\\d+)?)\\s*' + u + '$', 'i'));
     if (endMatch) return { qty: parseFloat(endMatch[2]), unit: normalizeUnit(endMatch[3]), title: endMatch[1] };
     return null;
+  }
+  function normalizeUnit(u) {
+    const lu = u.toLowerCase();
+    if (/^kile?$|^kila?$/.test(lu)) return 'kg';
+    if (/^lit(?:re?|ra?|ri?|ar?)$/.test(lu)) return 'l';
+    if (/^kom(?:ad[au]?)?$/.test(lu)) return 'pcs';
+    const map = { uds:'pcs', pz:'pcs', stk:'pcs', pieces:'pcs', litres:'l', liters:'l', paq:'pack', pak:'pack', conf:'pack', caja:'box', kut:'box', scat:'box', kilograms:'kg', grams:'g' };
+    return map[lu] || lu;
   }
   function normalizeUnit(u) {
     const map = { uds:'pcs', kom:'pcs', pz:'pcs', stk:'pcs', pieces:'pcs', lit:'l', litres:'l', liters:'l', paq:'pack', pak:'pack', conf:'pack', pack:'pack', caja:'box', kut:'box', scat:'box', box:'box', kilogram:'kg', grams:'g' };
