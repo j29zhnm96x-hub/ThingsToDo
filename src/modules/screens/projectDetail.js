@@ -102,15 +102,19 @@ async function openChecklistAddMenu(ctx, {
               return Math.max(maxOrder, order);
             }, -1) + 1;
 
-            // Parse quantity/unit from each item title
+            // Parse quantity/unit from each item title (multilingual)
             function parseQtyFromTitle(raw) {
-              const unitPattern = '(kg|g|l|ml|pcs|pack|box|m|cm|pieces|liters|litres)';
+              const u = '(?:kg|g|ml|m|cm|pcs|uds|kom|pz|Stk|lit|l|pack|paq|pak|conf|Pack|box|caja|kut|scat|Box|pieces|liters|litres)';
               const s = raw.trim();
-              const startMatch = s.match(new RegExp('^(\\d+(?:\\.\\d+)?)\\s*' + unitPattern + '\\s+(.+)', 'i'));
-              if (startMatch) return { qty: parseFloat(startMatch[1]), unit: startMatch[2].toLowerCase(), title: startMatch[3] };
-              const endMatch = s.match(new RegExp('^(.+)\\s+(\\d+(?:\\.\\d+)?)\\s*' + unitPattern + '$', 'i'));
-              if (endMatch) return { qty: parseFloat(endMatch[2]), unit: endMatch[3].toLowerCase(), title: endMatch[1] };
+              const startMatch = s.match(new RegExp('^(\\d+(?:\\.\\d+)?)\\s*' + u + '\\s+(.+)', 'i'));
+              if (startMatch) return { qty: parseFloat(startMatch[1]), unit: normalizeUnit(startMatch[2]), title: startMatch[3] };
+              const endMatch = s.match(new RegExp('^(.+)\\s+(\\d+(?:\\.\\d+)?)\\s*' + u + '$', 'i'));
+              if (endMatch) return { qty: parseFloat(endMatch[2]), unit: normalizeUnit(endMatch[3]), title: endMatch[1] };
               return null;
+            }
+            function normalizeUnit(u) {
+              const map = { uds:'pcs', kom:'pcs', pz:'pcs', stk:'pcs', pieces:'pcs', lit:'l', litres:'l', liters:'l', paq:'pack', pak:'pack', conf:'pack', caja:'box', kut:'box', scat:'box', kilogram:'kg', grams:'g' };
+              return map[u.toLowerCase()] || u.toLowerCase();
             }
             const todosToCreate = items.map((title, index) => {
               const parsed = parseQtyFromTitle(title);
@@ -1826,15 +1830,19 @@ function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated, useSug
     });
   }
 
-  // Parse "2kg milk" or "milk 2kg" patterns from the title
+  // Parse "2kg milk" or "milk 2kg" patterns from the title.
+  // Recognizes unit names in all supported languages.
   function parseQtyFromTitle(raw) {
-    // Pattern: number + optional space + unit at start or end
-    const unitPattern = '(kg|g|l|ml|pcs|pack|box|m|cm|pieces|liters|litres)';
-    const startMatch = raw.match(new RegExp('^(\\d+(?:\\.\\d+)?)\\s*' + unitPattern + '\\s+(.+)', 'i'));
-    if (startMatch) return { qty: parseFloat(startMatch[1]), unit: startMatch[2].toLowerCase(), title: startMatch[3] };
-    const endMatch = raw.match(new RegExp('^(.+)\\s+(\\d+(?:\\.\\d+)?)\\s*' + unitPattern + '$', 'i'));
-    if (endMatch) return { qty: parseFloat(endMatch[2]), unit: endMatch[3].toLowerCase(), title: endMatch[1] };
+    const u = '(?:kg|g|ml|m|cm|pcs|uds|kom|pz|Stk|lit|l|pack|paq|pak|conf|Pack|box|caja|kut|scat|Box|pieces|liters|litres)';
+    const startMatch = raw.match(new RegExp('^(\\d+(?:\\.\\d+)?)\\s*' + u + '\\s+(.+)', 'i'));
+    if (startMatch) return { qty: parseFloat(startMatch[1]), unit: normalizeUnit(startMatch[2]), title: startMatch[3] };
+    const endMatch = raw.match(new RegExp('^(.+)\\s+(\\d+(?:\\.\\d+)?)\\s*' + u + '$', 'i'));
+    if (endMatch) return { qty: parseFloat(endMatch[2]), unit: normalizeUnit(endMatch[3]), title: endMatch[1] };
     return null;
+  }
+  function normalizeUnit(u) {
+    const map = { uds:'pcs', kom:'pcs', pz:'pcs', stk:'pcs', pieces:'pcs', lit:'l', litres:'l', liters:'l', paq:'pack', pak:'pack', conf:'pack', pack:'pack', caja:'box', kut:'box', scat:'box', box:'box', kilogram:'kg', grams:'g' };
+    return map[u.toLowerCase()] || u.toLowerCase();
   }
 
   const addItem = async () => {
@@ -2276,7 +2284,20 @@ function renderChecklistWithDrag({ todos, modalHost, db, projectId, currentPageI
   return container;
 }
 
-const COMMON_UNITS = ['', 'kg', 'g', 'l', 'ml', 'pcs', 'pack', 'box', 'm', 'cm', 'Custom'];
+// Base unit values (stored internally) and their translation keys
+const UNIT_OPTIONS = [
+  { value: '', label: '—' },
+  { value: 'pcs', key: 'unitPcs' },
+  { value: 'kg', key: 'unitKg' },
+  { value: 'g', key: 'unitGram' },
+  { value: 'l', key: 'unitLit' },
+  { value: 'ml', key: 'unitMl' },
+  { value: 'pack', key: 'unitPack' },
+  { value: 'box', key: 'unitBox' },
+  { value: 'm', key: 'unitMetre' },
+  { value: 'cm', key: 'unitCm' },
+  { value: '__custom__', key: 'unitCustom' }
+];
 
 function openEditChecklistItem({ modalHost, db, todo, onSaved }) {
   const input = el('textarea', { class: 'input input--title', 'aria-label': 'Item name', placeholder: 'Item name' }, todo.title);
@@ -2287,13 +2308,15 @@ function openEditChecklistItem({ modalHost, db, todo, onSaved }) {
   const unit = todo.itemUnit || '';
   const qtyInput = el('input', { type: 'number', class: 'input', min: '0', step: 'any', placeholder: 'Qty', style: 'width:80px', value: String(qty) });
   const unitSelect = el('select', { class: 'select', 'aria-label': 'Unit' },
-    ...COMMON_UNITS.map(u => el('option', { value: u === 'Custom' ? '__custom__' : u, selected: unit === u ? 'selected' : null },
-      u === '' ? '—' : u
-    ))
+    ...UNIT_OPTIONS.map(u => {
+      const display = u.key ? t(u.key) : u.label;
+      return el('option', { value: u.value, selected: unit === u.value ? 'selected' : null }, display);
+    })
   );
+  const knownValues = UNIT_OPTIONS.map(u => u.value).filter(v => v && v !== '__custom__');
   const customUnitInput = el('input', {
     type: 'text', class: 'input', placeholder: 'Unit', style: 'width:80px;display:none',
-    value: !COMMON_UNITS.includes(unit) && unit ? unit : ''
+    value: !knownValues.includes(unit) && unit ? unit : ''
   });
 
   unitSelect.addEventListener('change', () => {
@@ -2302,7 +2325,7 @@ function openEditChecklistItem({ modalHost, db, todo, onSaved }) {
   });
 
   // If current unit is custom (not in preset list), show custom field
-  if (unit && !['', 'kg', 'g', 'l', 'ml', 'pcs', 'pack', 'box', 'm', 'cm'].includes(unit)) {
+  if (unit && !knownValues.includes(unit)) {
     unitSelect.value = '__custom__';
     customUnitInput.style.display = '';
     customUnitInput.value = unit;
