@@ -1,7 +1,7 @@
 import { el, clear } from '../ui/dom.js';
 import { renderTodoList } from '../ui/todoList.js';
 import { pickProject } from '../ui/pickProject.js';
-import { pickDestination } from '../ui/pickDestination.js';
+import { pickDestination, buildPagesMap } from '../ui/pickDestination.js';
 import { confirm } from '../ui/confirm.js';
 import { moveTodo, reorderBucket, completeTodo, uncompleteTodo } from '../logic/todoOps.js';
 import { openTodoMenu } from '../ui/todoMenu.js';
@@ -242,7 +242,8 @@ async function openNoteMenu(ctx, note) {
       label: t('move') || 'Move',
       class: 'btn',
       onClick: async () => {
-        const pick = await pickProject(modalHost, { title: t('moveNote') || 'Move note', projects, includeInbox: false });
+        const pagesByProjectId = await buildPagesMap(db);
+        const pick = await pickDestination(modalHost, { projects, pagesByProjectId, initial: { projectId: null, pageId: null }, includeInbox: false });
         if (pick !== undefined) {
           await db.projectNotes.put({ ...note, projectId: pick });
           renderProjectDetail(ctx, note.projectId);
@@ -1419,9 +1420,10 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
     },
     onEdit: (todo) => ctx.openTodoEditor({ mode: 'edit', todoId: todo.id, projectId: todo.projectId, db }),
     onMove: async (todo) => {
-      const dest = await pickProject(modalHost, { title: 'Move to…', projects, includeInbox: true, initial: todo.projectId ?? null, confirmLabel: 'Move' });
-      if (dest === undefined) return;
-      await moveTodo(db, todo, dest);
+      const pagesByProjectId = await buildPagesMap(db);
+      const dest = await pickDestination(modalHost, { projects, pagesByProjectId, initial: { projectId: todo.projectId, pageId: null }, includeInbox: true });
+      if (!dest) return;
+      await moveTodo(db, todo, dest.projectId, { pageId: dest.pageId });
       await renderProjectDetail(ctx, projectId, 0);
     },
     onLinkToggle: async (todo) => {
@@ -1477,9 +1479,10 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
         } },
         { label: 'Share…', class: 'btn', onClick: async () => { const { exportTodoToFile } = await import('../utils/share.js'); await exportTodoToFile(db, todo); return true; } },
         { label: 'Move', class: 'btn', onClick: async () => {
-          const dest = await pickProject(modalHost, { title: 'Move to…', projects, includeInbox: true, initial: todo.projectId ?? null, confirmLabel: 'Move' });
-          if (dest !== undefined) {
-            await moveTodo(db, todo, dest);
+          const pagesByProjectId = await buildPagesMap(db);
+          const dest = await pickDestination(modalHost, { projects, pagesByProjectId, initial: { projectId: todo.projectId, pageId: null }, includeInbox: true });
+          if (dest) {
+            await moveTodo(db, todo, dest.projectId, { pageId: dest.pageId });
             await renderProjectDetail(ctx, projectId, 0);
           }
           return true;

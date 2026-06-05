@@ -1,6 +1,7 @@
 import { el, clear, emptyState } from '../ui/dom.js';
 import { renderTodoList } from '../ui/todoList.js';
 import { pickProject } from '../ui/pickProject.js';
+import { pickDestination, buildPagesMap } from '../ui/pickDestination.js';
 import { confirm } from '../ui/confirm.js';
 import { restoreTodo, recycleTodos, restoreFromBin } from '../logic/todoOps.js';
 import { openTodoMenu } from '../ui/todoMenu.js';
@@ -205,18 +206,18 @@ export async function renderArchive(ctx) {
       }),
       onEdit: (todo) => ctx.openTodoEditor({ mode: 'edit', todoId: todo.id, projectId: todo.projectId, db }),
       onRestore: async (todo) => {
-        const initial = todo.archivedFromProjectId && projectsById.has(todo.archivedFromProjectId)
-          ? todo.archivedFromProjectId
-          : null;
-        const dest = await pickProject(modalHost, {
-          title: 'Restore to…',
-          projects,
-          includeInbox: true,
-          initial,
-          confirmLabel: 'Restore'
+        const pagesByProjectId = await buildPagesMap(db);
+        const dest = await pickDestination(modalHost, {
+          projects, pagesByProjectId,
+          initial: {
+            projectId: (todo.archivedFromProjectId && projectsById.has(todo.archivedFromProjectId))
+              ? todo.archivedFromProjectId : null,
+            pageId: null
+          },
+          includeInbox: true
         });
-        if (dest === undefined) return;
-        await restoreTodo(db, todo, dest);
+        if (!dest) return;
+        await restoreTodo(db, todo, dest.projectId, { pageId: dest.pageId });
         await renderArchive(ctx);
       },
       onDelete: async (todo) => {
@@ -269,20 +270,19 @@ export async function renderArchive(ctx) {
           { label: 'Edit', class: 'btn', onClick: () => (ctx.openTodoEditor({ mode: 'edit', todoId: todo.id, projectId: todo.projectId, db }), true) },
           { label: 'Share…', class: 'btn', onClick: async () => { const { exportTodoToFile } = await import('../utils/share.js'); await exportTodoToFile(db, todo); return true; } },
           { label: 'Restore', class: 'btn', onClick: async () => {
-            const initial = todo.archivedFromProjectId && projectsById.has(todo.archivedFromProjectId)
-              ? todo.archivedFromProjectId
-              : null;
-            const dest = await pickProject(modalHost, {
-              title: 'Restore to…',
-              projects,
-              includeInbox: true,
-              initial,
-              confirmLabel: 'Restore'
+            const pagesByProjectId = await buildPagesMap(db);
+            const dest = await pickDestination(modalHost, {
+              projects, pagesByProjectId,
+              initial: {
+                projectId: (todo.archivedFromProjectId && projectsById.has(todo.archivedFromProjectId))
+                  ? todo.archivedFromProjectId : null,
+                pageId: null
+              },
+              includeInbox: true
             });
-            if (dest !== undefined) {
-              await restoreTodo(db, todo, dest);
-              await renderArchive(ctx);
-            }
+            if (!dest) return false;
+            await restoreTodo(db, todo, dest.projectId, { pageId: dest.pageId });
+            await renderArchive(ctx);
             return true;
           } },
           { label: t('delete') || 'Delete', class: 'btn btn--danger', onClick: async () => {

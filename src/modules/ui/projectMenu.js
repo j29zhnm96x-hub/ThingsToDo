@@ -5,6 +5,7 @@ import { compressAttachmentsForArchive } from '../logic/attachments.js';
 import { showToast } from './toast.js';
 import { t } from '../utils/i18n.js';
 import { pickProject } from './pickProject.js';
+import { pickDestination, buildPagesMap } from './pickDestination.js';
 
 async function deleteProjectRecursive(db, projectId) {
   const allProjects = await db.projects.list();
@@ -173,45 +174,18 @@ export function openProjectMenu(modalHost, { db, project, onChange }) {
 
   moveBtn.addEventListener('click', async () => {
     const allProjects = await db.projects.list();
-    const validProjects = allProjects.filter(p => p.type !== 'checklist' && p.id !== project.id);
-    
-    // Create custom picker with Top Level option
-    const select = el('select', { class: 'select', 'aria-label': 'Destination' });
-    select.appendChild(el('option', { value: '' }, t('topLevel')));
-    for (const p of validProjects) {
-      select.appendChild(el('option', { value: p.id }, p.name));
-    }
-    
-    const chosenId = await new Promise((resolve) => {
-      openModal(modalHost, {
-        title: t('moveToProject'),
-        content: el('div', { class: 'stack' },
-          el('label', { class: 'label' },
-            el('span', {}, 'Destination'),
-            select
-          )
-        ),
-        actions: [
-          { label: 'Cancel', class: 'btn btn--ghost', onClick: () => resolve(undefined) },
-          {
-            label: t('move'),
-            class: 'btn btn--primary',
-            onClick: () => {
-              const v = select.value;
-              resolve(v === '' ? null : v);
-              return true;
-            }
-          }
-        ]
-      });
+    const pagesByProjectId = await buildPagesMap(db);
+    const dest = await pickDestination(modalHost, {
+      projects: allProjects.filter(p => p.id !== project.id),
+      pagesByProjectId,
+      initial: { projectId: null, pageId: null },
+      includeInbox: false
     });
-    
-    if (chosenId !== undefined) {
-      await db.projects.put({ ...project, parentId: chosenId });
-      onChange?.();
-      if (modalRef) modalRef.close();
-      showToast(t('projectMoved') || 'Project moved');
-    }
+    if (!dest) return;
+    await db.projects.put({ ...project, parentId: dest.projectId });
+    onChange?.();
+    if (modalRef) modalRef.close();
+    showToast(t('projectMoved') || 'Project moved');
   });
 
     modalRef = openModal(modalHost, {

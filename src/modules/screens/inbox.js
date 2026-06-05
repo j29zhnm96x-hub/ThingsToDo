@@ -1,6 +1,7 @@
 import { el, clear, emptyState } from '../ui/dom.js';
 import { renderTodoList } from '../ui/todoList.js';
 import { pickProject } from '../ui/pickProject.js';
+import { pickDestination, buildPagesMap } from '../ui/pickDestination.js';
 import { confirm } from '../ui/confirm.js';
 import { moveTodo, reorderBucket, completeTodo, uncompleteTodo, getAllTodosForProject } from '../logic/todoOps.js';
 import { compressAttachmentsForArchive } from '../logic/attachments.js';
@@ -150,9 +151,14 @@ export async function renderInbox(ctx) {
       ctx.openTodoEditor({ mode: 'edit', todoId: todo.id, projectId: todo.projectId, db });
     },
     onMove: async (todo) => {
-      const dest = await pickProject(modalHost, { title: 'Move to…', projects, includeInbox: true, initial: todo.projectId ?? null, confirmLabel: 'Move' });
-      if (dest === undefined) return;
-      await moveTodo(db, todo, dest);
+      const pagesByProjectId = await buildPagesMap(db);
+      const dest = await pickDestination(modalHost, {
+        projects, pagesByProjectId,
+        initial: { projectId: todo.projectId, pageId: null },
+        includeInbox: true
+      });
+      if (!dest) return;
+      await moveTodo(db, todo, dest.projectId, { pageId: dest.pageId });
       await renderInbox(ctx);
     },
     onLinkToggle: async (todo) => {
@@ -204,9 +210,14 @@ export async function renderInbox(ctx) {
         }] : []),
         { label: 'Share…', class: 'btn', onClick: async () => { const { exportTodoToFile } = await import('../utils/share.js'); await exportTodoToFile(db, todo); return true; } },
         { label: 'Move', class: 'btn', onClick: async () => {
-          const dest = await pickProject(modalHost, { title: 'Move to…', projects, includeInbox: true, initial: todo.projectId ?? null, confirmLabel: 'Move' });
-          if (dest === undefined) return false;
-          await moveTodo(db, todo, dest);
+          const pagesByProjectId = await buildPagesMap(db);
+          const dest = await pickDestination(modalHost, {
+            projects, pagesByProjectId,
+            initial: { projectId: todo.projectId, pageId: null },
+            includeInbox: true
+          });
+          if (!dest) return false;
+          await moveTodo(db, todo, dest.projectId, { pageId: dest.pageId });
           await renderInbox(ctx);
           return true;
         } },

@@ -43,7 +43,7 @@ export async function moveTodo(db, todo, projectId, { pageId = null } = {}) {
   await db.todos.put(updated);
 }
 
-export async function restoreTodo(db, todoOrId, projectId) {
+export async function restoreTodo(db, todoOrId, projectId, { pageId = null } = {}) {
   // Fetch fresh data from DB to ensure we have all fields
   const todoId = typeof todoOrId === 'string' ? todoOrId : todoOrId.id;
   const todo = await db.todos.get(todoId);
@@ -57,7 +57,9 @@ export async function restoreTodo(db, todoOrId, projectId) {
     completed: false,
     completedAt: null
   };
-  const updated = await placeAtEndOfBucket(db, base, projectId);
+  const updated = pageId != null
+    ? await placeAtEndOfChecklistPage(db, base, projectId, pageId)
+    : await placeAtEndOfBucket(db, base, projectId);
   await db.todos.put(updated);
 }
 

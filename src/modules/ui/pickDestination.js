@@ -3,6 +3,25 @@ import { openModal } from './modal.js';
 import { t } from '../utils/i18n.js';
 
 /**
+ * Pre-load all checklist pages grouped by project.
+ * Used by callers to build the picker data.
+ * @param {object} db
+ * @returns {Promise<Map<string, Array<{id, name, order}>>>}
+ */
+export async function buildPagesMap(db) {
+  const allProj = await db.projects.list();
+  const map = new Map();
+  for (const p of allProj) {
+    if (p.type === 'checklist') {
+      const pgs = await db.checklistPages.listByProject(p.id);
+      pgs.sort((a, b) => (a.order || 0) - (b.order || 0));
+      map.set(p.id, pgs);
+    }
+  }
+  return map;
+}
+
+/**
  * Unified hierarchical destination picker.
  * Shows projects, sub-projects, and their checklist pages in an indented tree.
  * Returns { projectId, pageId } or undefined if cancelled.
