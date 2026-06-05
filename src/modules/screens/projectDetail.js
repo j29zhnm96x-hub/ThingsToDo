@@ -1,6 +1,7 @@
 import { el, clear } from '../ui/dom.js';
 import { renderTodoList } from '../ui/todoList.js';
 import { pickProject } from '../ui/pickProject.js';
+import { pickDestination } from '../ui/pickDestination.js';
 import { confirm } from '../ui/confirm.js';
 import { moveTodo, reorderBucket, completeTodo, uncompleteTodo } from '../logic/todoOps.js';
 import { openTodoMenu } from '../ui/todoMenu.js';
@@ -1130,87 +1131,58 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
         await renderProjectDetail(ctx, projectId, 0);
       },
       onTap: (todo) => {
-        const moveChecklistItem = () => {
-          // Important: open the next modal *after* the current one closes.
-          // Otherwise, closing the current modal will clear modalHost and the
-          // newly opened modal disappears immediately.
-          setTimeout(() => {
-            openModal(modalHost, {
-              title: t('move') || 'Move',
-              content: el('div', { class: 'small' }, todo.title),
-              actions: [
-                {
-                  label: t('moveToPage') || 'Move to page',
-                  class: 'btn',
-                  onClick: () => {
-                    setTimeout(async () => {
-                      const pageId = await pickChecklistPage(modalHost, {
-                        title: t('moveToPage') || 'Move to page',
-                        pages,
-                        initial: todo.pageId || currentPageId,
-                        confirmLabel: t('move') || 'Move'
-                      });
-                      if (pageId === undefined || !pageId) return;
-                      await moveTodo(db, todo, projectId, { pageId });
-                      await renderProjectDetail(ctx, projectId, 0);
-                    }, 0);
-                    return true;
-                  }
-                },
-                {
-                  label: t('moveToProject') || 'Move to Project',
-                  class: 'btn',
-                  onClick: () => {
-                    setTimeout(async () => {
-                      const dest = await pickProject(modalHost, {
-                        title: t('moveToProject') || 'Move to Project',
-                        projects,
-                        includeInbox: true,
-                        initial: todo.projectId ?? null,
-                        confirmLabel: t('move') || 'Move'
-                      });
-                      if (dest === undefined) return;
+        const moveChecklistItem = async () => {
+          // Pre-load all pages for checklist projects
+          const allProj = await db.projects.list();
+          const pagesByProjectId = new Map();
+          for (const p of allProj) {
+            if (p.type === 'checklist') {
+              const pgs = await db.checklistPages.listByProject(p.id);
+              pgs.sort(sortPagesByOrder);
+              pagesByProjectId.set(p.id, pgs);
+            }
+          }
 
-                      // Inbox or normal project => convert to regular task by clearing pageId
-                      if (dest == null) {
-                        await moveTodo(db, todo, null, { pageId: null });
-                        await renderProjectDetail(ctx, projectId, 0);
-                        return;
-                      }
+          const dest = await pickDestination(modalHost, {
+            projects: allProj,
+            pagesByProjectId,
+            initial: { projectId: todo.projectId, pageId: todo.pageId },
+            includeInbox: true
+          });
+          if (!dest) return;
 
-                      const destProject = await db.projects.get(dest);
-                      const destIsChecklist = (destProject?.type === 'checklist');
-                      if (!destIsChecklist) {
-                        await moveTodo(db, todo, dest, { pageId: null });
-                        await renderProjectDetail(ctx, projectId, 0);
-                        return;
-                      }
+          const { projectId: destProjId, pageId: destPageId } = dest;
 
-                      let destPages = await db.checklistPages.listByProject(dest);
-                      destPages.sort(sortPagesByOrder);
-                      if (destPages.length === 0) {
-                        const defaultPage = newChecklistPage({ projectId: dest, name: '' });
-                        defaultPage.order = 0;
-                        await db.checklistPages.put(defaultPage);
-                        destPages = [defaultPage];
-                      }
-                      const destPageId = await pickChecklistPage(modalHost, {
-                        title: t('moveToPage') || 'Move to page',
-                        pages: destPages,
-                        initial: destPages[0]?.id,
-                        confirmLabel: t('move') || 'Move'
-                      });
-                      if (destPageId === undefined || !destPageId) return;
-                      await moveTodo(db, todo, dest, { pageId: destPageId });
-                      await renderProjectDetail(ctx, projectId, 0);
-                    }, 0);
-                    return true;
-                  }
-                },
-                { label: t('cancel') || 'Cancel', class: 'btn btn--ghost', onClick: () => true }
-              ]
-            });
-          }, 0);
+          // Moving to a specific page in a checklist project
+          if (destPageId) {
+            await moveTodo(db, todo, destProjId, { pageId: destPageId });
+            await renderProjectDetail(ctx, projectId, 0);
+            return;
+          }
+
+          // Moving to Inbox
+          if (destProjId == null) {
+            await moveTodo(db, todo, null, { pageId: null });
+            await renderProjectDetail(ctx, projectId, 0);
+            return;
+          }
+
+          // Moving to a non-checklist project (or checklist project without a specific page)
+          const destProject = await db.projects.get(destProjId);
+          if (destProject?.type === 'checklist') {
+            // For checklist project without specific page: place on first page
+            let destPages = pagesByProjectId.get(destProjId) || [];
+            if (destPages.length === 0) {
+              const defaultPage = newChecklistPage({ projectId: destProjId, name: '' });
+              defaultPage.order = 0;
+              await db.checklistPages.put(defaultPage);
+              destPages = [defaultPage];
+            }
+            await moveTodo(db, todo, destProjId, { pageId: destPages[0].id });
+          } else {
+            await moveTodo(db, todo, destProjId, { pageId: null });
+          }
+          await renderProjectDetail(ctx, projectId, 0);
         };
 
         const detailTextEl = el('textarea', {
