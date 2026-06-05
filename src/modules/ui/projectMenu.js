@@ -1,10 +1,8 @@
 import { el } from './dom.js';
 import { openModal } from './modal.js';
 import { confirm } from './confirm.js';
-import { compressAttachmentsForArchive } from '../logic/attachments.js';
 import { showToast } from './toast.js';
 import { t } from '../utils/i18n.js';
-import { pickProject } from './pickProject.js';
 import { pickDestination, buildPagesMap } from './pickDestination.js';
 
 async function deleteProjectRecursive(db, projectId) {
@@ -13,41 +11,33 @@ async function deleteProjectRecursive(db, projectId) {
   for (const child of children) {
     await deleteProjectRecursive(db, child.id);
   }
-
   const todos = await db.todos.listByProject(projectId);
-  for (const t of todos) {
-    await db.todos.delete(t.id);
+  for (const todo of todos) {
+    await db.todos.delete(todo.id);
   }
-
   await db.projects.delete(projectId);
 }
 
 function openEditProject(modalHost, { db, project, onChange }) {
-  const input = el('input', { class: 'input', value: project.name, 'aria-label': 'Project name' });
-  const protectedInput = el('input', { type: 'checkbox', checked: project.protected ? 'checked' : null, 'aria-label': 'Protect project' });
-  const suggestionsInput = el('input', { type: 'checkbox', checked: project.useSuggestions ? 'checked' : null, 'aria-label': 'Use suggestions' });
-  const qtyUnitsInput = el('input', { type: 'checkbox', checked: project.enableQtyUnits ? 'checked' : null, 'aria-label': 'Enable quantity and units' });
+  const input = el('input', { class: 'input', value: project.name, 'aria-label': t('projectName') });
+  const protectedInput = el('input', { type: 'checkbox', checked: project.protected ? 'checked' : null, 'aria-label': t('protectProject') });
+  const suggestionsInput = el('input', { type: 'checkbox', checked: project.useSuggestions ? 'checked' : null, 'aria-label': t('useSuggestions') });
+  const qtyUnitsInput = el('input', { type: 'checkbox', checked: project.enableQtyUnits ? 'checked' : null, 'aria-label': t('enableQtyUnits') });
   const keepCompletedInput = el('input', { type: 'checkbox', checked: project.keepCompletedItems ? 'checked' : null, 'aria-label': t('keepCompletedItems') });
 
   openModal(modalHost, {
-    title: 'Edit Project',
+    title: t('editProject'),
     content: el('div', { class: 'stack' },
-      el('label', { class: 'label' }, el('span', {}, 'Name'), input),
-      el('label', { class: 'label' }, el('span', {}, 'Protect project'), protectedInput),
-      project.type === 'checklist'
-        ? el('label', { class: 'label' }, el('span', {}, 'Enable suggestions for quick item entry'), suggestionsInput)
-        : null,
-      project.type === 'checklist'
-        ? el('label', { class: 'label' }, el('span', {}, t('enableQtyUnits') || 'Enable quantity and units for items'), qtyUnitsInput)
-        : null,
-      project.type === 'checklist'
-        ? el('label', { class: 'label' }, el('span', {}, t('keepCompletedItems')), keepCompletedInput)
-        : null
+      el('label', { class: 'label' }, el('span', {}, t('name')), input),
+      el('label', { class: 'label' }, el('span', {}, t('protectProject')), protectedInput),
+      project.type === 'checklist' ? el('label', { class: 'label' }, el('span', {}, t('enableSuggestions')), suggestionsInput) : null,
+      project.type === 'checklist' ? el('label', { class: 'label' }, el('span', {}, t('enableQtyUnits')), qtyUnitsInput) : null,
+      project.type === 'checklist' ? el('label', { class: 'label' }, el('span', {}, t('keepCompletedItems')), keepCompletedInput) : null
     ),
     actions: [
-      { label: 'Cancel', class: 'btn btn--ghost', onClick: () => true },
+      { label: t('cancel'), class: 'btn btn--ghost', onClick: () => true },
       {
-        label: 'Save',
+        label: t('save'),
         class: 'btn btn--primary',
         onClick: async () => {
           const name = input.value.trim();
@@ -66,54 +56,52 @@ function openEditProject(modalHost, { db, project, onChange }) {
 async function openDeleteProject(modalHost, { db, project, onChange }) {
   if (project.protected) {
     openModal(modalHost, {
-      title: 'Project Protected',
-      content: el('div', {}, 'This project is protected. Please uncheck "Protect project" in the edit menu to delete it.'),
-      actions: [{ label: 'OK', class: 'btn btn--primary', onClick: () => true }]
+      title: t('projectProtected'),
+      content: el('div', {}, t('projectProtectedMsg')),
+      actions: [{ label: t('ok'), class: 'btn btn--primary', onClick: () => true }]
     });
     return;
   }
 
   const content = el('div', { class: 'stack' },
-    el('div', { class: 'small' }, 'Deleting a project is destructive. Choose what to do with its todos.'),
-    el('div', { class: 'small' }, 'Option 1: Move todos to Inbox'),
-    el('div', { class: 'small' }, 'Option 2: Archive todos')
+    el('div', { class: 'small' }, t('deleteProjectMsg')),
+    el('div', { class: 'small' }, t('deleteProjectOption1')),
+    el('div', { class: 'small' }, t('deleteProjectOption2'))
   );
 
   openModal(modalHost, {
-    title: `Delete “${project.name}”?`,
+    title: t('deleteProject') + ' "' + project.name + '"?',
     content,
     actions: [
-      { label: 'Cancel', class: 'btn btn--ghost', onClick: () => true },
+      { label: t('cancel'), class: 'btn btn--ghost', onClick: () => true },
       {
-        label: 'Move todos to Inbox + Delete',
-        class: 'btn',
+        label: t('deleteProjectMove'),
+        class: 'btn btn--danger',
         onClick: async () => {
           const ok = await confirm(modalHost, {
-            title: 'Confirm delete',
-            message: 'Move all project todos to Inbox and delete the project?',
-            confirmLabel: 'Delete',
+            title: t('confirmDelete'),
+            message: t('deleteProjectMoveConfirm'),
+            confirmLabel: t('delete'),
             danger: true
           });
           if (!ok) return false;
 
-          // Move direct project todos to Inbox
           const todos = (await db.todos.listByProject(project.id)).filter((t) => !t.archived);
           for (const t of todos) await db.todos.put({ ...t, projectId: null });
 
-          // Delete subprojects + remaining todos
           await deleteProjectRecursive(db, project.id);
           onChange?.();
           return true;
         }
       },
       {
-        label: 'Archive todos + Delete',
+        label: t('deleteProjectArchive'),
         class: 'btn btn--danger',
         onClick: async () => {
           const ok = await confirm(modalHost, {
-            title: 'Confirm delete',
-            message: 'Archive all project todos and delete the project?',
-            confirmLabel: 'Archive + Delete',
+            title: t('confirmDelete'),
+            message: t('deleteProjectArchiveConfirm'),
+            confirmLabel: t('deleteProjectArchive'),
             danger: true
           });
           if (!ok) return false;
@@ -161,11 +149,7 @@ export function openProjectMenu(modalHost, { db, project, onChange }) {
     const wasLinked = project.showInInbox;
     await db.projects.put({ ...project, showInInbox: !project.showInInbox });
     onChange?.();
-    
-    // Close the modal
     if (modalRef) modalRef.close();
-    
-    // Show success toast
     const message = wasLinked ? t('projectUnlinkedFromInbox') : t('projectLinkedToInbox');
     showToast(message);
   });
@@ -188,16 +172,16 @@ export function openProjectMenu(modalHost, { db, project, onChange }) {
     showToast(t('projectMoved') || 'Project moved');
   });
 
-    modalRef = openModal(modalHost, {
-      title: project.name,
-      content: el('div', { class: 'stack' },
-        el('div', { class: 'small' }, t('actions')),
-        editBtn,
-        shareBtn,
-        linkBtn,
-        moveBtn,
-        deleteBtn
-      ),
-      actions: [{ label: t('close'), class: 'btn btn--ghost', onClick: () => true }]
-    });
+  modalRef = openModal(modalHost, {
+    title: project.name,
+    content: el('div', { class: 'stack' },
+      el('div', { class: 'small' }, t('actions')),
+      editBtn,
+      shareBtn,
+      linkBtn,
+      moveBtn,
+      deleteBtn
+    ),
+    actions: [{ label: t('close'), class: 'btn btn--ghost', onClick: () => true }]
+  });
 }
