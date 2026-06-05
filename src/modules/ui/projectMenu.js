@@ -139,11 +139,11 @@ async function openDeleteProject(modalHost, { db, project, onChange }) {
 }
 
 export function openProjectMenu(modalHost, { db, project, onChange }) {
-  const editBtn = el('button', { class: 'btn', type: 'button' }, 'Edit');
-  const shareBtn = el('button', { class: 'btn', type: 'button' }, 'Share…');
-  const linkBtn = el('button', { class: 'btn', type: 'button' }, project.showInInbox ? 'Unlink from Inbox' : 'Link to Inbox');
+  const editBtn = el('button', { class: 'btn', type: 'button' }, t('edit'));
+  const shareBtn = el('button', { class: 'btn', type: 'button' }, t('share'));
+  const linkBtn = el('button', { class: 'btn', type: 'button' }, project.showInInbox ? t('unlinkFromInbox') : t('linkToInbox'));
   const moveBtn = el('button', { class: 'btn', type: 'button' }, t('move'));
-  const deleteBtn = el('button', { class: 'btn btn--danger', type: 'button' }, 'Delete');
+  const deleteBtn = el('button', { class: 'btn btn--danger', type: 'button' }, t('delete'));
 
   editBtn.addEventListener('click', () => openEditProject(modalHost, { db, project, onChange }));
   shareBtn.addEventListener('click', async () => {
@@ -191,13 +191,13 @@ export function openProjectMenu(modalHost, { db, project, onChange }) {
     modalRef = openModal(modalHost, {
       title: project.name,
       content: el('div', { class: 'stack' },
-        el('div', { class: 'small' }, 'Project actions'),
+        el('div', { class: 'small' }, t('actions')),
         editBtn,
         shareBtn,
         linkBtn,
         moveBtn,
         deleteBtn
       ),
-      actions: [{ label: 'Close', class: 'btn btn--ghost', onClick: () => true }]
+      actions: [{ label: t('close'), class: 'btn btn--ghost', onClick: () => true }]
     });
 }

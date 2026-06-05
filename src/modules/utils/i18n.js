@@ -18,6 +18,8 @@ const translations = {
     create: 'Create',
     done: 'Done',
     close: 'Close',
+    share: 'Share',
+    actions: 'Actions',
     confirm: 'Confirm',
     yes: 'Yes',
     no: 'No',

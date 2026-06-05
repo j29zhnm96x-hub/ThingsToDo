@@ -15,7 +15,7 @@ import { el } from './ui/dom.js';
 import { applyTheme, applyPalette } from './ui/theme.js';
 import { autoArchiveCompleted, autoEmptyBin } from './logic/todoOps.js';
 import { hapticLight } from './ui/haptic.js';
-import { t } from './utils/i18n.js';
+import { t, getLang } from './utils/i18n.js';
 import { openModal } from './ui/modal.js';
 import { openRecordingModal } from './ui/voiceMemo.js';
 import { openBulkAddModal } from './ui/bulkAdd.js';
@@ -42,8 +42,11 @@ function getCurrentDateString() {
   const now = new Date();
   const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
   const dayName = t(days[now.getDay()]);
+  const lang = getLang() || 'en';
+  const localeMap = { en: 'en-US', hr: 'hr-HR', it: 'it-IT', de: 'de-DE', es: 'es-ES' };
+  const locale = localeMap[lang] || 'en-US';
   const options = { month: 'short', day: 'numeric' };
-  const dateStr = now.toLocaleDateString(undefined, options);
+  const dateStr = now.toLocaleDateString(locale, options);
   return `${dayName}, ${dateStr}`;
 }
 
