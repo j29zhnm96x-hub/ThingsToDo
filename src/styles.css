@@ -1047,6 +1047,7 @@ html[data-theme='light'] .checklist__item {
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: 15px;
+  display: inline-block;
 }
 
 .checklist__hint {
@@ -1345,6 +1346,8 @@ html[data-theme='light'] .checklist-clearPage-btn {
   text-overflow: clip;
   overflow: hidden;
   white-space: nowrap;
+  display: inline-block;
+  max-width: 100%;
   animation: titleScroll var(--scroll-dur, 10.5s) ease-in-out infinite;
 }
 
