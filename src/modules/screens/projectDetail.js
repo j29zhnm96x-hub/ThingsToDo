@@ -1351,16 +1351,9 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
         try {
           const textEls = container.querySelectorAll('.checklist__text');
           textEls.forEach(el => {
-            // Temporarily remove flex:1 to measure natural text width
-            const origFlex = el.style.flex;
-            el.style.flex = 'none';
-            // Force layout
-            void el.offsetWidth;
-            const sw = el.scrollWidth;
-            const cw = el.clientWidth;
-            el.style.flex = origFlex;
-            if (sw > cw) {
-              const dist = sw - cw + 40;
+            const chars = (el.textContent || '').length;
+            if (chars > 22) {
+              const dist = (chars - 10) * 7;
               el.style.setProperty('--scroll-dist', dist + 'px');
               el.style.setProperty('--scroll-dur', (8 + dist * 0.04) + 's');
               el.classList.add('title-scroll');
