@@ -418,6 +418,8 @@ export function renderTodoList({
         titleEls.forEach(el => {
           const card = el.closest('.todo');
           if (card?.dataset?.projectType === 'checklist') return;
+          // Skip completed items
+          if (card?.classList.contains('todo--completed-item')) return;
           if (el.scrollWidth > el.clientWidth) {
             el.style.setProperty('--scroll-dist', (el.scrollWidth - el.clientWidth + 40) + 'px');
             el.classList.add('title-scroll');

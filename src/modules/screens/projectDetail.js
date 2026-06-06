@@ -1353,6 +1353,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
           try {
             const textEls = container.querySelectorAll('.checklist__text');
             textEls.forEach(el => {
+              if (el.closest('.checklist__item--done')) return;
               if (el.scrollWidth > el.clientWidth) {
                 el.style.setProperty('--scroll-dist', (el.scrollWidth - el.clientWidth + 40) + 'px');
                 el.classList.add('title-scroll');
