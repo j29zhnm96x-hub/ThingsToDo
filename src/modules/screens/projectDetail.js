@@ -1351,11 +1351,10 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
         try {
           const textEls = container.querySelectorAll('.checklist__text');
           textEls.forEach(el => {
-            const chars = (el.textContent || '').length;
-            if (chars > 22) {
-              const dist = (chars - 10) * 7;
+            if (el.scrollWidth > el.clientWidth) {
+              const dist = el.scrollWidth - el.clientWidth + 40;
               el.style.setProperty('--scroll-dist', dist + 'px');
-              el.style.setProperty('--scroll-dur', (8 + dist * 0.04) + 's');
+              el.style.setProperty('--scroll-duration', Math.max(8, dist / 8) + 's');
               el.classList.add('title-scroll');
             }
           });
