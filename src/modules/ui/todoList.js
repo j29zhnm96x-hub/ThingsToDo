@@ -419,7 +419,9 @@ export function renderTodoList({
           const card = el.closest('.todo');
           if (card?.dataset?.projectType === 'checklist') return;
           if (el.scrollWidth > el.clientWidth) {
-            el.style.setProperty('--scroll-dist', (el.scrollWidth - el.clientWidth + 40) + 'px');
+            const dist = el.scrollWidth - el.clientWidth + 40;
+            el.style.setProperty('--scroll-dist', dist + 'px');
+            el.style.setProperty('--scroll-dur', (8 + dist * 0.04) + 's');
             el.classList.add('title-scroll');
           }
         });
