@@ -413,7 +413,7 @@ export function renderTodoList({
   if (scrollLongTitles) {
     function startScroll(el, dist) {
       const PAUSE_START = 3500;
-      const SCROLL_BASE = dist / 18 * 1000;
+      const SCROLL_BASE = dist / 36 * 1000;
       const SCROLL_TIME = Math.max(1000, SCROLL_BASE);
       const PAUSE_END = 1000;
       const SCROLL_BACK = 1000;
