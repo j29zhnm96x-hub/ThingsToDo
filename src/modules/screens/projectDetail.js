@@ -1355,7 +1355,9 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
             textEls.forEach(el => {
               if (el.closest('.checklist__item--done')) return;
               if (el.scrollWidth > el.clientWidth) {
-                el.style.setProperty('--scroll-dist', (el.scrollWidth - el.clientWidth + 40) + 'px');
+                const dist = el.scrollWidth - el.clientWidth + 40;
+                el.style.setProperty('--scroll-dist', dist + 'px');
+                el.style.setProperty('--scroll-duration', Math.max(8, dist / 12) + 's');
                 el.classList.add('title-scroll');
               }
             });
