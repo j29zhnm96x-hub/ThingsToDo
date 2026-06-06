@@ -1345,23 +1345,6 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
 
     main.append(container);
 
-    // Apply scrolling text to overflowing checklist items (same feature as todoList.js)
-    if (scrollLT) {
-      requestAnimationFrame(() => {
-        try {
-          const textEls = container.querySelectorAll('.checklist__text');
-          textEls.forEach(el => {
-            if (el.scrollWidth > el.clientWidth) {
-              const dist = el.scrollWidth - el.clientWidth + 40;
-              el.style.setProperty('--scroll-dist', dist + 'px');
-              el.style.setProperty('--scroll-duration', Math.max(8, dist / 8) + 's');
-              el.classList.add('title-scroll');
-            }
-          });
-        } catch (e) { /* non-critical */ }
-      });
-    }
-
     // Restore scroll position
     if (pillBar) {
       pillBar.scrollLeft = scrollPosition;
