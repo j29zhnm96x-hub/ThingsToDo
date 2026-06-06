@@ -1345,18 +1345,23 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
 
     main.append(container);
 
-    // Apply scrolling text to overflowing checklist items
-    requestAnimationFrame(() => {
-      try {
-        const textEls = container.querySelectorAll('.checklist__text');
-        textEls.forEach(el => {
-          if (el.scrollWidth > el.clientWidth) {
-            el.style.setProperty('--scroll-dist', (el.scrollWidth - el.clientWidth + 40) + 'px');
-            el.classList.add('title-scroll');
-          }
+    // Apply scrolling text to overflowing checklist items (respects setting)
+    try {
+      const s = await db.settings.get();
+      if (s.scrollLongTitles === true) {
+        requestAnimationFrame(() => {
+          try {
+            const textEls = container.querySelectorAll('.checklist__text');
+            textEls.forEach(el => {
+              if (el.scrollWidth > el.clientWidth) {
+                el.style.setProperty('--scroll-dist', (el.scrollWidth - el.clientWidth + 40) + 'px');
+                el.classList.add('title-scroll');
+              }
+            });
+          } catch (e) { /* non-critical */ }
         });
-      } catch (e) { /* non-critical */ }
-    });
+      }
+    } catch (e) { /* non-critical */ }
 
     // Restore scroll position
     if (pillBar) {
