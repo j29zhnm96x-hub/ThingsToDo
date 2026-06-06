@@ -1351,7 +1351,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
       if (s.scrollLongTitles === true) {
         function startScroll(el, dist) {
           const PAUSE_START = 3500;
-          const SCROLL_BASE = dist / 12 * 1000;
+          const SCROLL_BASE = dist / 18 * 1000;
           const SCROLL_TIME = Math.max(1000, SCROLL_BASE);
           const PAUSE_END = 1000;
           const SCROLL_BACK = 1000;
