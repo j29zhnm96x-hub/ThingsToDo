@@ -1349,6 +1349,33 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
     try {
       const s = await db.settings.get();
       if (s.scrollLongTitles === true) {
+        function startScroll(el, dist) {
+          const PAUSE_START = 3500;
+          const SCROLL_BASE = dist / 12 * 1000;
+          const SCROLL_TIME = Math.max(1000, SCROLL_BASE);
+          const PAUSE_END = 1000;
+          const SCROLL_BACK = 1000;
+          const TOTAL = PAUSE_START + SCROLL_TIME + PAUSE_END + SCROLL_BACK;
+          let start = 0;
+          function frame(time) {
+            if (!start) start = time;
+            const t = (time - start) % TOTAL;
+            if (t < PAUSE_START) {
+              el.style.textIndent = '0';
+            } else if (t < PAUSE_START + SCROLL_TIME) {
+              const p = (t - PAUSE_START) / SCROLL_TIME;
+              el.style.textIndent = `-${dist * p}px`;
+            } else if (t < PAUSE_START + SCROLL_TIME + PAUSE_END) {
+              el.style.textIndent = `-${dist}px`;
+            } else {
+              const p = (t - PAUSE_START - SCROLL_TIME - PAUSE_END) / SCROLL_BACK;
+              el.style.textIndent = `-${dist * (1 - p)}px`;
+            }
+            requestAnimationFrame(frame);
+          }
+          requestAnimationFrame(frame);
+        }
+
         requestAnimationFrame(() => {
           try {
             const textEls = container.querySelectorAll('.checklist__text');
@@ -1356,9 +1383,8 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
               if (el.closest('.checklist__item--done')) return;
               if (el.scrollWidth > el.clientWidth) {
                 const dist = el.scrollWidth - el.clientWidth + 40;
-                el.style.setProperty('--scroll-dist', dist + 'px');
-                el.style.setProperty('--scroll-duration', Math.max(8, dist / 12) + 's');
                 el.classList.add('title-scroll');
+                startScroll(el, dist);
               }
             });
           } catch (e) { /* non-critical */ }

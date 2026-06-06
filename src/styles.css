@@ -1345,7 +1345,13 @@ html[data-theme='light'] .checklist-clearPage-btn {
   text-overflow: clip;
   overflow: hidden;
   white-space: nowrap;
-  animation: titleScroll var(--scroll-duration, 10.5s) ease-in-out infinite;
+}
+@keyframes titleScroll {
+  0%   { text-indent: 0; }
+  33%  { text-indent: 0; }
+  81%  { text-indent: calc(-1 * var(--scroll-dist)); }
+  90%  { text-indent: calc(-1 * var(--scroll-dist)); }
+  100% { text-indent: 0; }
 }
 
 .todo__dueInline {
