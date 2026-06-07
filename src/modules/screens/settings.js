@@ -267,7 +267,7 @@ export async function renderSettings(ctx) {
           el('span', {}, '75'),
           el('span', {}, '90')
         )
-      ) : null
+      )
     ),
 
     // AI Assistant section
