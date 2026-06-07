@@ -1356,7 +1356,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
           const SCROLL_BASE = dist / speedPx * 1000;
           const SCROLL_TIME = Math.max(1000, SCROLL_BASE);
           const PAUSE_END = 1000;
-          const SCROLL_BACK = 1000;
+          const SCROLL_BACK = 500;
           const TOTAL = PAUSE_START + SCROLL_TIME + PAUSE_END + SCROLL_BACK;
           let start = 0;
           function frame(time) {
