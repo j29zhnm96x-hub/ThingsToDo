@@ -1351,11 +1351,12 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
       const s = await db.settings.get();
       if (s.scrollLongTitles === true) {
         function startScroll(el, dist) {
-          const PAUSE_START = 3000;
+          const PAUSE_START = 3500;
           const speedPx = 60 + scrollSpeed * 15;
           const SCROLL_BASE = dist / speedPx * 1000;
-          const PAUSE_END = 500;
-          const SCROLL_BACK = 500;
+          const SCROLL_TIME = Math.max(1000, SCROLL_BASE);
+          const PAUSE_END = 1000;
+          const SCROLL_BACK = 1000;
           const TOTAL = PAUSE_START + SCROLL_TIME + PAUSE_END + SCROLL_BACK;
           let start = 0;
           function frame(time) {
