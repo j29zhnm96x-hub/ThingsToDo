@@ -25,7 +25,8 @@ export function renderTodoList({
   groupByPriority, // optional: group active tasks by priority
   collapsedPriorities, // optional: { URGENT: true, ... }
   onGroupToggle, // optional: (priority) => void
-  scrollLongTitles = false
+  scrollLongTitles = false,
+  scrollSpeed = 0
 }) {
   const list = el('div', { class: 'list' });
 
@@ -413,7 +414,8 @@ export function renderTodoList({
   if (scrollLongTitles) {
     function startScroll(el, dist) {
       const PAUSE_START = 3500;
-      const SCROLL_BASE = dist / 60 * 1000;
+      const speedPx = 60 + scrollSpeed * 15; // -2→30, -1→45, 0→60, 1→75, 2→90
+      const SCROLL_BASE = dist / speedPx * 1000;
       const SCROLL_TIME = Math.max(1000, SCROLL_BASE);
       const PAUSE_END = 1000;
       const SCROLL_BACK = 1000;

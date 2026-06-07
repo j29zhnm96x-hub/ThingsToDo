@@ -38,6 +38,7 @@ export async function renderSettings(ctx) {
   const enableConfettiSound = settings.enableConfettiSound !== false; // Default true
   const enableSwipe = settings.enableSwipe === true; // Default false
   const scrollLongTitles = settings.scrollLongTitles === true; // Default false
+  const scrollSpeed = settings.scrollSpeed ?? 0; // -2 to +2, 0 = default 60px/s
 
   // AI settings
   const aiEnabled = settings.aiEnabled === true;
@@ -242,7 +243,29 @@ export async function renderSettings(ctx) {
         buildToggle(scrollLongTitles, async (val) => {
           await db.settings.put({ ...await db.settings.get(), scrollLongTitles: val });
         })
-      )
+      ),
+      scrollLongTitles ? el('div', { style: 'padding-left:12px;margin-top:4px' },
+        el('div', { class: 'small', style: 'margin-bottom:4px' }, t('scrollTextSpeed')),
+        el('div', { style: 'display:flex;align-items:center;gap:8px' },
+          el('span', { class: 'small', style: 'color:var(--muted);width:60px;text-align:center' }, 'Slow'),
+          el('input', {
+            type: 'range', min: -2, max: 2, step: 1, value: scrollSpeed,
+            style: 'flex:1',
+            onInput: async (e) => {
+              const val = parseInt(e.target.value, 10);
+              await db.settings.put({ ...await db.settings.get(), scrollSpeed: val });
+            }
+          }),
+          el('span', { class: 'small', style: 'color:var(--muted);width:60px;text-align:center' }, 'Fast')
+        ),
+        el('div', { style: 'display:flex;justify-content:space-between;padding:0 60px;font-size:11px;color:var(--muted)' },
+          el('span', {}, '30'),
+          el('span', {}, '45'),
+          el('span', {}, '60'),
+          el('span', {}, '75'),
+          el('span', {}, '90')
+        )
+      ) : null
     ),
 
     // AI Assistant section

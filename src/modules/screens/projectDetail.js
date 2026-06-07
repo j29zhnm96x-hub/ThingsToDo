@@ -347,6 +347,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
   // Load settings for scroll feature
   const projSettings = await db.settings.get();
   const scrollLT = projSettings.scrollLongTitles === true;
+  const scrollSpeed = projSettings.scrollSpeed ?? 0;
 
   // Flush any unsaved note edits BEFORE clearing the DOM
   const existingTextareas = document.querySelectorAll('.inlineNote__input');
@@ -1351,7 +1352,8 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
       if (s.scrollLongTitles === true) {
         function startScroll(el, dist) {
           const PAUSE_START = 3500;
-          const SCROLL_BASE = dist / 60 * 1000;
+          const speedPx = 60 + scrollSpeed * 15;
+          const SCROLL_BASE = dist / speedPx * 1000;
           const SCROLL_TIME = Math.max(1000, SCROLL_BASE);
           const PAUSE_END = 1000;
           const SCROLL_BACK = 1000;
@@ -1436,6 +1438,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
     projectsById,
     mode: 'active',
     scrollLongTitles: scrollLT,
+    scrollSpeed,
     onTap: (todo) => openTodoInfo({
       todo,
       db,

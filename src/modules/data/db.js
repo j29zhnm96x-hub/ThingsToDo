@@ -319,7 +319,8 @@ export const db = {
         aiModel: 'deepseek-chat',
         aiSystemPrompt: '',
         quickVoiceAdd: false,
-        scrollLongTitles: false
+        scrollLongTitles: false,
+        scrollSpeed: 0
       };
     },
     async put(settings) {
