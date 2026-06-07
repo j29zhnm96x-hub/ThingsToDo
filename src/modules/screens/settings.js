@@ -242,9 +242,11 @@ export async function renderSettings(ctx) {
         el('div', { class: 'small' }, t('scrollLongTitles')),
         buildToggle(scrollLongTitles, async (val) => {
           await db.settings.put({ ...await db.settings.get(), scrollLongTitles: val });
+          const el = document.getElementById('scrollSpeedSlider');
+          if (el) el.style.display = val ? '' : 'none';
         })
       ),
-      scrollLongTitles ? el('div', { style: 'padding-left:12px;margin-top:4px' },
+      el('div', { id: 'scrollSpeedSlider', style: 'padding-left:12px;margin-top:4px;display:' + (scrollLongTitles ? '' : 'none') },
         el('div', { class: 'small', style: 'margin-bottom:4px' }, t('scrollTextSpeed')),
         el('div', { style: 'display:flex;align-items:center;gap:8px' },
           el('span', { class: 'small', style: 'color:var(--muted);width:60px;text-align:center' }, 'Slow'),
