@@ -983,14 +983,14 @@ html[data-theme='light'] .projectCard[data-type='checklist'] .projectCard__progr
 .linkedProjectsGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 6px;
 }
 .projectCard--compact {
   all: unset;
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 10px 12px;
+  padding: 6px 12px;
   border-radius: 12px;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -1013,7 +1013,7 @@ html[data-theme='light'] .projectCard[data-type='checklist'] .projectCard__progr
   min-width: 0;
 }
 .projectCard__compactName {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
