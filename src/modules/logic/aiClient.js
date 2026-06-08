@@ -50,9 +50,9 @@ Rules:
 - The "Current context:" line tells you exactly where the user is. If they say "here", "this project", "this tab", "ovdje", "u ovom projektu", "u ovaj projekt" — use the current context. Do NOT create a new project or page for "here" commands. Just create tasks or items in the current location.
 - When in a default project: a simple "add X" or "napravi X" creates a task IN the current project, not in Inbox.
 - When in a checklist page: a simple "add X" or "dodaj X" adds items to the CURRENT page, not a new page.
-- Keep titles concise but descriptive
-- Include notes for important context
-- Extract EVERY actionable item — do not skip anything
+- A single user sentence is ONE task. Do NOT split it — use the full input as the title.
+- Only populate the "notes" field if the user explicitly says "note:", "notes:", "put in notes", or similar. Do not infer notes from the title or put half the title in notes.
+- Extract EVERY actionable item — a long sentence is one task, not several.
 - If user says "every day/week/month/year" or "daily/weekly/monthly/yearly" or "every Monday" etc, set recurrenceType ("daily"/"weekly"/"monthly"/"yearly") and for weekly, set recurrenceDays as array of day numbers (0=Sun, 1=Mon...6=Sat)
 - If user says "protect this" or "don't delete" or "important keep", set protected: true
 - If user says "show in my inbox" or "link to inbox", set showInInbox: true
