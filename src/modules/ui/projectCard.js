@@ -21,7 +21,7 @@ export function renderProjectCard({
     'aria-label': `${t('project')}: ${project.name}`
   },
     el('div', { class: 'projectCard__row1' },
-      el('span', { class: 'projectCard__name' }, project.name),
+      el('span', { class: 'projectCard__name' }, (project.type === 'checklist' ? '📋 ' : '📁 ') + project.name),
       el('div', { class: 'projectCard__icons' },
         project.protected ? el('span', { class: 'icon-protected', 'aria-label': t('protect') }, '🔒') : null,
         project.showInInbox ? el('span', { class: 'icon-protected', style: { opacity: 0.6 }, 'aria-label': t('linkToInbox') }, '🔗') : null,

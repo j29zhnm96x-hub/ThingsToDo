@@ -857,20 +857,26 @@ html[data-theme='dark'] .topbar__addBtn {
   position: absolute;
   top: 14px;
   left: 16px;
-  width: 6px;
-  height: 6px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: #f59e0b;
+}
+.projectCard[data-type='default'] {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.06) 0%, transparent 50%);
 }
 .projectCard[data-type='checklist']::before {
   content: '';
   position: absolute;
   top: 14px;
   left: 16px;
-  width: 6px;
-  height: 6px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: #a855f7;
+}
+.projectCard[data-type='checklist'] {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.06) 0%, transparent 50%);
 }
 
 /* Light mode overrides */
@@ -880,8 +886,14 @@ html[data-theme='light'] .card {
   box-shadow: var(--card-shadow);
 }
 
+html[data-theme='light'] .projectCard[data-type='default'] {
+  background: linear-gradient(135deg, #fffbeb 0%, transparent 60%);
+}
 html[data-theme='light'] .projectCard[data-type='default'] .projectCard__progressFill {
   background: #f59e0b;
+}
+html[data-theme='light'] .projectCard[data-type='checklist'] {
+  background: linear-gradient(135deg, #faf5ff 0%, transparent 60%);
 }
 html[data-theme='light'] .projectCard[data-type='checklist'] .projectCard__progressFill {
   background: #a855f7;
