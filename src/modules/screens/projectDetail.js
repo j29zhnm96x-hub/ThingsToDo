@@ -512,7 +512,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
 
         if (!started) {
           const currentScroll = appEl ? appEl.scrollTop : (document.scrollingElement?.scrollTop || 0);
-          if (currentScroll !== scrollBaseline) return;
+          if (Math.abs(currentScroll - scrollBaseline) > 3) return;
           const HOLD_MS = 120;
           if (Date.now() - downTime < HOLD_MS) return;
 
@@ -2186,7 +2186,7 @@ function renderChecklistWithDrag({ todos, modalHost, db, projectId, currentPageI
 
     if (!started) {
       const currentScroll = appEl ? appEl.scrollTop : (document.scrollingElement?.scrollTop || 0);
-      if (currentScroll !== scrollBaseline) return;
+      if (Math.abs(currentScroll - scrollBaseline) > 3) return;
       const HOLD_MS = 150;
       if (Date.now() - downTime < HOLD_MS) return;
 

@@ -135,7 +135,7 @@ export async function renderProjects(ctx) {
     if (!started) {
       // If the app scroller moved, treat this as a scroll, not a drag.
       const currentScroll = appEl ? appEl.scrollTop : (document.scrollingElement?.scrollTop || 0);
-      if (currentScroll !== scrollBaseline) return;
+      if (Math.abs(currentScroll - scrollBaseline) > 3) return;
 
       // Require a brief hold to start drag to avoid accidental drags during scroll.
       const HOLD_MS = 120;

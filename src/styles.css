@@ -828,6 +828,8 @@ html[data-theme='dark'] .topbar__addBtn {
 
 /* Project cards - same size/style as todo cards but lighter */
 .projectCard {
+  user-select: none;
+  -webkit-user-select: none;
   display: flex;
   flex-direction: column;
   gap: 0;
