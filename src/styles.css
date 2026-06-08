@@ -826,24 +826,24 @@ html[data-theme='dark'] .topbar__addBtn {
   transform: scale(0.99);
 }
 
-/* Project cards - same size/style as todo cards but lighter */
+/* Project cards */
 .projectCard {
   user-select: none;
   -webkit-user-select: none;
   display: flex;
   flex-direction: column;
-  gap: 0;
-  padding: 0 12px 4px;
-  border-radius: var(--radius);
+  gap: 6px;
+  padding: 14px 16px 12px;
+  border-radius: 16px;
   border: 1px solid var(--border);
   background: var(--surface);
   width: 100%;
   box-sizing: border-box;
-  overflow: hidden;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: all 200ms ease;
   box-shadow: var(--card-shadow);
+  position: relative;
 }
 
 .projectCard:active:not(.todo--dragging) {
@@ -851,39 +851,40 @@ html[data-theme='dark'] .topbar__addBtn {
   transform: scale(0.99);
 }
 
-.projectCard[data-type='default'] {
-  border-left: 4px solid #fbbf24;
-  background: linear-gradient(135deg, rgba(251, 191, 36, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%);
+/* Accent dot for project type */
+.projectCard[data-type='default']::before {
+  content: '';
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f59e0b;
+}
+.projectCard[data-type='checklist']::before {
+  content: '';
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #a855f7;
 }
 
-.projectCard[data-type='checklist'] {
-  border-left: 4px solid #a855f7;
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(34, 197, 94, 0.08) 100%);
-}
-
-/* Light mode specific overrides for better contrast/feel */
+/* Light mode overrides */
 html[data-theme='light'] .projectCard,
 html[data-theme='light'] .todo,
 html[data-theme='light'] .card {
   box-shadow: var(--card-shadow);
 }
 
-html[data-theme='light'] .projectCard[data-type='default'] {
-  background: linear-gradient(135deg, #fffbeb 0%, #eff6ff 100%);
-  border-left: 4px solid #f59e0b;
-}
-
-html[data-theme='light'] .projectCard[data-type='checklist'] {
-  background: linear-gradient(135deg, #faf5ff 0%, #f0fdf4 100%);
-  border-left: 4px solid #a855f7;
-}
-
 html[data-theme='light'] .projectCard[data-type='default'] .projectCard__progressFill {
-  background: #f59e0b; /* darker yellow for light theme */
+  background: #f59e0b;
 }
-
 html[data-theme='light'] .projectCard[data-type='checklist'] .projectCard__progressFill {
-  background: #a855f7; /* darker purple for light theme */
+  background: #a855f7;
 }
 
 .projectCard__row {
@@ -899,16 +900,15 @@ html[data-theme='light'] .projectCard[data-type='checklist'] .projectCard__progr
   justify-content: space-between;
   gap: 8px;
   min-width: 0;
-  margin-bottom: -1px;
+  padding-left: 14px; /* space for the accent dot */
 }
 
 .projectCard__row2 {
   display: flex;
   align-items: baseline;
-  gap: 4px;
+  gap: 8px;
   min-width: 0;
-  margin-top: -4px;
-  transform: translateY(-4px);
+  padding-left: 14px;
 }
 
 .projectCard__info {
@@ -920,9 +920,9 @@ html[data-theme='light'] .projectCard[data-type='checklist'] .projectCard__progr
 }
 
 .projectCard__name {
-  font-weight: 600;
-  font-size: 15px;
-  line-height: 0.98;
+  font-weight: 650;
+  font-size: 16px;
+  line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -930,7 +930,7 @@ html[data-theme='light'] .projectCard[data-type='checklist'] .projectCard__progr
 
 .projectCard__count {
   font-size: 13px;
-  line-height: 0.98;
+  line-height: 1;
   color: var(--muted);
   white-space: nowrap;
   flex-shrink: 0;
@@ -938,10 +938,8 @@ html[data-theme='light'] .projectCard[data-type='checklist'] .projectCard__progr
 
 .projectCard__progressText {
   margin-left: auto;
-  position: relative;
-  top: 0px;
   font-size: 12px;
-  line-height: 0.98;
+  line-height: 1;
   font-weight: 700;
   letter-spacing: 0.2px;
   color: var(--muted);
@@ -949,15 +947,15 @@ html[data-theme='light'] .projectCard[data-type='checklist'] .projectCard__progr
 
 .projectCard__progressBar {
   width: 100%;
-  height: 3px;
+  height: 6px;
   background: var(--border);
-  border-radius: 2px;
-  margin-top: -3px;
+  border-radius: 3px;
+  overflow: hidden;
 }
 
 .projectCard__progressFill {
   height: 100%;
-  border-radius: 2px;
+  border-radius: 3px;
   transition: width 0.3s ease;
 }
 
