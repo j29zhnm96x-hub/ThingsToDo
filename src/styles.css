@@ -983,15 +983,15 @@ html[data-theme='light'] .projectCard[data-type='checklist'] .projectCard__progr
 .linkedProjectsGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6px;
+  gap: 4px;
 }
 .projectCard--compact {
   all: unset;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 12px;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 10px;
   background: var(--surface);
   border: 1px solid var(--border);
   cursor: pointer;
