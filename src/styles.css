@@ -2738,8 +2738,8 @@ html[data-theme='dark'] .quickAdd-btn {
 }
 /* ── View Toggle Pills ── */
 .pill-btn {
-  padding: 6px 16px;
-  border-radius: 20px;
+  padding: 7px 20px;
+  border-radius: 10px;
   border: 1px solid var(--border);
   background: transparent;
   color: var(--muted);
@@ -2747,6 +2747,7 @@ html[data-theme='dark'] .quickAdd-btn {
   font-weight: 500;
   cursor: pointer;
   transition: all 150ms ease;
+  flex: 0 1 auto;
 }
 .pill-btn--active {
   background: var(--accent);

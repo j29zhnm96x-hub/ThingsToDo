@@ -47,7 +47,7 @@ export async function renderInbox(ctx) {
       renderInbox(ctx);
     }
   }, t('today'));
-  const viewToggle = el('div', { class: 'view-toggle', style: 'display:flex;gap:6px;margin-bottom:12px' }, toggleAll, toggleToday);
+  const viewToggle = el('div', { class: 'view-toggle', style: 'display:flex;justify-content:center;gap:8px;margin-bottom:12px' }, toggleAll, toggleToday);
 
   const allTodos = await db.todos.listActive();
 
