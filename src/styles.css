@@ -979,6 +979,55 @@ html[data-theme='light'] .projectCard[data-type='checklist'] .projectCard__progr
   background: #8b5cf6; /* purple */
 }
 
+/* Compact card for linked projects in inbox */
+.linkedProjectsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.projectCard--compact {
+  all: unset;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  box-shadow: var(--card-shadow);
+  transition: all 150ms ease;
+  box-sizing: border-box;
+  width: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+.projectCard--compact:active {
+  transform: scale(0.97);
+  background: var(--surface2);
+}
+.projectCard__compactRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+.projectCard__compactName {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+.projectCard__compactPct {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
 .projectCard__icons {
   display: flex;
   align-items: center;

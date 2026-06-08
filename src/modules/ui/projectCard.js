@@ -5,11 +5,39 @@ export function renderProjectCard({
   project,
   stats = { total: 0, completed: 0, active: 0 },
   onOpen,
-  onMenu
+  onMenu,
+  compact = false
 }) {
   const projectType = project.type || 'default';
   const hasTodos = stats.total > 0;
   const progress = hasTodos ? Math.round((stats.completed / stats.total) * 100) : null;
+
+  if (compact) {
+    return el('div', {
+      class: 'projectCard projectCard--compact',
+      dataset: { type: projectType, projectId: project.id },
+      onClick: (e) => {
+        if (e.target.closest('.projectCard__menuBtn')) return;
+        onOpen?.(project, e);
+      },
+      'aria-label': `${t('project')}: ${project.name}`
+    },
+      el('div', { class: 'projectCard__compactRow' },
+        el('span', {}, project.type === 'checklist' ? '📋' : '📁'),
+        el('span', { class: 'projectCard__compactName' }, project.name),
+        hasTodos ? el('span', { class: 'projectCard__compactPct' }, `${progress}%`) : null,
+        el('button', {
+          type: 'button',
+          class: 'projectCard__menuBtn iconBtn',
+          'aria-label': t('menu'),
+          onClick: (e) => {
+            e.stopPropagation();
+            onMenu?.(project, e);
+          }
+        }, '⋯')
+      )
+    );
+  }
 
   return el('div', {
     class: 'projectCard',

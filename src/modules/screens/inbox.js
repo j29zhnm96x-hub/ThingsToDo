@@ -263,10 +263,11 @@ export async function renderInbox(ctx) {
   });
 
   const linkedProjectsList = linkedProjects.length
-    ? el('div', { class: 'list' },
+    ? el('div', { class: 'list linkedProjectsGrid' },
         ...linkedProjects.map((p) => renderProjectCard({
           project: p,
           stats: linkedProjectStats.get(p.id) || { total: 0, completed: 0, active: 0 },
+          compact: true,
           onOpen: () => {
             hapticLight();
             location.hash = `#project/${p.id}`;
