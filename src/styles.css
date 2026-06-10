@@ -984,6 +984,7 @@ html[data-theme='light'] .projectCard[data-type='checklist'] .projectCard__progr
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 4px;
+  overflow: hidden;
 }
 .projectCard--compact {
   all: unset;
@@ -999,6 +1000,8 @@ html[data-theme='light'] .projectCard[data-type='checklist'] .projectCard__progr
   transition: all 150ms ease;
   box-sizing: border-box;
   width: 100%;
+  min-width: 0;
+  overflow: hidden;
   -webkit-tap-highlight-color: transparent;
 }
 .projectCard--compact:active {
