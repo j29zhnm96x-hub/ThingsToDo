@@ -334,5 +334,34 @@ export async function renderInbox(ctx) {
     }
 
     main.append(content);
+
+    // Scroll long linked project names in compact cards
+    if (scrollLongTitles && linkedProjects.length) {
+      requestAnimationFrame(() => {
+        try {
+          const nameEls = main.querySelectorAll('.projectCard__compactName');
+          nameEls.forEach(el => {
+            if (el.scrollWidth > el.clientWidth) {
+              const dist = el.scrollWidth - el.clientWidth + 20;
+              const speedPx = 60 + scrollSpeed * 15;
+              const SCROLL_BASE = dist / speedPx * 1000;
+              const SCROLL_TIME = Math.max(1000, SCROLL_BASE);
+              const TOTAL = 3500 + SCROLL_TIME + 1000 + 500;
+              let start = 0;
+              function frame(time) {
+                if (!start) start = time;
+                const t = (time - start) % TOTAL;
+                if (t < 3500) el.style.textIndent = '0';
+                else if (t < 3500 + SCROLL_TIME) el.style.textIndent = `-${dist * ((t - 3500) / SCROLL_TIME)}px`;
+                else if (t < 3500 + SCROLL_TIME + 1000) el.style.textIndent = `-${dist}px`;
+                else el.style.textIndent = `-${dist * (1 - (t - 3500 - SCROLL_TIME - 1000) / 500)}px`;
+                requestAnimationFrame(frame);
+              }
+              requestAnimationFrame(frame);
+            }
+          });
+        } catch (e) { /* non-critical */ }
+      });
+    }
   }
 }
