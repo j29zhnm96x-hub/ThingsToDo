@@ -424,7 +424,7 @@ export function renderTodoList({
       const TOTAL = PAUSE_START + SCROLL_TIME + PAUSE_END + SCROLL_BACK;
       el._scrollStart = 0;
       function frame(time) {
-        if (el.dataset.scrollStop === 'true') { return; }
+        if (el.dataset.scrollStop === 'true') { requestAnimationFrame(frame); return; }
         if (!el._scrollStart) el._scrollStart = time;
         const t = (time - el._scrollStart) % TOTAL;
         if (t < PAUSE_START) {

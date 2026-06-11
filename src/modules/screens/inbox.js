@@ -350,7 +350,7 @@ export async function renderInbox(ctx) {
               const TOTAL = 3500 + SCROLL_TIME + 1000 + 500;
               el._scrollStart = 0;
               function frame(time) {
-                if (el.dataset.scrollStop === 'true') { return; }
+                if (el.dataset.scrollStop === 'true') { requestAnimationFrame(frame); return; }
                 if (!el._scrollStart) el._scrollStart = time;
                 const t = (time - start) % TOTAL;
                 if (t < 3500) el.style.textIndent = '0';
