@@ -314,11 +314,11 @@ export async function openSmartAdd(ctx, context) {
       align: 'bottom',
       content: previewContent,
       onClose: () => {
-        const totalChecked = checkboxes.filter(cb => cb.checked).length;
-        if (totalChecked > 0) {
+        const checked = checkboxes.filter(cb => cb.checked);
+        if (checked.length > 0) {
           return confirm(modalHost, {
             title: 'Discard changes?',
-            message: 'You have unchecked items that will be lost.',
+            message: `${checked.length} item(s) will be lost if you close.`,
             confirmLabel: 'Discard',
             danger: true
           });
@@ -326,7 +326,20 @@ export async function openSmartAdd(ctx, context) {
         return true;
       },
       actions: [
-        { label: t('aiCancel'), class: 'btn btn--ghost', onClick: () => { if (recognition) stopListening(); return true; } },
+        { label: t('aiCancel'), class: 'btn btn--ghost', onClick: async () => {
+          if (recognition) stopListening();
+          const checked = checkboxes.filter(cb => cb.checked);
+          if (checked.length > 0) {
+            const ok = await confirm(modalHost, {
+              title: 'Discard changes?',
+              message: `${checked.length} item(s) will not be created.`,
+              confirmLabel: 'Discard',
+              danger: true
+            });
+            return !!ok;
+          }
+          return true;
+        } },
         { label: t('aiCreateSelected'), class: 'btn btn--primary', onClick: async () => {
           const selected = [];
           const cbArray = checkboxes;
@@ -428,10 +441,7 @@ export async function openSmartAdd(ctx, context) {
     );
 
     // Find the scrollable preview container and append overlay
-    const previewContainer = row.closest('.stack[style*="max-height"]') || row.closest('.modal') || modalHost;
-    previewContainer.style.position = 'relative';
-    previewContainer.appendChild(overlay);
-
+    document.body.appendChild(overlay);
     // Focus title input
     setTimeout(() => input.focus(), 150);
 
