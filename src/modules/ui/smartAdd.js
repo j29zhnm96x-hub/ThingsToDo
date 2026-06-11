@@ -3,6 +3,7 @@
 
 import { el } from './dom.js';
 import { openModal } from './modal.js';
+import { confirm } from './confirm.js';
 import { showToast } from './toast.js';
 import { t, getLang } from '../utils/i18n.js';
 import { router } from '../router.js';
