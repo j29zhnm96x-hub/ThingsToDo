@@ -128,9 +128,16 @@ export function initApp(root) {
       document.querySelectorAll('.todo__title, .checklist__text, .projectCard__compactName').forEach(el => {
         if (el.scrollWidth <= el.clientWidth) {
           el.dataset.scrollStop = 'true';
+          el.dataset.scrollPause = String(performance.now());
           el.style.textIndent = '0';
-        } else {
+        } else if (el.dataset.scrollStop === 'true') {
           delete el.dataset.scrollStop;
+          // Skip ahead by the paused duration so animation doesn't jump
+          const pausedAt = parseFloat(el.dataset.scrollPause) || 0;
+          if (pausedAt && el._scrollStart) {
+            el._scrollStart += performance.now() - pausedAt;
+          }
+          delete el.dataset.scrollPause;
         }
       });
     }, 300);

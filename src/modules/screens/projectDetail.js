@@ -1352,6 +1352,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
       if (s.scrollLongTitles === true) {
         function startScroll(el, dist) {
           delete el.dataset.scrollStop;
+          el._scrollDist = dist;
           const PAUSE_START = 3500;
           const speedPx = 60 + scrollSpeed * 15;
           const SCROLL_BASE = dist / speedPx * 1000;
@@ -1359,11 +1360,11 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
           const PAUSE_END = 1000;
           const SCROLL_BACK = 500;
           const TOTAL = PAUSE_START + SCROLL_TIME + PAUSE_END + SCROLL_BACK;
-          let start = 0;
+          el._scrollStart = 0;
           function frame(time) {
-            if (el.dataset.scrollStop === 'true') { el.style.textIndent = '0'; return; }
-            if (!start) start = time;
-            const t = (time - start) % TOTAL;
+            if (el.dataset.scrollStop === 'true') { return; }
+            if (!el._scrollStart) el._scrollStart = time;
+            const t = (time - el._scrollStart) % TOTAL;
             if (t < PAUSE_START) {
               el.style.textIndent = '0';
             } else if (t < PAUSE_START + SCROLL_TIME) {

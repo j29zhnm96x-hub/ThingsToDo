@@ -348,10 +348,10 @@ export async function renderInbox(ctx) {
               const SCROLL_BASE = dist / speedPx * 1000;
               const SCROLL_TIME = Math.max(1000, SCROLL_BASE);
               const TOTAL = 3500 + SCROLL_TIME + 1000 + 500;
-              let start = 0;
+              el._scrollStart = 0;
               function frame(time) {
-                if (el.dataset.scrollStop === 'true') { el.style.textIndent = '0'; return; }
-                if (!start) start = time;
+                if (el.dataset.scrollStop === 'true') { return; }
+                if (!el._scrollStart) el._scrollStart = time;
                 const t = (time - start) % TOTAL;
                 if (t < 3500) el.style.textIndent = '0';
                 else if (t < 3500 + SCROLL_TIME) el.style.textIndent = `-${dist * ((t - 3500) / SCROLL_TIME)}px`;
