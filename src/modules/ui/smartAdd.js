@@ -228,11 +228,20 @@ export async function openSmartAdd(ctx, context) {
     const checkboxes = [];
     const previewItems = [];
 
+    function makeEditableRow(item, cb, icon, title, typeLabel, subText, extraClass) {
+      const row = createPreviewRow(cb, icon, title, typeLabel, subText, extraClass);
+      row.addEventListener('click', (e) => {
+        if (e.target.closest('input[type="checkbox"]')) return;
+        openEditItemModal(item, row);
+      });
+      return row;
+    }
+
     // Tasks
     for (const task of parsed.tasks) {
       const cb = createCheckbox(true);
       checkboxes.push(cb);
-      previewItems.push(createPreviewRow(cb, '📄', task.title, t('aiTask'), task.notes));
+      previewItems.push(makeEditableRow(task, cb, '📄', task.title, t('aiTask'), task.notes));
     }
 
     // Projects
@@ -243,7 +252,7 @@ export async function openSmartAdd(ctx, context) {
       if (proj.tasks.length) sub.push(...proj.tasks.map(t => '  · ' + t.title));
       if (proj.subProjects.length) sub.push(...proj.subProjects.map(sp => '  📁 ' + sp.name + (sp.tasks.length ? ` (${sp.tasks.length} tasks)` : '')));
       if (proj.pages.length) sub.push(...proj.pages.map(p => '  📋 ' + p.name + ` (${p.items.length} items)`));
-      previewItems.push(createPreviewRow(cb, '📁', proj.name, t('aiProject'), sub.join('\n'), proj.type === 'checklist' ? 'checklist' : 'project'));
+      previewItems.push(makeEditableRow(proj, cb, '📁', proj.name, t('aiProject'), sub.join('\n'), proj.type === 'checklist' ? 'checklist' : 'project'));
     }
 
     // Checklist pages (only relevant in checklist mode)
@@ -251,7 +260,7 @@ export async function openSmartAdd(ctx, context) {
       const cb = createCheckbox(true);
       checkboxes.push(cb);
       const items = cp.items.map(i => '  · ' + i.title).join('\n');
-      previewItems.push(createPreviewRow(cb, '📋', cp.name, t('aiChecklistPage'), items));
+      previewItems.push(makeEditableRow(cp, cb, '📋', cp.name, t('aiChecklistPage'), items));
     }
 
     // Add to Project (existing project, add tasks)
@@ -259,7 +268,7 @@ export async function openSmartAdd(ctx, context) {
       const cb = createCheckbox(true);
       checkboxes.push(cb);
       const sub = ap.tasks.map(t => '  · ' + t.title).join('\n');
-      previewItems.push(createPreviewRow(cb, '📌', ap.projectName, '→ ' + t('aiProject'), sub));
+      previewItems.push(makeEditableRow(ap, cb, '📌', ap.projectName, '→ ' + t('aiProject'), sub));
     }
 
     // Add to Checklist Page (existing project+page, add items)
@@ -267,21 +276,21 @@ export async function openSmartAdd(ctx, context) {
       const cb = createCheckbox(true);
       checkboxes.push(cb);
       const sub = acp.items.map(i => '  · ' + i.title).join('\n');
-      previewItems.push(createPreviewRow(cb, '📌', acp.projectName + ' › ' + acp.pageName, '→ ' + t('aiChecklistPage'), sub));
+      previewItems.push(makeEditableRow(acp, cb, '📌', acp.projectName + ' › ' + acp.pageName, '→ ' + t('aiChecklistPage'), sub));
     }
 
     // Move tasks
     for (const mt of parsed.moveTasks) {
       const cb = createCheckbox(true);
       checkboxes.push(cb);
-      previewItems.push(createPreviewRow(cb, '↗️', mt.taskTitle, '→ ' + mt.targetProject, mt.targetPage ? 'tab: ' + mt.targetPage : ''));
+      previewItems.push(makeEditableRow(mt, cb, '↗️', mt.taskTitle, '→ ' + mt.targetProject, mt.targetPage ? 'tab: ' + mt.targetPage : ''));
     }
 
     // Notes
     for (const n of parsed.notes) {
       const cb = createCheckbox(true);
       checkboxes.push(cb);
-      previewItems.push(createPreviewRow(cb, '📝', n.text, t('aiNote'), ''));
+      previewItems.push(makeEditableRow(n, cb, '📝', n.text, t('aiNote'), ''));
     }
 
     const selectAllCb = el('input', { type: 'checkbox', checked: 'checked', 'aria-label': 'Select all' });
@@ -364,18 +373,60 @@ export async function openSmartAdd(ctx, context) {
   }
 
   function createPreviewRow(checkbox, icon, title, typeLabel, subText, extraClass) {
+    const titleEl = el('div', { style: { fontWeight: '500', fontSize: '14px', wordBreak: 'break-word' } }, icon + ' ' + title);
     const row = el('div', {
       class: 'card' + (extraClass ? ' card--' + extraClass : ''),
-      style: { display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '10px 12px', margin: '0' }
+      style: { display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '10px 12px', margin: '0', cursor: 'pointer' }
     },
       checkbox,
       el('div', { style: { flex: '1', minWidth: '0' } },
-        el('div', { style: { fontWeight: '500', fontSize: '14px', wordBreak: 'break-word' } }, icon + ' ' + title),
+        titleEl,
         el('div', { class: 'small', style: { color: 'var(--muted)' } }, typeLabel),
         subText ? el('div', { class: 'small', style: { color: 'var(--muted)', marginTop: '4px', whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxHeight: '60px', overflow: 'hidden' } }, subText) : null
       )
     );
+    // Store titleEl so edit can update it
+    row._titleEl = titleEl;
     return row;
+  }
+
+  function openEditItemModal(item, row) {
+    const titleField = item.title !== undefined ? 'title' : item.text !== undefined ? 'text' : item.taskTitle !== undefined ? 'taskTitle' : item.projectName !== undefined ? 'projectName' : 'name';
+    const currentTitle = item[titleField] || '';
+    const hasNotes = item.notes !== undefined || item.text !== undefined;
+
+    const input = el('input', { type: 'text', class: 'input', value: currentTitle, 'aria-label': 'Title' });
+    const notesInput = hasNotes
+      ? el('textarea', { class: 'input', rows: 3, style: 'margin-top:6px', 'aria-label': 'Notes' }, item.notes || '')
+      : null;
+
+    const newTitleKey = titleField;
+
+    openModal(modalHost, {
+      title: 'Edit item',
+      content: notesInput ? el('div', { class: 'stack' }, input, notesInput) : el('div', { class: 'stack' }, input),
+      actions: [
+        { label: t('cancel') || 'Cancel', class: 'btn btn--ghost', onClick: () => true },
+        {
+          label: t('save') || 'Save',
+          class: 'btn btn--primary',
+          onClick: () => {
+            const newTitle = input.value.trim() || currentTitle;
+            item[newTitleKey] = newTitle;
+            if (notesInput) {
+              item.notes = notesInput.value.trim() || '';
+            }
+            // Update the displayed row
+            if (row && row._titleEl) {
+              const iconMatch = row._titleEl.textContent.match(/^(\S+\s)/);
+              const icon = iconMatch ? iconMatch[1] : '📄 ';
+              row._titleEl.textContent = icon + newTitle;
+            }
+            return true;
+          }
+        }
+      ]
+    });
   }
 
   function countItems(parsed) {
