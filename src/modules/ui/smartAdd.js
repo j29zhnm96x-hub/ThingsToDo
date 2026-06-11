@@ -411,50 +411,44 @@ export async function openSmartAdd(ctx, context) {
     const iconMatch = row._titleEl.textContent.match(/^(\S+\s)/);
     const icon = iconMatch ? iconMatch[1] : '📄 ';
 
-    // Save original children so we can restore later
-    const savedChildren = Array.from(row.childNodes);
-
-    // Build edit UI inline
-    const input = el('input', { type: 'text', class: 'input', value: currentTitle, 'aria-label': 'Title', style: 'flex:1;min-width:0' });
+    // Build a floating edit overlay inside the preview modal
+    const input = el('input', { type: 'text', class: 'input', value: currentTitle, 'aria-label': 'Title' });
     const notesInput = hasNotes
-      ? el('textarea', { class: 'input', rows: 2, style: 'margin-top:6px', 'aria-label': 'Notes' }, item.notes || '')
+      ? el('textarea', { class: 'input', rows: 3, style: 'margin-top:8px', 'aria-label': 'Notes' }, item.notes || '')
       : null;
 
-    const saveBtn = el('button', { type: 'button', class: 'btn btn--primary', style: 'padding:4px 12px;font-size:13px;min-height:28px' });
-    saveBtn.textContent = t('save') || 'Save';
-    const cancelBtn = el('button', { type: 'button', class: 'btn btn--ghost', style: 'padding:4px 12px;font-size:13px;min-height:28px' });
-    cancelBtn.textContent = t('cancel') || 'Cancel';
-
-    // Replace row content
-    row.textContent = '';
-    row.style.padding = '8px 12px';
-    row.append(
-      el('div', { style: 'flex:1;min-width:0;display:flex;flex-direction:column;gap:4px' },
-        el('div', { style: 'display:flex;align-items:center;gap:6px' },
-          el('span', {}, icon),
-          input
-        ),
-        notesInput || null
-      ),
-      el('div', { style: 'display:flex;align-items:center;gap:4px;flex-shrink:0' }, saveBtn, cancelBtn)
+    const overlay = el('div', { style: 'position:absolute;inset:0;z-index:30;background:var(--bg);display:flex;flex-direction:column;padding:24px 16px;gap:12px;overflow-y:auto' },
+      el('div', { style: 'font-weight:600;font-size:15px;margin-bottom:4px' }, 'Edit ' + (item.title !== undefined ? 'task' : 'item')),
+      input,
+      notesInput || null,
+      el('div', { style: 'display:flex;gap:8px;margin-top:4px' },
+        el('button', { type: 'button', class: 'btn btn--primary', style: 'flex:1' }, t('save') || 'Save'),
+        el('button', { type: 'button', class: 'btn btn--ghost', style: 'flex:1' }, t('cancel') || 'Cancel')
+      )
     );
 
-    saveBtn.addEventListener('click', (e) => {
+    // Find the scrollable preview container and append overlay
+    const previewContainer = row.closest('.stack[style*="max-height"]') || row.closest('.modal') || modalHost;
+    previewContainer.style.position = 'relative';
+    previewContainer.appendChild(overlay);
+
+    // Focus title input
+    setTimeout(() => input.focus(), 150);
+
+    // Save button
+    overlay.querySelector('.btn--primary').addEventListener('click', (e) => {
       e.stopPropagation();
       const newTitle = input.value.trim() || currentTitle;
       item[titleField] = newTitle;
       if (notesInput) item.notes = notesInput.value.trim() || '';
-      // Restore display
-      row.textContent = '';
-      for (const child of savedChildren) row.appendChild(child);
+      overlay.remove();
       row._titleEl.textContent = icon + newTitle;
     });
 
-    cancelBtn.addEventListener('click', (e) => {
+    // Cancel button
+    overlay.querySelector('.btn--ghost').addEventListener('click', (e) => {
       e.stopPropagation();
-      row.textContent = '';
-      for (const child of savedChildren) row.appendChild(child);
-      row._titleEl.textContent = icon + currentTitle;
+      overlay.remove();
     });
   }
 
