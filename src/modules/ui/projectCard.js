@@ -25,7 +25,7 @@ export function renderProjectCard({
       el('div', { class: 'projectCard__compactRow' },
         el('span', {}, project.type === 'checklist' ? '📋' : '📁'),
         el('span', { class: 'projectCard__compactName' }, project.name),
-        el('div', { style: 'display:flex;align-items:center;gap:2px;flex-shrink:0' },
+        el('div', { style: 'display:flex;align-items:center;gap:1px;flex-shrink:0' },
           hasTodos ? el('span', { class: 'projectCard__compactPct' }, `${progress}%`) : null,
           el('button', {
             type: 'button',

@@ -991,7 +991,7 @@ html[data-theme='light'] .projectCard[data-type='checklist'] .projectCard__progr
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 12px 10px;
+  padding: 6px 10px;
   border-radius: 10px;
   background: var(--surface);
   border: 1px solid var(--border);
