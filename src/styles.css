@@ -1011,7 +1011,7 @@ html[data-theme='light'] .projectCard[data-type='checklist'] .projectCard__progr
 .projectCard__compactRow {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 3px;
   width: 100%;
   min-width: 0;
 }
@@ -1025,10 +1025,11 @@ html[data-theme='light'] .projectCard[data-type='checklist'] .projectCard__progr
   min-width: 0;
 }
 .projectCard__compactPct {
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 9px;
+  font-weight: 600;
   color: var(--muted);
   flex-shrink: 0;
+  letter-spacing: 0.3px;
 }
 
 .projectCard__icons {
