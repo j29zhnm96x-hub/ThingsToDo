@@ -312,6 +312,18 @@ export async function openSmartAdd(ctx, context) {
       title: t('aiPreviewTitle'),
       align: 'bottom',
       content: previewContent,
+      onClose: () => {
+        const totalChecked = checkboxes.filter(cb => cb.checked).length;
+        if (totalChecked > 0) {
+          return confirm(modalHost, {
+            title: 'Discard changes?',
+            message: 'You have unchecked items that will be lost.',
+            confirmLabel: 'Discard',
+            danger: true
+          });
+        }
+        return true;
+      },
       actions: [
         { label: t('aiCancel'), class: 'btn btn--ghost', onClick: () => { if (recognition) stopListening(); return true; } },
         { label: t('aiCreateSelected'), class: 'btn btn--primary', onClick: async () => {
