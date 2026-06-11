@@ -352,7 +352,7 @@ export async function renderInbox(ctx) {
               function frame(time) {
                 if (el.dataset.scrollStop === 'true') { requestAnimationFrame(frame); return; }
                 if (!el._scrollStart) el._scrollStart = time;
-                const t = (time - start) % TOTAL;
+                const t = (time - el._scrollStart) % TOTAL;
                 if (t < 3500) el.style.textIndent = '0';
                 else if (t < 3500 + SCROLL_TIME) el.style.textIndent = `-${dist * ((t - 3500) / SCROLL_TIME)}px`;
                 else if (t < 3500 + SCROLL_TIME + 1000) el.style.textIndent = `-${dist}px`;
