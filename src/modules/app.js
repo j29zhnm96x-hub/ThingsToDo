@@ -120,6 +120,22 @@ export function initApp(root) {
   const quickAddBtn = createQuickAddButton(ctx);
   root?.appendChild(quickAddBtn);
 
+  // Re-measure scrolling text on resize/orientation change — stops scrolls that no longer overflow
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      document.querySelectorAll('.todo__title, .checklist__text, .projectCard__compactName').forEach(el => {
+        if (el.scrollWidth <= el.clientWidth) {
+          el.dataset.scrollStop = 'true';
+          el.style.textIndent = '0';
+        } else {
+          delete el.dataset.scrollStop;
+        }
+      });
+    }, 300);
+  });
+
   // SPA nav: bottom tabs
   tabButtons.forEach((btn) => {
     btn.addEventListener('click', () => {

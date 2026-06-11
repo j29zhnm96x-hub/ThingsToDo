@@ -413,6 +413,7 @@ export function renderTodoList({
   // Apply CSS-based scroll animation to overflowing titles (no JS animation loop)
   if (scrollLongTitles) {
     function startScroll(el, dist) {
+      delete el.dataset.scrollStop;
       const PAUSE_START = 3500;
       const speedPx = 60 + scrollSpeed * 15; // -2→30, -1→45, 0→60, 1→75, 2→90
       const SCROLL_BASE = dist / speedPx * 1000;
@@ -422,6 +423,7 @@ export function renderTodoList({
       const TOTAL = PAUSE_START + SCROLL_TIME + PAUSE_END + SCROLL_BACK;
       let start = 0;
       function frame(time) {
+        if (el.dataset.scrollStop === 'true') { el.style.textIndent = '0'; return; }
         if (!start) start = time;
         const t = (time - start) % TOTAL;
         if (t < PAUSE_START) {

@@ -342,6 +342,7 @@ export async function renderInbox(ctx) {
           const nameEls = main.querySelectorAll('.projectCard__compactName');
           nameEls.forEach(el => {
             if (el.scrollWidth > el.clientWidth) {
+              delete el.dataset.scrollStop;
               const dist = el.scrollWidth - el.clientWidth + 20;
               const speedPx = 60 + scrollSpeed * 15;
               const SCROLL_BASE = dist / speedPx * 1000;
@@ -349,6 +350,7 @@ export async function renderInbox(ctx) {
               const TOTAL = 3500 + SCROLL_TIME + 1000 + 500;
               let start = 0;
               function frame(time) {
+                if (el.dataset.scrollStop === 'true') { el.style.textIndent = '0'; return; }
                 if (!start) start = time;
                 const t = (time - start) % TOTAL;
                 if (t < 3500) el.style.textIndent = '0';
