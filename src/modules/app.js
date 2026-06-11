@@ -120,10 +120,19 @@ export function initApp(root) {
   const quickAddBtn = createQuickAddButton(ctx);
   root?.appendChild(quickAddBtn);
 
-  // Re-measure scrolling text on resize/orientation change — stops scrolls that no longer overflow
+  // Re-measure scrolling text on resize/orientation change
   let resizeTimer;
+  let wasPortrait = window.innerHeight > window.innerWidth;
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
+    const isPortrait = window.innerHeight > window.innerWidth;
+    if (isPortrait !== wasPortrait) {
+      wasPortrait = isPortrait;
+      // Refresh page so all scrolls are freshly evaluated
+      setTimeout(() => router.refresh(), 350);
+      return;
+    }
+    // Same orientation, just a slight size change — handle with pausing
     resizeTimer = setTimeout(() => {
       document.querySelectorAll('.todo__title, .checklist__text, .projectCard__compactName').forEach(el => {
         if (el.scrollWidth <= el.clientWidth) {
@@ -132,7 +141,6 @@ export function initApp(root) {
           el.style.textIndent = '0';
         } else if (el.dataset.scrollStop === 'true') {
           delete el.dataset.scrollStop;
-          // Skip ahead by the paused duration so animation doesn't jump
           const pausedAt = parseFloat(el.dataset.scrollPause) || 0;
           if (pausedAt && el._scrollStart) {
             el._scrollStart += performance.now() - pausedAt;
