@@ -3,7 +3,6 @@
 
 import { el } from './dom.js';
 import { openModal } from './modal.js';
-import { confirm } from './confirm.js';
 import { showToast } from './toast.js';
 import { t, getLang } from '../utils/i18n.js';
 import { router } from '../router.js';
@@ -316,12 +315,10 @@ export async function openSmartAdd(ctx, context) {
       onClose: () => {
         const checked = checkboxes.filter(cb => cb.checked);
         if (checked.length > 0) {
-          return confirm(modalHost, {
-            title: 'Discard changes?',
-            message: `${checked.length} item(s) will be lost if you close.`,
-            confirmLabel: 'Discard',
-            danger: true
-          });
+          return confirmOverlay(
+            `${checked.length} item(s) will be lost if you close.`,
+            'Discard'
+          );
         }
         return true;
       },
@@ -330,13 +327,11 @@ export async function openSmartAdd(ctx, context) {
           if (recognition) stopListening();
           const checked = checkboxes.filter(cb => cb.checked);
           if (checked.length > 0) {
-            const ok = await confirm(modalHost, {
-              title: 'Discard changes?',
-              message: `${checked.length} item(s) will not be created.`,
-              confirmLabel: 'Discard',
-              danger: true
-            });
-            return !!ok;
+            const ok = await confirmOverlay(
+              `${checked.length} item(s) will not be created.`,
+              'Discard'
+            );
+            if (!ok) return false; // Stay on preview
           }
           return true;
         } },
@@ -459,6 +454,21 @@ export async function openSmartAdd(ctx, context) {
     overlay.querySelector('.btn--ghost').addEventListener('click', (e) => {
       e.stopPropagation();
       overlay.remove();
+    });
+  }
+
+  function confirmOverlay(msg, dangerLabel) {
+    return new Promise((resolve) => {
+      const overlay = el('div', { style: 'position:fixed;inset:0;z-index:50;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;padding:24px' },
+        el('div', { style: 'background:var(--surface);border-radius:16px;padding:24px;max-width:320px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,0.4)' },
+          el('div', { class: 'small', style: 'margin-bottom:16px' }, msg),
+          el('div', { style: 'display:flex;gap:8px' },
+            el('button', { type: 'button', class: 'btn btn--ghost', style: 'flex:1', onClick: () => { overlay.remove(); resolve(false); } }, t('cancel') || 'Cancel'),
+            el('button', { type: 'button', class: 'btn btn--danger', style: 'flex:1', onClick: () => { overlay.remove(); resolve(true); } }, dangerLabel || 'Discard')
+          )
+        )
+      );
+      document.body.appendChild(overlay);
     });
   }
 
