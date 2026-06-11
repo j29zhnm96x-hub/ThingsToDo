@@ -59,6 +59,7 @@ Rules:
 - The user's language is provided in context. Respond in EXACTLY that language — titles, notes, project names, and page names must all be in the user's language, not English.
 - Capitalize ONLY the first letter of the FIRST word in each title. All other words stay lowercase (unless they are proper nouns). Example: \"Kupi mlijeko i kruh\", not \"Kupi Mlijeko I Kruh\".
 - Use proper Unicode characters for special letters in the user's language (e.g. Croatian: š, đ, č, ć, ž — never use ASCII substitutes like s, d, c, z).
+- Pay attention to correct grammar in the user's language — preserve proper noun cases (e.g. in Croatian: "javiti Alenu" not "javiti Aleni", "vidjeti Mariju" not "vidjeti Marija").
 
 Response format:
 {
