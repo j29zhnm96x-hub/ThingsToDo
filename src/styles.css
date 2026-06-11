@@ -1015,6 +1015,11 @@ html[data-theme='light'] .projectCard[data-type='checklist'] .projectCard__progr
   width: 100%;
   min-width: 0;
 }
+.projectCard--compact .projectCard__menuBtn {
+  min-width: 18px;
+  min-height: 18px;
+  font-size: 17px;
+}
 .projectCard__compactName {
   font-size: 12px;
   font-weight: 600;
@@ -1025,11 +1030,12 @@ html[data-theme='light'] .projectCard[data-type='checklist'] .projectCard__progr
   min-width: 0;
 }
 .projectCard__compactPct {
-  font-size: 9px;
-  font-weight: 600;
+  font-size: 8px;
+  font-weight: 500;
   color: var(--muted);
   flex-shrink: 0;
-  letter-spacing: 0.3px;
+  letter-spacing: 0;
+  line-height: 1;
 }
 
 .projectCard__icons {
