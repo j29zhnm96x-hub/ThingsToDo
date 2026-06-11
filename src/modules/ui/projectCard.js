@@ -25,16 +25,18 @@ export function renderProjectCard({
       el('div', { class: 'projectCard__compactRow' },
         el('span', {}, project.type === 'checklist' ? '📋' : '📁'),
         el('span', { class: 'projectCard__compactName' }, project.name),
-        hasTodos ? el('span', { class: 'projectCard__compactPct' }, `${progress}%`) : null,
-        el('button', {
-          type: 'button',
-          class: 'projectCard__menuBtn iconBtn',
-          'aria-label': t('menu'),
-          onClick: (e) => {
-            e.stopPropagation();
-            onMenu?.(project, e);
-          }
-        }, '⋯')
+        el('div', { style: 'display:flex;align-items:center;gap:2px;flex-shrink:0' },
+          hasTodos ? el('span', { class: 'projectCard__compactPct' }, `${progress}%`) : null,
+          el('button', {
+            type: 'button',
+            class: 'projectCard__menuBtn iconBtn',
+            'aria-label': t('menu'),
+            onClick: (e) => {
+              e.stopPropagation();
+              onMenu?.(project, e);
+            }
+          }, '⋯')
+        )
       )
     );
   }
