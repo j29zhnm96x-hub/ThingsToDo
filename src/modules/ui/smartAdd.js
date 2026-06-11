@@ -391,41 +391,57 @@ export async function openSmartAdd(ctx, context) {
   }
 
   function openEditItemModal(item, row) {
+    if (!row || !row._titleEl) return;
     const titleField = item.title !== undefined ? 'title' : item.text !== undefined ? 'text' : item.taskTitle !== undefined ? 'taskTitle' : item.projectName !== undefined ? 'projectName' : 'name';
     const currentTitle = item[titleField] || '';
-    const hasNotes = item.notes !== undefined || item.text !== undefined;
+    const hasNotes = item.notes !== undefined;
+    const iconMatch = row._titleEl.textContent.match(/^(\S+\s)/);
+    const icon = iconMatch ? iconMatch[1] : '📄 ';
 
-    const input = el('input', { type: 'text', class: 'input', value: currentTitle, 'aria-label': 'Title' });
+    // Save original children so we can restore later
+    const savedChildren = Array.from(row.childNodes);
+
+    // Build edit UI inline
+    const input = el('input', { type: 'text', class: 'input', value: currentTitle, 'aria-label': 'Title', style: 'flex:1;min-width:0' });
     const notesInput = hasNotes
-      ? el('textarea', { class: 'input', rows: 3, style: 'margin-top:6px', 'aria-label': 'Notes' }, item.notes || '')
+      ? el('textarea', { class: 'input', rows: 2, style: 'margin-top:6px', 'aria-label': 'Notes' }, item.notes || '')
       : null;
 
-    const newTitleKey = titleField;
+    const saveBtn = el('button', { type: 'button', class: 'btn btn--primary', style: 'padding:4px 12px;font-size:13px;min-height:28px' });
+    saveBtn.textContent = t('save') || 'Save';
+    const cancelBtn = el('button', { type: 'button', class: 'btn btn--ghost', style: 'padding:4px 12px;font-size:13px;min-height:28px' });
+    cancelBtn.textContent = t('cancel') || 'Cancel';
 
-    openModal(modalHost, {
-      title: 'Edit item',
-      content: notesInput ? el('div', { class: 'stack' }, input, notesInput) : el('div', { class: 'stack' }, input),
-      actions: [
-        { label: t('cancel') || 'Cancel', class: 'btn btn--ghost', onClick: () => true },
-        {
-          label: t('save') || 'Save',
-          class: 'btn btn--primary',
-          onClick: () => {
-            const newTitle = input.value.trim() || currentTitle;
-            item[newTitleKey] = newTitle;
-            if (notesInput) {
-              item.notes = notesInput.value.trim() || '';
-            }
-            // Update the displayed row
-            if (row && row._titleEl) {
-              const iconMatch = row._titleEl.textContent.match(/^(\S+\s)/);
-              const icon = iconMatch ? iconMatch[1] : '📄 ';
-              row._titleEl.textContent = icon + newTitle;
-            }
-            return true;
-          }
-        }
-      ]
+    // Replace row content
+    row.textContent = '';
+    row.style.padding = '8px 12px';
+    row.append(
+      el('div', { style: 'flex:1;min-width:0;display:flex;flex-direction:column;gap:4px' },
+        el('div', { style: 'display:flex;align-items:center;gap:6px' },
+          el('span', {}, icon),
+          input
+        ),
+        notesInput || null
+      ),
+      el('div', { style: 'display:flex;align-items:center;gap:4px;flex-shrink:0' }, saveBtn, cancelBtn)
+    );
+
+    saveBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const newTitle = input.value.trim() || currentTitle;
+      item[titleField] = newTitle;
+      if (notesInput) item.notes = notesInput.value.trim() || '';
+      // Restore display
+      row.textContent = '';
+      for (const child of savedChildren) row.appendChild(child);
+      row._titleEl.textContent = icon + newTitle;
+    });
+
+    cancelBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      row.textContent = '';
+      for (const child of savedChildren) row.appendChild(child);
+      row._titleEl.textContent = icon + currentTitle;
     });
   }
 
