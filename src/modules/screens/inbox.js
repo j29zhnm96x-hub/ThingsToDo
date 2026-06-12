@@ -4,6 +4,7 @@ import { pickProject } from '../ui/pickProject.js';
 import { pickDestination, buildPagesMap } from '../ui/pickDestination.js';
 import { confirm } from '../ui/confirm.js';
 import { moveTodo, reorderBucket, completeTodo, uncompleteTodo, getAllTodosForProject } from '../logic/todoOps.js';
+import { showToast } from '../ui/toast.js';
 import { compressAttachmentsForArchive } from '../logic/attachments.js';
 import { openTodoMenu } from '../ui/todoMenu.js';
 import { openTodoInfo } from '../ui/todoInfo.js';
@@ -161,6 +162,7 @@ export async function renderInbox(ctx) {
       });
       if (!dest) return;
       await moveTodo(db, todo, dest.projectId, { pageId: dest.pageId });
+      showToast(t('moved') || 'Moved');
       await renderInbox(ctx);
     },
     onLinkToggle: async (todo) => {
@@ -220,6 +222,7 @@ export async function renderInbox(ctx) {
           });
           if (!dest) return false;
           await moveTodo(db, todo, dest.projectId, { pageId: dest.pageId });
+          showToast(t('moved') || 'Moved');
           await renderInbox(ctx);
           return true;
         } },

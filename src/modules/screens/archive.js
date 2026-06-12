@@ -9,6 +9,7 @@ import { openTodoInfo } from '../ui/todoInfo.js';
 import { hapticLight } from '../ui/haptic.js';
 import { openModal } from '../ui/modal.js';
 import { openBinModal } from '../ui/binModal.js';
+import { showToast } from '../ui/toast.js';
 import { t } from '../utils/i18n.js';
 import { endRecurringSeries } from '../logic/recurrence.js';
 
@@ -218,6 +219,7 @@ export async function renderArchive(ctx) {
         });
         if (!dest) return;
         await restoreTodo(db, todo, dest.projectId, { pageId: dest.pageId });
+        showToast(t('restored') || 'Restored');
         await renderArchive(ctx);
       },
       onDelete: async (todo) => {
@@ -282,6 +284,7 @@ export async function renderArchive(ctx) {
             });
             if (!dest) return false;
             await restoreTodo(db, todo, dest.projectId, { pageId: dest.pageId });
+            showToast(t('restored') || 'Restored');
             await renderArchive(ctx);
             return true;
           } },
