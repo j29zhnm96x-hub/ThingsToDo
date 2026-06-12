@@ -202,31 +202,24 @@ export async function renderSettings(ctx) {
   }, t('updateCheck') || 'Check for Updates');
 
   main.append(el('div', { class: 'stack' },
-    el('div', { class: 'card stack' },
-      el('div', { style: { fontWeight: '700' } }, t('language')),
-      langSelect
-    ),
-    el('div', { class: 'card stack' },
-      el('div', { style: { fontWeight: '700' } }, t('inbox')),
+    buildCollapsibleSection(t('language'), [langSelect]),
+    buildCollapsibleSection(t('inbox'), [
       el('div', { class: 'row' },
         el('div', { class: 'small' }, t('groupActiveTasks')),
         groupingToggle
       )
-    ),
-    el('div', { class: 'card stack' },
-      el('div', { style: { fontWeight: '700' } }, t('voiceMemos')),
+    ]),
+    buildCollapsibleSection(t('voiceMemos'), [
       el('label', { class: 'label' },
         el('span', {}, t('voiceRecordingQuality') || 'Recording quality'),
         voiceQualitySelect
       )
-    ),
-    el('div', { class: 'card stack' },
-      el('div', { style: { fontWeight: '700' } }, t('checklistOptions') || 'Checklists options'),
+    ]),
+    buildCollapsibleSection(t('checklistOptions') || 'Checklists options', [
       el('div', { class: 'small' }, t('manageSuggestionHistory') || 'Manage saved checklist suggestions'),
       manageSuggestionsBtn
-    ),
-    el('div', { class: 'card stack' },
-      el('div', { style: { fontWeight: '700' } }, t('behaviors')),
+    ]),
+    buildCollapsibleSection(t('behaviors'), [
       el('div', { class: 'row' },
         el('div', { class: 'small' }, t('enableConfetti')),
         confettiToggle
@@ -269,11 +262,10 @@ export async function renderSettings(ctx) {
           el('span', {}, '90')
         )
       )
-    ),
+    ]),
 
     // AI Assistant section
-    el('div', { class: 'card stack' },
-      el('div', { style: { fontWeight: '700' } }, t('aiSettings')),
+    buildCollapsibleSection(t('aiSettings'), [
       el('div', { class: 'row' },
         el('div', { class: 'small' }, t('aiEnable')),
         buildToggle(aiEnabled, async (val) => {
@@ -386,21 +378,19 @@ export async function renderSettings(ctx) {
           }, aiSystemPrompt)
         )
       ) : null
-    ),
-    el('div', { class: 'card stack' },
-      el('div', { style: { fontWeight: '700' } }, t('theme')),
+    ]),
+    buildCollapsibleSection(t('theme'), [
       el('div', { class: 'row' },
         el('div', { class: 'small' }, t('themeLight')),
         themeToggle
       ),
       paletteSwatches
-    ),
+    ]),
     el('div', { class: 'card stack' },
       el('div', { style: { fontWeight: '700' } }, t('help')),
       helpBtn
     ),
-      el('div', { class: 'card stack' },
-        el('div', { style: { fontWeight: '700' } }, t('dataManagement')),
+    buildCollapsibleSection(t('dataManagement'), [
       el('div', { class: 'small' }, t('dataStoredLocally')),
       el('div', { class: 'row' },
         el('div', { class: 'small' }, t('compressImages')),
@@ -416,7 +406,7 @@ export async function renderSettings(ctx) {
       binBtn,
       resetStatsBtn,
       resetBtn
-    ),
+    ]),
     el('div', { class: 'card stack' },
       el('div', { style: { fontWeight: '700' } }, t('updateCheck') || 'App Updates'),
       checkUpdateBtn,
@@ -723,6 +713,21 @@ export async function renderSettings(ctx) {
         }
       ]
     });
+  }
+
+  function buildCollapsibleSection(title, children, startOpen) {
+    const contentEl = el('div', { style: { display: startOpen ? '' : 'none', marginTop: '10px' } }, ...children);
+    const chevron = el('span', { style: { fontSize: '10px', transition: 'transform 200ms', flexShrink: 0 } }, startOpen ? '▼' : '▶');
+    const titleRow = el('div', { style: { fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', userSelect: 'none' } },
+      chevron, title
+    );
+    titleRow.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = contentEl.style.display !== 'none';
+      contentEl.style.display = isOpen ? 'none' : '';
+      chevron.textContent = isOpen ? '▶' : '▼';
+    });
+    return el('div', { class: 'card stack' }, titleRow, contentEl);
   }
 
   function buildToggle(checked, onChange) {
