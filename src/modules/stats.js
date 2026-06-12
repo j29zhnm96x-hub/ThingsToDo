@@ -150,7 +150,7 @@ export async function getCompletionRate(db) {
 
   for (const t of all) {
     if (t.completed && !t.archived && isAfterCutoff(t.completedAt, cutoff)) completed++;
-    else if (t.archived) archived++;
+    else if (t.archived && isAfterCutoff(t.archivedAt, cutoff)) archived++;
     else active++;
   }
 

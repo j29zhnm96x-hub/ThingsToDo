@@ -47,6 +47,8 @@ const translations = {
     noTasksHint: 'Tap the + button to add your first task',
     completed: 'Completed',
     active: 'active',
+    archived: 'archived',
+    total: 'total',
     markCompleted: 'Mark completed',
     markIncomplete: 'Mark incomplete',
     
