@@ -399,13 +399,13 @@ export async function openSmartAdd(ctx, context) {
 
   function renderPriorityDots(item, row) {
     const current = item.priority || 'P2';
-    const container = el('div', { style: 'display:flex;align-items:center;gap:6px;margin-top:6px' });
+    const container = el('div', { style: 'display:flex;align-items:center;gap:12px;margin-top:6px' });
     container.className = 'ai-priority-dots';
     for (const p of PRIORITY_ORDER) {
       const color = PRIORITY_COLORS[p];
       const dot = el('span', {
         style: {
-          display: 'inline-block', width: '16px', height: '16px', borderRadius: '50%',
+          display: 'inline-block', width: '20px', height: '20px', borderRadius: '50%',
           background: color, cursor: 'pointer', flexShrink: 0,
           border: current === p ? '2px solid var(--text)' : '2px solid transparent',
           transition: 'transform 150ms ease', boxSizing: 'border-box'
