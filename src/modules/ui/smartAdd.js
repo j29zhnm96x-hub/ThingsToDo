@@ -228,8 +228,8 @@ export async function openSmartAdd(ctx, context) {
     const checkboxes = [];
     const previewItems = [];
 
-    function makeEditableRow(item, cb, icon, title, typeLabel, subText, extraClass) {
-      const row = createPreviewRow(cb, icon, title, typeLabel, subText, extraClass);
+    function makeEditableRow(item, cb, icon, title, typeLabel, subText, extraClass, extraChildren) {
+      const row = createPreviewRow(cb, icon, title, typeLabel, subText, extraClass, extraChildren);
       row.addEventListener('click', (e) => {
         if (e.target.closest('input[type="checkbox"]')) return;
         openEditItemModal(item, row);
@@ -241,7 +241,8 @@ export async function openSmartAdd(ctx, context) {
     for (const task of parsed.tasks) {
       const cb = createCheckbox(true);
       checkboxes.push(cb);
-      previewItems.push(makeEditableRow(task, cb, '📄', task.title, t('aiTask'), task.notes));
+      const priorityDots = renderPriorityDots(task);
+      previewItems.push(makeEditableRow(task, cb, '📄', task.title, t('aiTask'), task.notes, null, [priorityDots]));
     }
 
     // Projects
@@ -393,18 +394,54 @@ export async function openSmartAdd(ctx, context) {
     return el('input', { type: 'checkbox', checked: checked ? 'checked' : null, style: { flexShrink: '0', width: '18px', height: '18px' } });
   }
 
-  function createPreviewRow(checkbox, icon, title, typeLabel, subText, extraClass) {
+  const PRIORITY_COLORS = { URGENT: '#ef4444', P0: '#ef4444', P1: '#f97316', P2: '#eab308', P3: '#22c55e' };
+  const PRIORITY_ORDER = ['URGENT', 'P0', 'P1', 'P2', 'P3'];
+
+  function renderPriorityDots(item, row) {
+    const current = item.priority || 'P2';
+    const container = el('div', { style: 'display:flex;align-items:center;gap:6px;margin-top:6px' });
+    container.className = 'ai-priority-dots';
+    for (const p of PRIORITY_ORDER) {
+      const color = PRIORITY_COLORS[p];
+      const dot = el('span', {
+        style: {
+          display: 'inline-block', width: '16px', height: '16px', borderRadius: '50%',
+          background: color, cursor: 'pointer', flexShrink: 0,
+          border: current === p ? '2px solid var(--text)' : '2px solid transparent',
+          transition: 'transform 150ms ease', boxSizing: 'border-box'
+        },
+        onClick: (e) => {
+          e.stopPropagation();
+          item.priority = p;
+          // Update visual: remove border from all, highlight selected
+          Array.from(container.children).forEach((d, i) => {
+            d.style.border = PRIORITY_ORDER[i] === p ? '2px solid var(--text)' : '2px solid transparent';
+          });
+        }
+      });
+      container.appendChild(dot);
+    }
+    return container;
+  }
+
+  function createPreviewRow(checkbox, icon, title, typeLabel, subText, extraClass, extraChildren) {
     const titleEl = el('div', { style: { fontWeight: '500', fontSize: '14px', wordBreak: 'break-word' } }, icon + ' ' + title);
+    const contentChildren = [
+      titleEl,
+      el('div', { class: 'small', style: { color: 'var(--muted)' } }, typeLabel)
+    ];
+    if (subText) {
+      contentChildren.push(el('div', { class: 'small', style: { color: 'var(--muted)', marginTop: '4px', whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxHeight: '60px', overflow: 'hidden' } }, subText));
+    }
+    if (extraChildren && extraChildren.length) {
+      contentChildren.push(...extraChildren);
+    }
     const row = el('div', {
       class: 'card' + (extraClass ? ' card--' + extraClass : ''),
       style: { display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '10px 12px', margin: '0', cursor: 'pointer' }
     },
       checkbox,
-      el('div', { style: { flex: '1', minWidth: '0' } },
-        titleEl,
-        el('div', { class: 'small', style: { color: 'var(--muted)' } }, typeLabel),
-        subText ? el('div', { class: 'small', style: { color: 'var(--muted)', marginTop: '4px', whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxHeight: '60px', overflow: 'hidden' } }, subText) : null
-      )
+      el('div', { style: { flex: '1', minWidth: '0' } }, ...contentChildren)
     );
     // Store titleEl so edit can update it
     row._titleEl = titleEl;
