@@ -320,7 +320,8 @@ export const db = {
         aiSystemPrompt: '',
         quickVoiceAdd: false,
         scrollLongTitles: false,
-        scrollSpeed: 0
+        scrollSpeed: 0,
+        statsResetDate: null
       };
     },
     async put(settings) {

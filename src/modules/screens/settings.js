@@ -173,6 +173,7 @@ export async function renderSettings(ctx) {
     await db.settings.put(next);
   });
   const resetBtn = el('button', { class: 'btn btn--danger', type: 'button', onClick: resetData }, t('clearAllData'));
+  const resetStatsBtn = el('button', { class: 'btn', type: 'button', onClick: resetStats }, t('resetStats') || 'Reset statistics');
   const manageSuggestionsBtn = el('button', { class: 'btn', type: 'button', onClick: openSuggestionHistoryModal }, t('clearSuggestionHistory') || 'Clear suggestion history');
 
   // Update check
@@ -413,6 +414,7 @@ export async function renderSettings(ctx) {
       importBtn,
       pasteSharedBtn,
       binBtn,
+      resetStatsBtn,
       resetBtn
     ),
     el('div', { class: 'card stack' },
@@ -774,6 +776,18 @@ export async function renderSettings(ctx) {
         onClick: () => window.open(info.signupUrl, '_blank', 'noopener')
       }, t('aiOpenSite'))
     );
+  }
+
+  async function resetStats() {
+    const ok = await confirm(modalHost, {
+      title: t('resetStats') || 'Reset statistics',
+      message: 'This will clear all statistics data. Your tasks and projects will not be affected.',
+      confirmLabel: t('resetStats') || 'Reset',
+      danger: true
+    });
+    if (!ok) return;
+    await db.settings.put({ ...await db.settings.get(), statsResetDate: new Date().toISOString() });
+    showToast(t('statsReset') || 'Statistics reset');
   }
 
   async function resetData() {

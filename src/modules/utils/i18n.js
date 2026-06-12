@@ -194,6 +194,8 @@ const translations = {
     binEmpty: 'Bin is empty',
     itemsInBin: '{n} items in bin',
     clearAllData: 'Clear All Data',
+    resetStats: 'Reset statistics',
+    statsReset: 'Statistics reset',
     clearDataWarning: 'This will delete all your tasks, projects, and settings. This cannot be undone.',
     exportData: 'Export Data',
     importData: 'Import Data',

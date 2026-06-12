@@ -2,6 +2,21 @@
 
 const DAY_MS = 86400000;
 
+/** If the user has reset stats, return the cutoff date (tasks completed before this are ignored) */
+async function getResetCutoff(db) {
+  try {
+    const s = await db.settings.get();
+    return s.statsResetDate ? new Date(s.statsResetDate) : null;
+  } catch {
+    return null;
+  }
+}
+function isAfterCutoff(completedAt, cutoff) {
+  if (!cutoff) return true;
+  if (!completedAt) return false;
+  return new Date(completedAt) >= cutoff;
+}
+
 function dayKey(date) {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -24,6 +39,7 @@ async function getAllTodos(db) {
 
 /** Count completed tasks per day for the last N days */
 async function completedPerDay(db, days) {
+  const resetCutoff = await getResetCutoff(db);
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);
   cutoff.setHours(0, 0, 0, 0);
@@ -32,6 +48,7 @@ async function completedPerDay(db, days) {
   const map = new Map();
   for (const t of all) {
     if (!t.completed || !t.completedAt) continue;
+    if (!isAfterCutoff(t.completedAt, resetCutoff)) continue;
     const d = new Date(t.completedAt);
     if (d < cutoff) continue;
     const key = dayKey(d);
@@ -42,6 +59,7 @@ async function completedPerDay(db, days) {
 
 /** Today's summary */
 export async function getTodayStats(db) {
+  const cutoff = await getResetCutoff(db);
   const today = todayKey();
   const all = await getAllTodos(db);
   let completed = 0;
@@ -50,7 +68,7 @@ export async function getTodayStats(db) {
 
   for (const t of all) {
     if (t.archived) continue;
-    if (t.completed && t.completedAt && dayKey(new Date(t.completedAt)) === today) {
+    if (t.completed && t.completedAt && dayKey(new Date(t.completedAt)) === today && isAfterCutoff(t.completedAt, cutoff)) {
       completed++;
     }
     if (t.dueDate) {
@@ -124,13 +142,14 @@ export async function getMonthlyData(db) {
 
 /** Overall completion rate */
 export async function getCompletionRate(db) {
+  const cutoff = await getResetCutoff(db);
   const all = await getAllTodos(db);
   let completed = 0;
   let active = 0;
   let archived = 0;
 
   for (const t of all) {
-    if (t.completed && !t.archived) completed++;
+    if (t.completed && !t.archived && isAfterCutoff(t.completedAt, cutoff)) completed++;
     else if (t.archived) archived++;
     else active++;
   }
@@ -147,12 +166,14 @@ export async function getCompletionRate(db) {
 
 /** Most productive day of the week */
 export async function getProductiveDay(db) {
+  const cutoff = await getResetCutoff(db);
   const all = await getAllTodos(db);
   const dayCounts = [0, 0, 0, 0, 0, 0, 0];
   const labels = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
   for (const t of all) {
     if (!t.completed || !t.completedAt) continue;
+    if (!isAfterCutoff(t.completedAt, cutoff)) continue;
     const d = new Date(t.completedAt);
     dayCounts[d.getDay()]++;
   }
