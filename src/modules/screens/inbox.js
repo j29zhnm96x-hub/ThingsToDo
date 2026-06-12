@@ -8,7 +8,7 @@ import { compressAttachmentsForArchive } from '../logic/attachments.js';
 import { openTodoMenu } from '../ui/todoMenu.js';
 import { openTodoInfo } from '../ui/todoInfo.js';
 import { renderProjectCard } from '../ui/projectCard.js';
-import { openProjectMenu } from '../ui/projectMenu.js';
+import { openProjectMenu, openInboxProjectMenu } from '../ui/projectMenu.js';
 import { hapticLight } from '../ui/haptic.js';
 import { Priority } from '../data/models.js';
 import { t } from '../utils/i18n.js';
@@ -274,7 +274,7 @@ export async function renderInbox(ctx) {
           },
           onMenu: () => {
             hapticLight();
-            openProjectMenu(modalHost, { db, project: p, onChange: () => renderInbox(ctx) });
+            openInboxProjectMenu(modalHost, { db, project: p, onChange: () => renderInbox(ctx) });
           }
         }))
       )

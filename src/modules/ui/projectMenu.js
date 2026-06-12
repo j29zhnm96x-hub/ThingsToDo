@@ -185,3 +185,25 @@ export function openProjectMenu(modalHost, { db, project, onChange }) {
     actions: [{ label: t('close'), class: 'btn btn--ghost', onClick: () => true }]
   });
 }
+
+export function openInboxProjectMenu(modalHost, { db, project, onChange }) {
+  const linkBtn = el('button', { class: 'btn', type: 'button' }, project.showInInbox ? t('unlinkFromInbox') : t('linkToInbox'));
+
+  let modalRef = null;
+  linkBtn.addEventListener('click', async () => {
+    const wasLinked = project.showInInbox;
+    await db.projects.put({ ...project, showInInbox: !project.showInInbox });
+    onChange?.();
+    if (modalRef) modalRef.close();
+    const message = wasLinked ? t('projectUnlinkedFromInbox') : t('projectLinkedToInbox');
+    showToast(message);
+  });
+
+  modalRef = openModal(modalHost, {
+    title: project.name,
+    content: el('div', { class: 'stack' },
+      linkBtn
+    ),
+    actions: [{ label: t('cancel'), class: 'btn btn--ghost', onClick: () => true }]
+  });
+}
