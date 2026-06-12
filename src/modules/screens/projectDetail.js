@@ -246,7 +246,8 @@ async function openNoteMenu(ctx, note) {
         const pick = await pickDestination(modalHost, { projects, pagesByProjectId, initial: { projectId: null, pageId: null }, includeInbox: false });
         if (pick !== undefined) {
           await db.projectNotes.put({ ...note, projectId: pick });
-          showToast(t('moved') || 'Moved');
+          const destProj = await db.projects.get(pick);
+          showToast('Moved to ' + (destProj?.name || 'Inbox'));
           renderProjectDetail(ctx, note.projectId);
         }
         return true;
@@ -1155,11 +1156,13 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
           if (!dest) return;
 
           const { projectId: destProjId, pageId: destPageId } = dest;
+          const destProj = destProjId ? await db.projects.get(destProjId) : null;
+          const destName = destProj?.name || 'Inbox';
 
           // Moving to a specific page in a checklist project
           if (destPageId) {
             await moveTodo(db, todo, destProjId, { pageId: destPageId });
-            showToast(t('moved') || 'Moved');
+            showToast('Moved to ' + destName);
             await renderProjectDetail(ctx, projectId, 0);
             return;
           }
@@ -1167,7 +1170,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
           // Moving to Inbox
           if (destProjId == null) {
             await moveTodo(db, todo, null, { pageId: null });
-            showToast(t('moved') || 'Moved');
+            showToast('Moved to Inbox');
             await renderProjectDetail(ctx, projectId, 0);
             return;
           }
@@ -1187,7 +1190,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
           } else {
             await moveTodo(db, todo, destProjId, { pageId: null });
           }
-          showToast(t('moved') || 'Moved');
+          showToast('Moved to ' + destName);
           await renderProjectDetail(ctx, projectId, 0);
         };
 
@@ -1466,7 +1469,8 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
       const dest = await pickDestination(modalHost, { projects, pagesByProjectId, initial: { projectId: todo.projectId, pageId: null }, includeInbox: true });
       if (!dest) return;
       await moveTodo(db, todo, dest.projectId, { pageId: dest.pageId });
-      showToast(t('moved') || 'Moved');
+      const destProj = dest.projectId ? await db.projects.get(dest.projectId) : null;
+      showToast('Moved to ' + (destProj?.name || 'Inbox'));
       await renderProjectDetail(ctx, projectId, 0);
     },
     onLinkToggle: async (todo) => {
@@ -1526,7 +1530,8 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
           const dest = await pickDestination(modalHost, { projects, pagesByProjectId, initial: { projectId: todo.projectId, pageId: null }, includeInbox: true });
           if (dest) {
             await moveTodo(db, todo, dest.projectId, { pageId: dest.pageId });
-            showToast(t('moved') || 'Moved');
+            const destProj = dest.projectId ? await db.projects.get(dest.projectId) : null;
+            showToast('Moved to ' + (destProj?.name || 'Inbox'));
             await renderProjectDetail(ctx, projectId, 0);
           }
           return true;

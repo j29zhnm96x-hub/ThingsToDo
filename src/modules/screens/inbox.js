@@ -162,7 +162,8 @@ export async function renderInbox(ctx) {
       });
       if (!dest) return;
       await moveTodo(db, todo, dest.projectId, { pageId: dest.pageId });
-      showToast(t('moved') || 'Moved');
+      const destProj = dest.projectId ? await db.projects.get(dest.projectId) : null;
+      showToast('Moved to ' + (destProj?.name || 'Inbox'));
       await renderInbox(ctx);
     },
     onLinkToggle: async (todo) => {
@@ -222,7 +223,8 @@ export async function renderInbox(ctx) {
           });
           if (!dest) return false;
           await moveTodo(db, todo, dest.projectId, { pageId: dest.pageId });
-          showToast(t('moved') || 'Moved');
+          const destProj = dest.projectId ? await db.projects.get(dest.projectId) : null;
+          showToast('Moved to ' + (destProj?.name || 'Inbox'));
           await renderInbox(ctx);
           return true;
         } },

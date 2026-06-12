@@ -219,7 +219,8 @@ export async function renderArchive(ctx) {
         });
         if (!dest) return;
         await restoreTodo(db, todo, dest.projectId, { pageId: dest.pageId });
-        showToast(t('restored') || 'Restored');
+        const destProj = dest.projectId ? await db.projects.get(dest.projectId) : null;
+        showToast('Restored to ' + (destProj?.name || 'Inbox'));
         await renderArchive(ctx);
       },
       onDelete: async (todo) => {
@@ -284,7 +285,8 @@ export async function renderArchive(ctx) {
             });
             if (!dest) return false;
             await restoreTodo(db, todo, dest.projectId, { pageId: dest.pageId });
-            showToast(t('restored') || 'Restored');
+            const destProj = dest.projectId ? await db.projects.get(dest.projectId) : null;
+            showToast('Restored to ' + (destProj?.name || 'Inbox'));
             await renderArchive(ctx);
             return true;
           } },
