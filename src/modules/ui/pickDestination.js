@@ -129,7 +129,7 @@ export async function pickDestination(modalHost, {
                 type: 'page',
                 projectId: proj.id,
                 pageId: page.id,
-                label: page.name || (t('untitled') || 'Untitled'),
+                label: page.name || 'List',
                 labelLower: (page.name || '').toLowerCase(),
                 indent: depth + 1
               });

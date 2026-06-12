@@ -712,7 +712,7 @@ async function createSelected(ctx, context, selected) {
       if (context.mode === 'checklist' && context.project) {
         const pages = await db.checklistPages.listByProject(context.project.id);
         const cpData = item.data;
-        const page = newChecklistPage({ projectId: context.project.id, name: cpData.name || 'Untitled' });
+        const page = newChecklistPage({ projectId: context.project.id, name: cpData.name || 'List' });
         page.order = pages.length;
         await db.checklistPages.put(page);
         results.push(page);

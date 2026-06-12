@@ -601,7 +601,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
     
     // Migration: create default page if none exist
     if (pages.length === 0) {
-      const defaultPage = newChecklistPage({ projectId, name: '' });
+      const defaultPage = newChecklistPage({ projectId, name: 'List 1' });
       defaultPage.order = 0;
       await db.checklistPages.put(defaultPage);
       pages = [defaultPage];
@@ -1181,7 +1181,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
             // For checklist project without specific page: place on first page
             let destPages = pagesByProjectId.get(destProjId) || [];
             if (destPages.length === 0) {
-              const defaultPage = newChecklistPage({ projectId: destProjId, name: '' });
+              const defaultPage = newChecklistPage({ projectId: destProjId, name: 'List 1' });
               defaultPage.order = 0;
               await db.checklistPages.put(defaultPage);
               destPages = [defaultPage];
