@@ -400,12 +400,14 @@ export async function renderSettings(ctx) {
         el('div', { class: 'small' }, t('extraCompressArchive')),
         compressArchiveToggle
       ),
-      exportBtn,
-      importBtn,
-      pasteSharedBtn,
-      binBtn,
-      resetStatsBtn,
-      resetBtn
+      el('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
+        exportBtn,
+        importBtn,
+        pasteSharedBtn,
+        binBtn,
+        resetStatsBtn,
+        resetBtn
+      )
     ]),
     el('div', { class: 'card stack' },
       el('div', { style: { fontWeight: '700' } }, t('updateCheck') || 'App Updates'),
@@ -715,8 +717,8 @@ export async function renderSettings(ctx) {
     });
   }
 
-  function buildCollapsibleSection(title, children, startOpen) {
-    const contentEl = el('div', { style: { display: startOpen ? '' : 'none', marginTop: '10px' } }, ...children);
+  function buildCollapsibleSection(title, children, startOpen, contentStyle) {
+    const contentEl = el('div', { style: { display: startOpen ? '' : 'none', marginTop: '10px', ...(contentStyle || {}) } }, ...children);
     const chevron = el('span', { style: { fontSize: '10px', transition: 'transform 200ms', flexShrink: 0 } }, startOpen ? '▼' : '▶');
     const titleRow = el('div', { style: { fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', userSelect: 'none' } },
       chevron, title
