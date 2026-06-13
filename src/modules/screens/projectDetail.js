@@ -2405,9 +2405,7 @@ function openEditChecklistItem({ modalHost, db, todo, onSaved }) {
         customUnitInput
       );
       // Focus the qty input so the number pad pops up immediately
-      requestAnimationFrame(() => {
-        qtyInput.focus();
-      });
+      setTimeout(() => qtyInput.focus(), 10);
     } else {
       // Set mode: show qty input directly
       qtyBody.append(
