@@ -2388,28 +2388,52 @@ function openEditChecklistItem({ modalHost, db, todo, onSaved }) {
   }
 
   let addMode = false;
-  const modeToggle = el('span', {
-    style: {
-      fontSize: '10px', cursor: 'pointer', userSelect: 'none',
-      padding: '2px 6px', borderRadius: '4px',
-      background: addMode ? 'var(--accent)' : 'var(--surface2)',
-      color: addMode ? '#fff' : 'var(--text)',
-      fontWeight: '600', lineHeight: '1.4'
-    },
+  const currentQty = todo.itemQuantity != null ? `${todo.itemQuantity}${todo.itemUnit ? ' ' + todo.itemUnit : ''}` : null;
+
+  // Container that swaps content based on mode
+  const qtyBody = el('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' });
+
+  function renderQtyMode() {
+    qtyBody.innerHTML = '';
+    if (addMode && currentQty) {
+      // Add mode: show current qty + new input
+      qtyBody.append(
+        el('span', { style: 'font-size:0.875rem;color:var(--muted);width:100%' }, 'Current: ' + currentQty),
+        el('span', { style: 'font-size:0.875rem;color:var(--muted)' }, '+'),
+        qtyInput,
+        unitSelect,
+        customUnitInput
+      );
+    } else {
+      // Set mode: show qty input directly
+      qtyBody.append(
+        el('span', { style: 'font-size:0.875rem;color:var(--muted)' }, 'Qty'),
+        qtyInput,
+        unitSelect,
+        customUnitInput
+      );
+    }
+  }
+
+  const modeBtn = el('button', {
+    type: 'button',
+    class: 'btn btn--small',
     onClick: () => {
       addMode = !addMode;
-      modeToggle.style.background = addMode ? 'var(--accent)' : 'var(--surface2)';
-      modeToggle.style.color = addMode ? '#fff' : 'var(--text)';
-      modeToggle.textContent = addMode ? 'Add' : 'Set';
+      modeBtn.textContent = addMode ? 'Set' : 'Add';
+      renderQtyMode();
     }
-  }, 'Set');
+  }, 'Add');
+  if (!currentQty) modeBtn.style.display = 'none'; // no add mode if no current qty
 
-  const qtyRow = el('div', { style: 'display:flex;gap:8px;align-items:center;margin-top:8px' },
-    el('span', { style: 'font-size:0.875rem;color:var(--muted)' }, 'Qty'),
-    qtyInput,
-    modeToggle,
-    unitSelect,
-    customUnitInput
+  renderQtyMode();
+
+  const qtyRow = el('div', { style: 'display:flex;flex-direction:column;gap:6px;margin-top:8px' },
+    el('div', { style: 'display:flex;align-items:center;gap:8px' },
+      el('span', { style: 'font-size:0.875rem;color:var(--muted)' }, 'Qty'),
+      modeBtn
+    ),
+    qtyBody
   );
 
   const content = el('div', {}, input, qtyRow);
@@ -2423,6 +2447,9 @@ function openEditChecklistItem({ modalHost, db, todo, onSaved }) {
       itemQuantity = addMode
         ? (todo.itemQuantity || 0) + q
         : q;
+    } else if (addMode) {
+      // In add mode, empty means no change
+      itemQuantity = todo.itemQuantity ?? null;
     } else {
       itemQuantity = null;
     }
