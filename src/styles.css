@@ -1120,6 +1120,14 @@ html[data-theme='light'] .checklist__item {
   font-size: 15px;
 }
 
+.qty-badge {
+  color: #facc15; /* strong yellow in dark mode */
+  font-weight: 600;
+}
+html[data-theme='light'] .qty-badge {
+  color: #1a56db; /* dark blue in light mode */
+}
+
 .checklist__hint {
   color: var(--muted);
   font-size: 14px;

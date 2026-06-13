@@ -2054,15 +2054,16 @@ function renderChecklistWithDrag({ todos, modalHost, db, projectId, currentPageI
     let swiping = false;
     const SWIPE_THRESHOLD = 80;
 
-    const qtyLabel = (todo.itemQuantity != null && todo.itemUnit)
-      ? ` — ${todo.itemQuantity} ${todo.itemUnit}`
-      : todo.itemQuantity != null
-        ? ` — ${todo.itemQuantity}`
-        : '';
     const textSpan = el('span', { 
       class: 'checklist__text',
       style: 'cursor: pointer;'
-    }, todo.title + qtyLabel);
+    }, todo.title);
+    if (todo.itemQuantity != null) {
+      const qtyStr = todo.itemUnit
+        ? `${todo.itemQuantity} ${todo.itemUnit}`
+        : `${todo.itemQuantity}`;
+      textSpan.append(el('span', { class: 'qty-badge' }, ' ' + qtyStr));
+    }
 
     const row = el('div', {
       class: completed ? 'checklist__item checklist__item--done pill' : 'checklist__item pill',
