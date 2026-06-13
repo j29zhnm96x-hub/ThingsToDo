@@ -241,8 +241,9 @@ export async function openSmartAdd(ctx, context) {
     for (const task of parsed.tasks) {
       const cb = createCheckbox(true);
       checkboxes.push(cb);
-      const priorityDots = renderPriorityDots(task);
-      previewItems.push(makeEditableRow(task, cb, '📄', task.title, t('aiTask'), task.notes, null, [priorityDots]));
+      // Checklist items don't have priorities — skip the priority dots
+      const extra = context.mode === 'checklist' ? null : [renderPriorityDots(task)];
+      previewItems.push(makeEditableRow(task, cb, '📄', task.title, t('aiTask'), task.notes, null, extra));
     }
 
     // Projects
