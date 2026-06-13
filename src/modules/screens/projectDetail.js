@@ -2390,30 +2390,36 @@ function openEditChecklistItem({ modalHost, db, todo, onSaved }) {
   let addMode = false;
   const currentQty = todo.itemQuantity != null ? `${todo.itemQuantity}${todo.itemUnit ? ' ' + todo.itemUnit : ''}` : null;
 
-  // Container that swaps content based on mode
-  const qtyBody = el('div', { style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' });
+  // Second input dedicated to Add mode (stays in DOM always)
+  const addInput = el('input', { type: 'number', class: 'input', min: '0', step: 'any', placeholder: '0', inputmode: 'decimal', style: 'width:80px' });
+
+  // Set mode content (always visible unless Add mode is active)
+  const setBody = el('div', { style: 'display:flex;gap:8px;align-items:center' },
+    el('span', { style: 'font-size:0.875rem;color:var(--muted)' }, 'Qty'),
+    qtyInput,
+    unitSelect,
+    customUnitInput
+  );
+
+  // Add mode content (hidden by default)
+  const addBody = el('div', { style: 'display:none;gap:8px;align-items:center;flex-wrap:wrap' },
+    el('span', { style: 'font-size:0.875rem;color:var(--muted);width:100%' }, 'Current: ' + (currentQty || '—')),
+    el('span', { style: 'font-size:0.875rem;color:var(--muted)' }, '+'),
+    addInput,
+    unitSelect,
+    customUnitInput
+  );
 
   function renderQtyMode() {
-    qtyBody.innerHTML = '';
     if (addMode && currentQty) {
-      // Add mode: show current qty + new input
-      qtyBody.append(
-        el('span', { style: 'font-size:0.875rem;color:var(--muted);width:100%' }, 'Current: ' + currentQty),
-        el('span', { style: 'font-size:0.875rem;color:var(--muted)' }, '+'),
-        qtyInput,
-        unitSelect,
-        customUnitInput
-      );
-      // Focus the qty input so the number pad pops up immediately
-      setTimeout(() => qtyInput.focus(), 10);
+      setBody.style.display = 'none';
+      addBody.style.display = 'flex';
+      addInput.value = '';
+      // Focus the add input — stays in DOM, should trigger keyboard on iOS
+      addInput.focus();
     } else {
-      // Set mode: show qty input directly
-      qtyBody.append(
-        el('span', { style: 'font-size:0.875rem;color:var(--muted)' }, 'Qty'),
-        qtyInput,
-        unitSelect,
-        customUnitInput
-      );
+      addBody.style.display = 'none';
+      setBody.style.display = 'flex';
     }
   }
 
@@ -2423,28 +2429,29 @@ function openEditChecklistItem({ modalHost, db, todo, onSaved }) {
     onClick: () => {
       addMode = !addMode;
       modeBtn.textContent = addMode ? 'Set' : 'Add';
-      if (addMode) qtyInput.value = ''; // start fresh in add mode
       renderQtyMode();
     }
   }, 'Add');
-  if (!currentQty) modeBtn.style.display = 'none'; // no add mode if no current qty
-
-  renderQtyMode();
+  if (!currentQty) modeBtn.style.display = 'none';
 
   const qtyRow = el('div', { style: 'display:flex;flex-direction:column;gap:6px;margin-top:8px' },
     el('div', { style: 'display:flex;align-items:center;gap:8px' },
       el('span', { style: 'font-size:0.875rem;color:var(--muted)' }, 'Qty'),
       modeBtn
     ),
-    qtyBody
+    setBody,
+    addBody
   );
+
+
 
   const content = el('div', {}, input, qtyRow);
 
   const saveItem = async () => {
     const title = input.value.trim();
     if (!title) { input.focus(); return false; }
-    const q = parseFloat(qtyInput.value);
+    const src = addMode ? addInput : qtyInput;
+    const q = parseFloat(src.value);
     let itemQuantity;
     if (Number.isFinite(q) && q > 0) {
       itemQuantity = addMode
