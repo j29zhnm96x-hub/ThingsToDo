@@ -2062,7 +2062,7 @@ function renderChecklistWithDrag({ todos, modalHost, db, projectId, currentPageI
       const qtyStr = todo.itemUnit
         ? `${todo.itemQuantity} ${todo.itemUnit}`
         : `${todo.itemQuantity}`;
-      textSpan.append(el('span', { class: 'qty-badge' }, ' ' + qtyStr));
+      textSpan.append(el('span', { class: 'qty-badge' }, ' → ' + qtyStr));
     }
 
     const row = el('div', {

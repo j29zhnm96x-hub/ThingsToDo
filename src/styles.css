@@ -1123,6 +1123,7 @@ html[data-theme='light'] .checklist__item {
 .qty-badge {
   color: #facc15; /* strong yellow in dark mode */
   font-weight: 600;
+  white-space: nowrap;
 }
 html[data-theme='light'] .qty-badge {
   color: #1a56db; /* dark blue in light mode */
