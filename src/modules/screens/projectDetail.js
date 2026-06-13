@@ -2387,9 +2387,27 @@ function openEditChecklistItem({ modalHost, db, todo, onSaved }) {
     customUnitInput.value = unit;
   }
 
+  let addMode = false;
+  const modeToggle = el('span', {
+    style: {
+      fontSize: '10px', cursor: 'pointer', userSelect: 'none',
+      padding: '2px 6px', borderRadius: '4px',
+      background: addMode ? 'var(--accent)' : 'var(--surface2)',
+      color: addMode ? '#fff' : 'var(--text)',
+      fontWeight: '600', lineHeight: '1.4'
+    },
+    onClick: () => {
+      addMode = !addMode;
+      modeToggle.style.background = addMode ? 'var(--accent)' : 'var(--surface2)';
+      modeToggle.style.color = addMode ? '#fff' : 'var(--text)';
+      modeToggle.textContent = addMode ? 'Add' : 'Set';
+    }
+  }, 'Set');
+
   const qtyRow = el('div', { style: 'display:flex;gap:8px;align-items:center;margin-top:8px' },
     el('span', { style: 'font-size:0.875rem;color:var(--muted)' }, 'Qty'),
     qtyInput,
+    modeToggle,
     unitSelect,
     customUnitInput
   );
@@ -2400,7 +2418,14 @@ function openEditChecklistItem({ modalHost, db, todo, onSaved }) {
     const title = input.value.trim();
     if (!title) { input.focus(); return false; }
     const q = parseFloat(qtyInput.value);
-    const itemQuantity = Number.isFinite(q) && q > 0 ? q : null;
+    let itemQuantity;
+    if (Number.isFinite(q) && q > 0) {
+      itemQuantity = addMode
+        ? (todo.itemQuantity || 0) + q
+        : q;
+    } else {
+      itemQuantity = null;
+    }
     const u = unitSelect.value === '__custom__' ? customUnitInput.value.trim() : unitSelect.value;
     const itemUnit = u || null;
     await db.todos.put({ ...todo, title, itemQuantity, itemUnit });
