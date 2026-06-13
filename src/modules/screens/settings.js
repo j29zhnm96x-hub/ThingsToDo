@@ -717,6 +717,7 @@ export async function renderSettings(ctx) {
     });
   }
 
+  let openSection = null; // accordion: tracks the currently open contentEl
   function buildCollapsibleSection(title, children, startOpen, contentStyle) {
     const contentEl = el('div', { style: { display: startOpen ? '' : 'none', marginTop: '6px', ...(contentStyle || {}) } }, ...children);
     const chevron = el('span', { style: { fontSize: '9px', transition: 'transform 200ms', flexShrink: 0 } }, startOpen ? '▼' : '▶');
@@ -726,8 +727,27 @@ export async function renderSettings(ctx) {
     titleRow.addEventListener('click', (e) => {
       e.stopPropagation();
       const isOpen = contentEl.style.display !== 'none';
-      contentEl.style.display = isOpen ? 'none' : '';
-      chevron.textContent = isOpen ? '▶' : '▼';
+      if (isOpen) {
+        // Close this section
+        contentEl.style.display = 'none';
+        chevron.textContent = '▶';
+        if (openSection === contentEl) openSection = null;
+      } else {
+        // Close previously open section if any
+        if (openSection && openSection !== contentEl) {
+          openSection.style.display = 'none';
+          // Find its chevron and reset
+          const parentCard = openSection.parentElement;
+          if (parentCard) {
+            const prevChevron = parentCard.querySelector('span');
+            if (prevChevron) prevChevron.textContent = '▶';
+          }
+        }
+        // Open this section
+        contentEl.style.display = '';
+        chevron.textContent = '▼';
+        openSection = contentEl;
+      }
     });
     return el('div', { class: 'card stack', style: { padding: '8px 12px' } }, titleRow, contentEl);
   }
