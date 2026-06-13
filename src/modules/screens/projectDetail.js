@@ -2362,7 +2362,7 @@ function openEditChecklistItem({ modalHost, db, todo, onSaved }) {
 
   const qty = todo.itemQuantity ?? '';
   const unit = todo.itemUnit || '';
-  const qtyInput = el('input', { type: 'number', class: 'input', min: '0', step: 'any', placeholder: 'Qty', style: 'width:80px', value: String(qty) });
+  const qtyInput = el('input', { type: 'number', class: 'input', min: '0', step: 'any', placeholder: 'Qty', inputmode: 'decimal', style: 'width:80px', value: String(qty) });
   const unitSelect = el('select', { class: 'select', 'aria-label': 'Unit' },
     ...UNIT_OPTIONS.map(u => {
       const display = u.key ? t(u.key) : u.label;
@@ -2404,8 +2404,10 @@ function openEditChecklistItem({ modalHost, db, todo, onSaved }) {
         unitSelect,
         customUnitInput
       );
-      // Focus and select the qty input so number pad pops up immediately
-      setTimeout(() => { qtyInput.focus(); qtyInput.select(); }, 0);
+      // Focus the qty input so the number pad pops up immediately
+      requestAnimationFrame(() => {
+        qtyInput.focus();
+      });
     } else {
       // Set mode: show qty input directly
       qtyBody.append(
@@ -2423,6 +2425,7 @@ function openEditChecklistItem({ modalHost, db, todo, onSaved }) {
     onClick: () => {
       addMode = !addMode;
       modeBtn.textContent = addMode ? 'Set' : 'Add';
+      if (addMode) qtyInput.value = ''; // start fresh in add mode
       renderQtyMode();
     }
   }, 'Add');
