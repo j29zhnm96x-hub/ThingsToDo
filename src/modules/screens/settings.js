@@ -201,7 +201,7 @@ export async function renderSettings(ctx) {
     }
   }, t('updateCheck') || 'Check for Updates');
 
-  main.append(el('div', { class: 'stack' },
+  main.append(el('div', { class: 'stack', style: { gap: '6px' } },
     buildCollapsibleSection(t('language'), [langSelect]),
     buildCollapsibleSection(t('inbox'), [
       el('div', { class: 'row' },
@@ -386,8 +386,8 @@ export async function renderSettings(ctx) {
       ),
       paletteSwatches
     ]),
-    el('div', { class: 'card stack' },
-      el('div', { style: { fontWeight: '700' } }, t('help')),
+    el('div', { class: 'card stack', style: { padding: '8px 12px' } },
+      el('div', { style: { fontWeight: '600', fontSize: '14px' } }, t('help')),
       helpBtn
     ),
     buildCollapsibleSection(t('dataManagement'), [
@@ -409,8 +409,8 @@ export async function renderSettings(ctx) {
         resetBtn
       )
     ]),
-    el('div', { class: 'card stack' },
-      el('div', { style: { fontWeight: '700' } }, t('updateCheck') || 'App Updates'),
+    el('div', { class: 'card stack', style: { padding: '8px 12px' } },
+      el('div', { style: { fontWeight: '600', fontSize: '14px' } }, t('updateCheck') || 'App Updates'),
       checkUpdateBtn,
       statusEl
     )
@@ -718,9 +718,9 @@ export async function renderSettings(ctx) {
   }
 
   function buildCollapsibleSection(title, children, startOpen, contentStyle) {
-    const contentEl = el('div', { style: { display: startOpen ? '' : 'none', marginTop: '10px', ...(contentStyle || {}) } }, ...children);
-    const chevron = el('span', { style: { fontSize: '10px', transition: 'transform 200ms', flexShrink: 0 } }, startOpen ? '▼' : '▶');
-    const titleRow = el('div', { style: { fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', userSelect: 'none' } },
+    const contentEl = el('div', { style: { display: startOpen ? '' : 'none', marginTop: '6px', ...(contentStyle || {}) } }, ...children);
+    const chevron = el('span', { style: { fontSize: '9px', transition: 'transform 200ms', flexShrink: 0 } }, startOpen ? '▼' : '▶');
+    const titleRow = el('div', { style: { fontWeight: '600', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', userSelect: 'none' } },
       chevron, title
     );
     titleRow.addEventListener('click', (e) => {
@@ -729,7 +729,7 @@ export async function renderSettings(ctx) {
       contentEl.style.display = isOpen ? 'none' : '';
       chevron.textContent = isOpen ? '▶' : '▼';
     });
-    return el('div', { class: 'card stack' }, titleRow, contentEl);
+    return el('div', { class: 'card stack', style: { padding: '8px 12px' } }, titleRow, contentEl);
   }
 
   function buildToggle(checked, onChange) {
