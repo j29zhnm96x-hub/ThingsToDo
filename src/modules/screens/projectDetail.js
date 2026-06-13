@@ -2397,18 +2397,14 @@ function openEditChecklistItem({ modalHost, db, todo, onSaved }) {
   // Set mode content (always visible unless Add mode is active)
   const setBody = el('div', { style: 'display:flex;gap:8px;align-items:center' },
     el('span', { style: 'font-size:0.875rem;color:var(--muted)' }, 'Qty'),
-    qtyInput,
-    unitSelect,
-    customUnitInput
+    qtyInput
   );
 
   // Add mode content (hidden by default)
   const addBody = el('div', { style: 'display:none;gap:8px;align-items:center;flex-wrap:wrap' },
     el('span', { style: 'font-size:0.875rem;color:var(--muted);width:100%' }, 'Current: ' + (currentQty || '—')),
     el('span', { style: 'font-size:0.875rem;color:var(--muted)' }, '+'),
-    addInput,
-    unitSelect,
-    customUnitInput
+    addInput
   );
 
   function renderQtyMode() {
@@ -2440,8 +2436,12 @@ function openEditChecklistItem({ modalHost, db, todo, onSaved }) {
       el('span', { style: 'font-size:0.875rem;color:var(--muted)' }, 'Qty'),
       modeBtn
     ),
-    setBody,
-    addBody
+    el('div', { style: 'display:flex;gap:8px;align-items:center' },
+      setBody,
+      addBody,
+      unitSelect,
+      customUnitInput
+    )
   );
 
 
