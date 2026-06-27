@@ -414,8 +414,10 @@ export async function renderSettings(ctx) {
       ) : null
     ]),
     buildCollapsibleSection(t('theme'), [
-      themePicker,
-      paletteSwatches
+      el('div', { style: 'display:flex;flex-direction:column;gap:10px' },
+        themePicker,
+        paletteSwatches
+      )
     ]),
     el('div', { class: 'card stack', style: { padding: '8px 12px' } },
       el('div', { style: { fontWeight: '600', fontSize: '14px' } }, t('help')),
