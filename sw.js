@@ -110,22 +110,48 @@ self.addEventListener('fetch', (event) => {
 
   event.respondWith(
     (async () => {
-      // Always try cache first for maximum offline reliability
+      // For navigation requests (page loads), always serve index.html from cache
+      // This handles hash routes like #inbox, #projects, etc.
+      if (isNavigation) {
+        const cached = await caches.match('./index.html');
+        if (cached) {
+          if (cached.redirected) {
+            const body = await cached.blob();
+            return new Response(body, {
+              status: cached.status,
+              statusText: cached.statusText,
+              headers: cached.headers
+            });
+          }
+          return cached;
+        }
+        // If index.html not in cache, try network
+        try {
+          const res = await fetch(req);
+          if (res.ok) {
+            const cache = await caches.open(CACHE_NAME);
+            cache.put('./index.html', res.clone());
+          }
+          return res;
+        } catch {
+          return new Response('Offline', { status: 503 });
+        }
+      }
+
+      // For non-navigation requests, try cache first
       const cached = await caches.match(req);
       
       if (cached) {
         // Return cached version immediately
-        // For non-navigation requests, also try to update cache in background
-        if (!isNavigation) {
-          try {
-            const networkRes = await fetch(req);
-            if (networkRes.ok) {
-              const cache = await caches.open(CACHE_NAME);
-              cache.put(req, networkRes.clone());
-            }
-          } catch {
-            // Network failed, but we already have cached version — ignore
+        // Also try to update cache in background
+        try {
+          const networkRes = await fetch(req);
+          if (networkRes.ok) {
+            const cache = await caches.open(CACHE_NAME);
+            cache.put(req, networkRes.clone());
           }
+        } catch {
+          // Network failed, but we already have cached version — ignore
         }
         
         if (cached.redirected) {
@@ -156,12 +182,6 @@ self.addEventListener('fetch', (event) => {
         }
         return res;
       } catch {
-        // Network failed and not in cache
-        if (isNavigation) {
-          // For navigation requests, return index.html (SPA fallback)
-          const fallback = await caches.match('./index.html');
-          return fallback || new Response('Offline', { status: 503 });
-        }
         return new Response('Offline', { status: 503 });
       }
     })()
