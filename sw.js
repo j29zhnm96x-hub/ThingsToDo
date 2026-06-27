@@ -6,7 +6,7 @@
   - Redirected responses are normalized before caching/serving
 */
 
-const CACHE_NAME = 'thingstodo-v50';
+const CACHE_NAME = 'thingstodo-v51';
 
 const APP_SHELL = [
   './index.html',
