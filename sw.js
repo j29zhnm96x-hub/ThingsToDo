@@ -3,12 +3,12 @@
   - Precaches app shell for offline support
   - Cache-first for static assets
   - Navigation requests always serve index.html (SPA)
+  - Redirected responses are normalized before caching/serving
 */
 
-const CACHE_NAME = 'thingstodo-v49';
+const CACHE_NAME = 'thingstodo-v50';
 
 const APP_SHELL = [
-  './',
   './index.html',
   './manifest.webmanifest',
   './assets/icon.svg',
@@ -70,11 +70,35 @@ const APP_SHELL = [
   './src/modules/utils/image.js'
 ];
 
+// Normalize a possibly-redirected response so Safari accepts it from SW
+async function normalizeResponse(res) {
+  if (!res || !res.redirected) return res;
+  const body = await res.blob();
+  return new Response(body, {
+    status: res.status,
+    statusText: res.statusText,
+    headers: res.headers
+  });
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(APP_SHELL))
-      .then(() => self.skipWaiting())
+    (async () => {
+      const cache = await caches.open(CACHE_NAME);
+      const results = await Promise.allSettled(
+        APP_SHELL.map(async (url) => {
+          const res = await fetch(url);
+          const normalized = await normalizeResponse(res);
+          await cache.put(url, normalized);
+        })
+      );
+      results.forEach((r, i) => {
+        if (r.status === 'rejected') {
+          console.warn('SW precache failed for', APP_SHELL[i], r.reason);
+        }
+      });
+      await self.skipWaiting();
+    })()
   );
 });
 
@@ -104,23 +128,39 @@ self.addEventListener('fetch', (event) => {
   // Navigation requests (page loads) always serve index.html
   if (req.mode === 'navigate') {
     event.respondWith(
-      caches.match('./index.html')
-        .then(cached => cached || fetch(req))
-        .catch(() => new Response('Offline', { status: 503 }))
+      (async () => {
+        const cached = await caches.match('./index.html');
+        if (cached) {
+          return await normalizeResponse(cached);
+        }
+        try {
+          const res = await fetch(req);
+          return await normalizeResponse(res);
+        } catch {
+          return new Response('Offline', { status: 503 });
+        }
+      })()
     );
     return;
   }
 
   // Static assets: cache-first
   event.respondWith(
-    caches.match(req).then(cached => {
-      if (cached) return cached;
-      return fetch(req).then(res => {
+    (async () => {
+      const cached = await caches.match(req);
+      if (cached) {
+        return await normalizeResponse(cached);
+      }
+      try {
+        const res = await fetch(req);
         if (!res.ok || res.type === 'opaque') return res;
-        const clone = res.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(req, clone));
-        return res;
-      });
-    }).catch(() => new Response('Offline', { status: 503 }))
+        const normalized = await normalizeResponse(res);
+        const cache = await caches.open(CACHE_NAME);
+        await cache.put(req, normalized.clone());
+        return normalized;
+      } catch {
+        return new Response('Offline', { status: 503 });
+      }
+    })()
   );
 });
