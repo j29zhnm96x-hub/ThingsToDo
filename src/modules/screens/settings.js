@@ -564,11 +564,12 @@ export async function renderSettings(ctx) {
   async function exportData() {
     const projects = await db.projects.list();
     const payload = {
-      version: 1,
+      version: 2,
       exportedAt: new Date().toISOString(),
       projects,
       todos: [...(await db.todos.listActive()), ...(await db.todos.listArchived())],
       checklistPages: await db.checklistPages.list(),
+      checklistSuggestions: await db.checklistSuggestions.list(),
       settings: await db.settings.get(),
       attachments: [],
       projectNotes: [],
@@ -739,6 +740,11 @@ export async function renderSettings(ctx) {
               } catch (e) {
                 // Skip memo if blob conversion fails
               }
+            }
+
+            // Restore checklist suggestions if present in the export
+            for (const s of (parsed.checklistSuggestions || [])) {
+              try { await db.checklistSuggestions.put(s); } catch (e) { /* skip */ }
             }
 
             // Refresh current screen
