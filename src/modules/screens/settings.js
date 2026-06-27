@@ -28,8 +28,10 @@ export async function renderSettings(ctx) {
   clear(main);
 
   const settings = await db.settings.get();
-  const isLight = settings.theme === 'light';
+  const currentTheme = settings.theme || 'dark';
   const themePalette = settings.themePalette || 'default';
+  const themeLat = settings.themeLat;
+  const themeLng = settings.themeLng;
   const compressImages = settings.compressImages !== false; // Default to true
   const compressArchivedImages = settings.compressArchivedImages !== false; // Default to true
   const voiceQuality = settings.voiceQuality || 'low'; // Default to low
@@ -49,19 +51,51 @@ export async function renderSettings(ctx) {
   const aiSystemPrompt = settings.aiSystemPrompt || '';
   const quickVoiceAdd = settings.quickVoiceAdd === true;
 
-  const themeToggle = el('input', {
-    type: 'checkbox',
-    checked: isLight ? 'checked' : null,
-    'aria-label': 'Light mode'
-  });
+  const themeModes = [
+    { id: 'light', label: t('themeLight') },
+    { id: 'dark', label: t('themeDark') || 'Dark' },
+    { id: 'dynamic', label: t('themeDynamic') || 'Dynamic' }
+  ];
 
-  themeToggle.addEventListener('change', async () => {
-    const nextTheme = themeToggle.checked ? 'light' : 'dark';
-    const nextSettings = { ...await db.settings.get(), theme: nextTheme };
-    await db.settings.put(nextSettings);
-    applyTheme(nextTheme);
-    applyPalette(nextSettings.themePalette || 'default');
-  });
+  const themePicker = el('div', { class: 'row', role: 'group', 'aria-label': t('theme'), style: { justifyContent: 'center', gap: '6px' } },
+    ...themeModes.map((m) => {
+      const isSelected = currentTheme === m.id;
+      return el('button', {
+        type: 'button',
+        class: `btn btn--small${isSelected ? ' btn--primary' : ''}`,
+        'aria-pressed': isSelected ? 'true' : 'false',
+        onClick: async () => {
+          if (m.id === currentTheme) return;
+          let lat = themeLat, lng = themeLng;
+
+          // Request location if switching to dynamic and no saved location
+          if (m.id === 'dynamic' && (lat == null || lng == null)) {
+            if ('geolocation' in navigator) {
+              try {
+                const pos = await new Promise((resolve, reject) =>
+                  navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: false, timeout: 5000 })
+                );
+                lat = pos.coords.latitude;
+                lng = pos.coords.longitude;
+              } catch {
+                showToast('Enable location for Dynamic theme, or use Light/Dark.');
+              }
+            }
+          }
+
+          await db.settings.put({
+            ...await db.settings.get(),
+            theme: m.id,
+            themeLat: lat ?? null,
+            themeLng: lng ?? null
+          });
+          applyTheme(m.id, lat, lng);
+          applyPalette((await db.settings.get()).themePalette || 'default');
+          await renderSettings(ctx);
+        }
+      }, m.label);
+    })
+  );
 
   const paletteOptions = [
     { id: 'default', label: t('paletteDefault') },
@@ -380,10 +414,7 @@ export async function renderSettings(ctx) {
       ) : null
     ]),
     buildCollapsibleSection(t('theme'), [
-      el('div', { class: 'row' },
-        el('div', { class: 'small' }, t('themeLight')),
-        themeToggle
-      ),
+      themePicker,
       paletteSwatches
     ]),
     el('div', { class: 'card stack', style: { padding: '8px 12px' } },

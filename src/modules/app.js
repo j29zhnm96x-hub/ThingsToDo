@@ -188,7 +188,7 @@ export function initApp(root) {
 
       // Apply persisted theme and palette (default: dark + default palette).
       const settings = await db.settings.get();
-      applyTheme(settings.theme || 'dark');
+      applyTheme(settings.theme || 'dark', settings.themeLat, settings.themeLng);
       applyPalette(settings.themePalette || 'default');
 
       // Update tab labels with translations
