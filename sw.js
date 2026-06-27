@@ -1,12 +1,11 @@
 /*
   ThingsToDo Service Worker
-  - Cache-first for app shell (offline support)
-  - Network-first for JS (code updates load immediately)
-  - Manual update support via SKIP_WAITING message
+  - Precaches app shell for offline support
+  - Cache-first for static assets
+  - Navigation requests always serve index.html (SPA)
 */
 
-const CACHE_NAME = 'thingstodo-v48';
-const APP_VERSION = '1.0.0';
+const CACHE_NAME = 'thingstodo-v49';
 
 const APP_SHELL = [
   './',
@@ -73,25 +72,22 @@ const APP_SHELL = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    (async () => {
-      const cache = await caches.open(CACHE_NAME);
-      await Promise.allSettled(APP_SHELL.map((url) => cache.add(url)));
-    })()
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(APP_SHELL))
+      .then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    (async () => {
-      const keys = await caches.keys();
-      await Promise.all(keys.map((key) => (key === CACHE_NAME || key.startsWith('thingstodo-') && key < CACHE_NAME) ? caches.delete(key) : null));
-      await self.clients.claim();
-    })()
+    caches.keys()
+      .then(keys => Promise.all(
+        keys.map(key => key !== CACHE_NAME ? caches.delete(key) : null)
+      ))
+      .then(() => self.clients.claim())
   );
 });
 
-// Manual update: activate immediately when told
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
@@ -105,85 +101,26 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  const isNavigation = req.mode === 'navigate';
-  const isScript = url.pathname.endsWith('.js');
+  // Navigation requests (page loads) always serve index.html
+  if (req.mode === 'navigate') {
+    event.respondWith(
+      caches.match('./index.html')
+        .then(cached => cached || fetch(req))
+        .catch(() => new Response('Offline', { status: 503 }))
+    );
+    return;
+  }
 
+  // Static assets: cache-first
   event.respondWith(
-    (async () => {
-      // For navigation requests (page loads), always serve index.html from cache
-      // This handles hash routes like #inbox, #projects, etc.
-      if (isNavigation) {
-        const cached = await caches.match('./index.html');
-        if (cached) {
-          if (cached.redirected) {
-            const body = await cached.blob();
-            return new Response(body, {
-              status: cached.status,
-              statusText: cached.statusText,
-              headers: cached.headers
-            });
-          }
-          return cached;
-        }
-        // If index.html not in cache, try network
-        try {
-          const res = await fetch(req);
-          if (res.ok) {
-            const cache = await caches.open(CACHE_NAME);
-            cache.put('./index.html', res.clone());
-          }
-          return res;
-        } catch {
-          return new Response('Offline', { status: 503 });
-        }
-      }
-
-      // For non-navigation requests, try cache first
-      const cached = await caches.match(req);
-      
-      if (cached) {
-        // Return cached version immediately
-        // Also try to update cache in background
-        try {
-          const networkRes = await fetch(req);
-          if (networkRes.ok) {
-            const cache = await caches.open(CACHE_NAME);
-            cache.put(req, networkRes.clone());
-          }
-        } catch {
-          // Network failed, but we already have cached version — ignore
-        }
-        
-        if (cached.redirected) {
-          const body = await cached.blob();
-          return new Response(body, {
-            status: cached.status,
-            statusText: cached.statusText,
-            headers: cached.headers
-          });
-        }
-        return cached;
-      }
-
-      // Not in cache — try network
-      try {
-        let res = await fetch(req);
-        if (res.redirected) {
-          const body = await res.blob();
-          res = new Response(body, {
-            status: res.status,
-            statusText: res.statusText,
-            headers: res.headers
-          });
-        }
-        const cache = await caches.open(CACHE_NAME);
-        if (res.ok && res.type !== 'opaque') {
-          cache.put(req, res.clone());
-        }
+    caches.match(req).then(cached => {
+      if (cached) return cached;
+      return fetch(req).then(res => {
+        if (!res.ok || res.type === 'opaque') return res;
+        const clone = res.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(req, clone));
         return res;
-      } catch {
-        return new Response('Offline', { status: 503 });
-      }
-    })()
+      });
+    }).catch(() => new Response('Offline', { status: 503 }))
   );
 });

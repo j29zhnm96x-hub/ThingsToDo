@@ -3,7 +3,7 @@
 // bypassing all caches (CDN, browser, SW internal).
 
 // IMPORTANT: Bump this with every deploy to force PWA update detection
-const SW_BUILD = 6;
+const SW_BUILD = 7;
 
 let registration = null;
 

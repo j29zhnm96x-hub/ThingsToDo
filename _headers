@@ -1,6 +1,4 @@
 # Cloudflare Pages _headers
-# Ensure service worker is never cached so updates are detected immediately
+# Service worker: allow browser to store it for offline use, but always revalidate when online
 /sw.js
-  Cache-Control: no-cache, no-store, must-revalidate
-  Pragma: no-cache
-  Expires: 0
+  Cache-Control: public, max-age=0, must-revalidate
