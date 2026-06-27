@@ -87,22 +87,36 @@ function applyDynamicTheme(lat, lng) {
 }
 
 // ---------------------------------------------------------------------------
-// Start/stop the dynamic theme timer (checks every 60 seconds)
+// Schedule the next theme switch at the exact sunrise/sunset moment
 // ---------------------------------------------------------------------------
-let dynamicLat = null;
-let dynamicLng = null;
+function scheduleNextSwitch(lat, lng) {
+  const now = new Date();
+  const { sunrise, sunset } = calcSunriseSunset(lat, lng, now);
+  const currentHour = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
+
+  const day = currentHour >= sunrise && currentHour < sunset;
+  let nextHour = day ? sunset : sunrise + 24; // next sunrise is tomorrow if currently night
+
+  // Calculate delay in ms
+  let delay = (nextHour - currentHour) * 3600 * 1000;
+
+  if (delay < 10000) delay = 10000; // safety minimum
+
+  timerId = setTimeout(() => {
+    applyDynamicTheme(lat, lng);
+    scheduleNextSwitch(lat, lng); // schedule the one after that
+  }, delay);
+}
 
 function startDynamicTimer(lat, lng) {
-  dynamicLat = lat;
-  dynamicLng = lng;
   stopDynamicTimer();
   applyDynamicTheme(lat, lng);
-  timerId = setInterval(() => applyDynamicTheme(lat, lng), 60000);
+  scheduleNextSwitch(lat, lng);
 }
 
 function stopDynamicTimer() {
   if (timerId !== null) {
-    clearInterval(timerId);
+    clearTimeout(timerId);
     timerId = null;
   }
 }
