@@ -1229,7 +1229,13 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
 
         openModal(modalHost, {
           title: t('itemDetails') || 'Item Details',
-          content: detailTextEl,
+          content: el('div', {},
+            detailTextEl,
+            todo.notes ? el('div', { style: 'margin-top:12px' },
+              el('div', { class: 'small', style: 'color:var(--muted);margin-bottom:4px' }, 'Notes'),
+              el('textarea', { class: 'modalSelectableField', readonly: 'readonly', rows: '1', style: 'width:100%', spellcheck: 'false' }, todo.notes)
+            ) : null
+          ),
           actions: [
             { label: t('edit'), class: 'btn', onClick: () => { 
               setTimeout(() => openEditChecklistItem({ modalHost, db, todo, onSaved: () => renderProjectDetail(ctx, projectId, 0) }), 50);
