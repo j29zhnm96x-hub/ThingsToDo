@@ -1231,10 +1231,14 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
           title: t('itemDetails') || 'Item Details',
           content: el('div', {},
             detailTextEl,
-            todo.notes ? el('div', { style: 'margin-top:12px' },
-              el('div', { class: 'small', style: 'color:var(--muted);margin-bottom:4px' }, 'Notes'),
-              el('textarea', { class: 'modalSelectableField', readonly: 'readonly', rows: '1', style: 'width:100%', spellcheck: 'false' }, todo.notes)
-            ) : null
+            todo.notes ? (() => {
+              const notesTa = el('textarea', { class: 'modalSelectableField', readonly: 'readonly', rows: '1', style: 'width:100%', spellcheck: 'false' }, todo.notes);
+              setTimeout(() => { notesTa.style.height = 'auto'; notesTa.style.height = notesTa.scrollHeight + 'px'; }, 0);
+              return el('div', { style: 'margin-top:12px' },
+                el('div', { class: 'small', style: 'color:var(--muted);margin-bottom:4px' }, 'Notes'),
+                notesTa
+              );
+            })() : null
           ),
           actions: [
             { label: t('edit'), class: 'btn', onClick: () => { 
