@@ -1826,6 +1826,14 @@ function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated, useSug
     container.appendChild(qtyRow);
   }
 
+  const notesInput = el('textarea', {
+    class: 'input',
+    placeholder: 'Notes (optional)',
+    style: 'width:100%;min-height:50px;resize:vertical;margin-top:8px',
+    'aria-label': 'Notes'
+  });
+  container.appendChild(notesInput);
+
   const hideDropdown = () => {
     dropdown.style.display = 'none';
     dropdown.innerHTML = '';
@@ -1933,6 +1941,8 @@ function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated, useSug
     const todo = newTodo({ title: title.trim(), projectId, pageId });
     todo.itemQuantity = itemQuantity;
     todo.itemUnit = itemUnit;
+    const noteVal = notesInput.value.trim();
+    if (noteVal) todo.notes = noteVal;
     await db.todos.put(todo);
     if (useSuggestions) {
       await db.checklistSuggestions.remember([baseTitle]);
@@ -2446,7 +2456,16 @@ function openEditChecklistItem({ modalHost, db, todo, onSaved }) {
 
 
 
-  const content = el('div', {}, input, qtyRow);
+  const notesEditInput = el('textarea', { class: 'input', placeholder: 'Notes (optional)', style: 'width:100%;min-height:50px;resize:vertical', 'aria-label': 'Notes' }, todo.notes || '');
+
+  const content = el('div', {},
+    input,
+    qtyRow,
+    el('div', { style: 'margin-top:8px' },
+      el('div', { class: 'small', style: 'color:var(--muted);margin-bottom:4px' }, 'Notes'),
+      notesEditInput
+    )
+  );
 
   const saveItem = async () => {
     const title = input.value.trim();
@@ -2466,7 +2485,8 @@ function openEditChecklistItem({ modalHost, db, todo, onSaved }) {
     }
     const u = unitSelect.value === '__custom__' ? customUnitInput.value.trim() : unitSelect.value;
     const itemUnit = u || null;
-    await db.todos.put({ ...todo, title, itemQuantity, itemUnit });
+    const notes = notesEditInput.value.trim() || null;
+    await db.todos.put({ ...todo, title, itemQuantity, itemUnit, notes });
     onSaved?.();
     return true;
   };
