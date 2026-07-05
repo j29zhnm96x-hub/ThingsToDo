@@ -51,6 +51,12 @@ export async function renderSettings(ctx) {
   const aiSystemPrompt = settings.aiSystemPrompt || '';
   const quickVoiceAdd = settings.quickVoiceAdd === true;
 
+  // Auto-update deprecated Groq model if user is still on llama-3.3-70b-versatile
+  if (settings.aiProvider === 'groq' && settings.aiModel === 'llama-3.3-70b-versatile') {
+    settings.aiModel = AI_PROVIDERS.groq.model;
+    db.settings.put(settings).catch(() => {});
+  }
+
   const themeModes = [
     { id: 'light', label: t('themeLight') },
     { id: 'dark', label: t('themeDark') || 'Dark' },
