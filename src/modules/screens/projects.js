@@ -264,24 +264,54 @@ export function openCreateProject({ db, modalHost, onCreated, parentId = null })
     enableQtyUnitsToggle
   );
 
+  const defaultUnits = [
+    { value: '', label: t('defaultUnitNone') || 'None' },
+    { value: 'pcs', label: t('unitPcs') },
+    { value: 'kg', label: t('unitKg') },
+    { value: 'g', label: t('unitGram') },
+    { value: 'l', label: t('unitLit') },
+    { value: 'ml', label: t('unitMl') },
+    { value: 'pack', label: t('unitPack') },
+    { value: 'box', label: t('unitBox') },
+    { value: 'm', label: t('unitMetre') },
+    { value: 'cm', label: t('unitCm') }
+  ];
+  const defaultUnitSelect = el('select', { class: 'select', 'aria-label': t('defaultUnit') || 'Default unit' },
+    ...defaultUnits.map(u => el('option', { value: u.value }, u.label))
+  );
+  const defaultUnitRow = el('label', { class: 'label', style: 'display:none;' },
+    el('span', {}, t('defaultUnit') || 'Default unit'),
+    defaultUnitSelect
+  );
+
   const keepCompletedToggle = el('input', { type: 'checkbox', 'aria-label': t('keepCompletedItems') });
   const keepCompletedRow = el('label', { class: 'label', style: 'display:none;' },
     el('span', {}, t('keepCompletedItems')),
     keepCompletedToggle
   );
 
+  const updateDefaultUnitVisibility = () => {
+    const isChecklist = typeSelect.value === 'checklist';
+    const showUnits = isChecklist && enableQtyUnitsToggle.checked;
+    defaultUnitRow.style.display = showUnits ? '' : 'none';
+  };
+
   typeSelect.addEventListener('change', () => {
     const isChecklist = typeSelect.value === 'checklist';
     suggestionsRow.style.display = isChecklist ? '' : 'none';
     qtyUnitsRow.style.display = isChecklist ? '' : 'none';
     keepCompletedRow.style.display = isChecklist ? '' : 'none';
+    updateDefaultUnitVisibility();
   });
+
+  enableQtyUnitsToggle.addEventListener('change', updateDefaultUnitVisibility);
 
   const content = el('div', { class: 'stack' },
     el('label', { class: 'label' }, el('span', {}, t('projectName')), nameInput),
     el('label', { class: 'label' }, el('span', {}, t('projectType')), typeSelect),
     suggestionsRow,
     qtyUnitsRow,
+    defaultUnitRow,
     keepCompletedRow
   );
 
@@ -300,7 +330,7 @@ export function openCreateProject({ db, modalHost, onCreated, parentId = null })
             return false;
           }
           const type = typeSelect.value === 'checklist' ? 'checklist' : 'default';
-          const project = newProject({ name, type, parentId, useSuggestions: type === 'checklist' ? useSuggestionsToggle.checked : false, enableQtyUnits: type === 'checklist' ? enableQtyUnitsToggle.checked : false, keepCompletedItems: type === 'checklist' ? keepCompletedToggle.checked : false });
+          const project = newProject({ name, type, parentId, useSuggestions: type === 'checklist' ? useSuggestionsToggle.checked : false, enableQtyUnits: type === 'checklist' ? enableQtyUnitsToggle.checked : false, keepCompletedItems: type === 'checklist' ? keepCompletedToggle.checked : false, defaultUnit: type === 'checklist' && enableQtyUnitsToggle.checked ? defaultUnitSelect.value || null : null });
           await db.projects.put(project);
           
           if (type === 'checklist') {

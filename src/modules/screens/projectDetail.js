@@ -161,6 +161,7 @@ async function openChecklistAddMenu(ctx, {
           pageId: currentPageId,
           useSuggestions: project.useSuggestions === true,
           enableQtyUnits: project.enableQtyUnits === true,
+          defaultUnit: effectiveUnit,
           onCreated: onRefresh
         });
       }
@@ -647,6 +648,8 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
     // Filter todos for current page
     const currentPage = pages.find(p => p.id === currentPageId);
     const isFirstPage = pages.indexOf(currentPage) === 0;
+    // Page default unit overrides project default unit
+    const effectiveUnit = currentPage?.defaultUnit || project.defaultUnit || '';
     const pageTodos = todos.filter(t => {
       // Match explicit pageId, OR if on first page also show todos without pageId (legacy/unmigrated)
       if (t.pageId === currentPageId) return true;
@@ -816,8 +819,8 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
         title: page.name || t('untitled'),
         content: el('div', { class: 'small' }, t('pageActions') || 'Page actions'),
         actions: [
-          { label: t('rename'), class: 'btn', onClick: () => {
-            openRenamePageModal({ modalHost, db, page, onSaved: () => renderProjectDetail(ctx, projectId, 0) });
+          { label: t('edit'), class: 'btn', onClick: () => {
+            openEditPageModal({ modalHost, db, page, project, onSaved: () => renderProjectDetail(ctx, projectId, 0) });
             return false;
           }},
           { label: 'Move items', class: 'btn', onClick: () => {
@@ -1427,6 +1430,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
       pageId: currentPageId, 
       useSuggestions: project.useSuggestions === true, 
       enableQtyUnits: project.enableQtyUnits === true,
+      defaultUnit: effectiveUnit,
       onCreated: () => renderProjectDetail(ctx, projectId) 
     });
 
@@ -1802,7 +1806,7 @@ export async function openProjectAddMenu(ctx, project) {
     closeModal = modalRef.close;
 }
 
-function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated, useSuggestions = false, enableQtyUnits = false }) {
+function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated, useSuggestions = false, enableQtyUnits = false, defaultUnit = '' }) {
   const input = el('textarea', { 
     class: 'input input--title', 
     placeholder: t('itemName') || 'Item name', 
@@ -1816,6 +1820,9 @@ function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated, useSug
   let container = el('div', { style: 'position: relative;' }, input, dropdown);
 
   let qtyInput, selectedUnit = '';
+
+  // Map internal unit values to translation keys for the quick-add buttons
+  const INTERNAL_TO_KEY = { 'pcs': 'unitPcs', 'kg': 'unitKg', 'l': 'unitLit' };
 
   if (enableQtyUnits) {
     qtyInput = el('input', { type: 'text', inputmode: 'numeric', pattern: '[0-9]*', placeholder: t('qty') || 'Qty', class: 'input input--small', style: 'width: 60px; margin-right: 8px;' });
@@ -1831,6 +1838,19 @@ function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated, useSug
         } 
       }, t(key) || key)
     );
+
+    // Pre-select the default unit button if set
+    if (defaultUnit) {
+      const key = INTERNAL_TO_KEY[defaultUnit];
+      if (key) {
+        selectedUnit = t(key) || key;
+        unitButtons.forEach(btn => {
+          if (btn.textContent === selectedUnit) {
+            btn.classList.add('btn--primary');
+          }
+        });
+      }
+    }
 
     const qtyRow = el('div', { style: 'display: flex; align-items: center; margin-top: 8px; gap: 6px;' }, qtyInput, ...unitButtons);
     container.appendChild(qtyRow);
@@ -2029,20 +2049,47 @@ function openAddPageModal({ modalHost, db, projectId, pages, onCreated }) {
   setTimeout(focusInput, 300);
 }
 
-function openRenamePageModal({ modalHost, db, page, onSaved }) {
+function openEditPageModal({ modalHost, db, page, project, onSaved }) {
   const input = el('input', { class: 'input', value: page.name || '', placeholder: t('pageName') || 'Page name', 'aria-label': t('pageName') || 'Page name' });
   input.autofocus = true;
 
+  const defaultUnits = [
+    { value: '', label: t('defaultUnitNone') || 'None' },
+    { value: 'pcs', label: t('unitPcs') },
+    { value: 'kg', label: t('unitKg') },
+    { value: 'g', label: t('unitGram') },
+    { value: 'l', label: t('unitLit') },
+    { value: 'ml', label: t('unitMl') },
+    { value: 'pack', label: t('unitPack') },
+    { value: 'box', label: t('unitBox') },
+    { value: 'm', label: t('unitMetre') },
+    { value: 'cm', label: t('unitCm') }
+  ];
+  const defaultUnitSelect = el('select', { class: 'select', 'aria-label': t('defaultUnit') || 'Default unit' },
+    ...defaultUnits.map(u => el('option', { value: u.value, selected: (page.defaultUnit || '') === u.value ? 'selected' : null }, u.label))
+  );
+  const showDefaultUnit = project?.enableQtyUnits === true;
+  const unitRow = showDefaultUnit ? el('label', { class: 'label', style: 'margin-top:12px' },
+    el('span', {}, t('defaultUnit') || 'Default unit'),
+    defaultUnitSelect
+  ) : null;
+
+  const content = el('div', { class: 'stack' },
+    el('label', { class: 'label' }, el('span', {}, t('pageName') || 'Page name'), input),
+    unitRow
+  );
+
   const savePage = async () => {
     const name = input.value.trim();
-    await db.checklistPages.put({ ...page, name });
+    const defaultUnit = showDefaultUnit ? defaultUnitSelect.value || null : page.defaultUnit || null;
+    await db.checklistPages.put({ ...page, name, defaultUnit });
     onSaved?.();
     return true;
   };
 
   openModal(modalHost, {
-    title: t('renamePage') || 'Rename page',
-    content: input,
+    title: t('renamePage') || 'Edit page',
+    content,
     align: 'top',
     actions: [
       { label: t('cancel'), class: 'btn btn--ghost', onClick: () => true },

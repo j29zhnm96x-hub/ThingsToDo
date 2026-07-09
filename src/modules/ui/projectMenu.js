@@ -25,6 +25,30 @@ function openEditProject(modalHost, { db, project, onChange }) {
   const qtyUnitsInput = el('input', { type: 'checkbox', checked: project.enableQtyUnits ? 'checked' : null, 'aria-label': t('enableQtyUnits') });
   const keepCompletedInput = el('input', { type: 'checkbox', checked: project.keepCompletedItems ? 'checked' : null, 'aria-label': t('keepCompletedItems') });
 
+  const defaultUnits = [
+    { value: '', label: t('defaultUnitNone') || 'None' },
+    { value: 'pcs', label: t('unitPcs') },
+    { value: 'kg', label: t('unitKg') },
+    { value: 'g', label: t('unitGram') },
+    { value: 'l', label: t('unitLit') },
+    { value: 'ml', label: t('unitMl') },
+    { value: 'pack', label: t('unitPack') },
+    { value: 'box', label: t('unitBox') },
+    { value: 'm', label: t('unitMetre') },
+    { value: 'cm', label: t('unitCm') }
+  ];
+  const defaultUnitSelect = el('select', { class: 'select', 'aria-label': t('defaultUnit') || 'Default unit' },
+    ...defaultUnits.map(u => el('option', { value: u.value, selected: project.defaultUnit === u.value ? 'selected' : null }, u.label))
+  );
+  const defaultUnitRow = el('label', { class: 'label', style: project.type === 'checklist' && project.enableQtyUnits ? '' : 'display:none;' },
+    el('span', {}, t('defaultUnit') || 'Default unit'),
+    defaultUnitSelect
+  );
+
+  qtyUnitsInput.addEventListener('change', () => {
+    defaultUnitRow.style.display = qtyUnitsInput.checked ? '' : 'none';
+  });
+
   openModal(modalHost, {
     title: t('editProject'),
     content: el('div', { class: 'stack' },
@@ -32,6 +56,7 @@ function openEditProject(modalHost, { db, project, onChange }) {
       el('label', { class: 'label' }, el('span', {}, t('protectProject')), protectedInput),
       project.type === 'checklist' ? el('label', { class: 'label' }, el('span', {}, t('enableSuggestions')), suggestionsInput) : null,
       project.type === 'checklist' ? el('label', { class: 'label' }, el('span', {}, t('enableQtyUnits')), qtyUnitsInput) : null,
+      project.type === 'checklist' ? defaultUnitRow : null,
       project.type === 'checklist' ? el('label', { class: 'label' }, el('span', {}, t('keepCompletedItems')), keepCompletedInput) : null
     ),
     actions: [
@@ -42,7 +67,7 @@ function openEditProject(modalHost, { db, project, onChange }) {
         onClick: async () => {
           const name = input.value.trim();
           if (!name) return false;
-          await db.projects.put({ ...project, name, protected: protectedInput.checked, useSuggestions: project.type === 'checklist' ? suggestionsInput.checked : false, enableQtyUnits: project.type === 'checklist' ? qtyUnitsInput.checked : false, keepCompletedItems: project.type === 'checklist' ? keepCompletedInput.checked : false });
+          await db.projects.put({ ...project, name, protected: protectedInput.checked, useSuggestions: project.type === 'checklist' ? suggestionsInput.checked : false, enableQtyUnits: project.type === 'checklist' ? qtyUnitsInput.checked : false, defaultUnit: project.type === 'checklist' && qtyUnitsInput.checked ? defaultUnitSelect.value || null : null, keepCompletedItems: project.type === 'checklist' ? keepCompletedInput.checked : false });
           onChange?.();
           return true;
         }

@@ -19,7 +19,7 @@ export function nowIso() {
   return new Date().toISOString();
 }
 
-export function newProject({ name, type = 'default', parentId = null, useSuggestions = false, enableQtyUnits = false, keepCompletedItems = false }) {
+export function newProject({ name, type = 'default', parentId = null, useSuggestions = false, enableQtyUnits = false, keepCompletedItems = false, defaultUnit = null }) {
   const t = nowIso();
   return {
     id: uuid(),
@@ -30,6 +30,7 @@ export function newProject({ name, type = 'default', parentId = null, useSuggest
     useSuggestions: !!useSuggestions,
     enableQtyUnits: !!enableQtyUnits,
     keepCompletedItems: !!keepCompletedItems,
+    defaultUnit: defaultUnit || null,
     createdAt: t,
     updatedAt: t,
     sortOrder: t // default: by created time
@@ -96,13 +97,14 @@ export function newVoiceMemo({ title, projectId, blob, duration }) {
   };
 }
 
-export function newChecklistPage({ projectId, name = '' }) {
+export function newChecklistPage({ projectId, name = '', defaultUnit = null }) {
   const t = nowIso();
   return {
     id: uuid(),
     projectId,
     name: name.trim(),
     order: 0,
+    defaultUnit: defaultUnit || null,
     createdAt: t,
     updatedAt: t
   };
