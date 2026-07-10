@@ -290,6 +290,12 @@ export function openCreateProject({ db, modalHost, onCreated, parentId = null })
     keepCompletedToggle
   );
 
+  const mergeDuplicatesToggle = el('input', { type: 'checkbox', 'aria-label': t('mergeDuplicates') || 'Merge duplicates' });
+  const mergeDuplicatesRow = el('label', { class: 'label', style: 'display:none;' },
+    el('span', {}, t('mergeDuplicates') || 'Merge duplicates'),
+    mergeDuplicatesToggle
+  );
+
   const updateDefaultUnitVisibility = () => {
     const isChecklist = typeSelect.value === 'checklist';
     const showUnits = isChecklist && enableQtyUnitsToggle.checked;
@@ -301,6 +307,7 @@ export function openCreateProject({ db, modalHost, onCreated, parentId = null })
     suggestionsRow.style.display = isChecklist ? '' : 'none';
     qtyUnitsRow.style.display = isChecklist ? '' : 'none';
     keepCompletedRow.style.display = isChecklist ? '' : 'none';
+    mergeDuplicatesRow.style.display = isChecklist ? '' : 'none';
     updateDefaultUnitVisibility();
   });
 
@@ -312,7 +319,8 @@ export function openCreateProject({ db, modalHost, onCreated, parentId = null })
     suggestionsRow,
     qtyUnitsRow,
     defaultUnitRow,
-    keepCompletedRow
+    keepCompletedRow,
+    mergeDuplicatesRow
   );
 
   openModal(modalHost, {
@@ -330,7 +338,7 @@ export function openCreateProject({ db, modalHost, onCreated, parentId = null })
             return false;
           }
           const type = typeSelect.value === 'checklist' ? 'checklist' : 'default';
-          const project = newProject({ name, type, parentId, useSuggestions: type === 'checklist' ? useSuggestionsToggle.checked : false, enableQtyUnits: type === 'checklist' ? enableQtyUnitsToggle.checked : false, keepCompletedItems: type === 'checklist' ? keepCompletedToggle.checked : false, defaultUnit: type === 'checklist' && enableQtyUnitsToggle.checked ? defaultUnitSelect.value || null : null });
+          const project = newProject({ name, type, parentId, useSuggestions: type === 'checklist' ? useSuggestionsToggle.checked : false, enableQtyUnits: type === 'checklist' ? enableQtyUnitsToggle.checked : false, keepCompletedItems: type === 'checklist' ? keepCompletedToggle.checked : false, defaultUnit: type === 'checklist' && enableQtyUnitsToggle.checked ? defaultUnitSelect.value || null : null, mergeDuplicates: type === 'checklist' ? mergeDuplicatesToggle.checked : false });
           await db.projects.put(project);
           
           if (type === 'checklist') {

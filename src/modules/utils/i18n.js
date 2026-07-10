@@ -90,6 +90,7 @@ const translations = {
     collapseAll: 'Collapse all',
     expandAll: 'Expand all',
     keepCompletedItems: 'Disable auto-archive of completed items',
+    mergeDuplicates: 'Merge duplicates (by qty)',
     
     // Due dates
     dueDate: 'Due date',
@@ -599,6 +600,7 @@ const translations = {
     collapseAll: 'Contraer todo',
     expandAll: 'Expandir todo',
     keepCompletedItems: 'Desactivar archivado automático de elementos completados',
+    mergeDuplicates: 'Combinar duplicados (por cantidad)',
     
     // Due dates
     dueDate: 'Fecha límite',
@@ -1080,6 +1082,7 @@ const translations = {
     collapseAll: 'Sažmi sve',
     expandAll: 'Proširi sve',
     keepCompletedItems: 'Onemogući automatsko arhiviranje završenih stavki',
+    mergeDuplicates: 'Spoji duplikate (po količini)',
     
     // Due dates
     dueDate: 'Rok',
@@ -1573,6 +1576,7 @@ const translations = {
     collapseAll: 'Comprimi tutto',
     expandAll: 'Espandi tutto',
     keepCompletedItems: 'Disabilita l\'archiviazione automatica degli elementi completati',
+    mergeDuplicates: 'Unisci duplicati (per quantità)',
     
     // Due dates
     dueDate: 'Scadenza',
@@ -2068,6 +2072,7 @@ const translations = {
     collapseAll: 'Alle einklappen',
     expandAll: 'Alle ausklappen',
     keepCompletedItems: 'Automatische Archivierung abgeschlossener Elemente deaktivieren',
+    mergeDuplicates: 'Duplikate zusammenführen (nach Menge)',
     
     // Due dates
     dueDate: 'Fälligkeitsdatum',

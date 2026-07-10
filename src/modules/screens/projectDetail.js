@@ -7,7 +7,7 @@ import { moveTodo, reorderBucket, completeTodo, uncompleteTodo } from '../logic/
 import { openTodoMenu } from '../ui/todoMenu.js';
 import { openTodoInfo } from '../ui/todoInfo.js';
 import { openModal } from '../ui/modal.js';
-import { newTodo, newChecklistPage, newProjectNote } from '../data/models.js';
+import { newTodo, newChecklistPage, newProjectNote, nowIso } from '../data/models.js';
 import { hapticLight } from '../ui/haptic.js';
 import { openCreateProject } from './projects.js';
 import { openProjectMenu } from '../ui/projectMenu.js';
@@ -135,7 +135,39 @@ async function openChecklistAddMenu(ctx, {
               return todo;
             });
 
-            await Promise.all(todosToCreate.map((todo) => db.todos.put(todo)));
+            // Merge duplicates if enabled: group items by title, check against existing
+            if (project.mergeDuplicates === true) {
+              // Group new items by normalized title, combine qtys
+              const grouped = new Map();
+              for (const todo of todosToCreate) {
+                const key = (todo.title || '').trim().toLowerCase();
+                if (!key) continue;
+                const existing = grouped.get(key);
+                if (existing) {
+                  existing.itemQuantity = (existing.itemQuantity || 0) + (todo.itemQuantity || 0);
+                  if (todo.itemUnit) existing.itemUnit = todo.itemUnit;
+                } else {
+                  grouped.set(key, { ...todo });
+                }
+              }
+
+              // Try merging each group with existing page items
+              const toCreate = [];
+              for (const [key, todo] of grouped) {
+                if (todo.itemQuantity != null) {
+                  const merged = await tryMergeChecklistItem({ db, projectId: project.id, pageId: targetPageId, firstPageId, todo });
+                  if (merged) continue;
+                }
+                toCreate.push(todo);
+              }
+
+              if (toCreate.length) {
+                await Promise.all(toCreate.map((todo) => db.todos.put(todo)));
+              }
+            } else {
+              await Promise.all(todosToCreate.map((todo) => db.todos.put(todo)));
+            }
+
             if (project.useSuggestions === true) {
               await db.checklistSuggestions.remember(items.map(normalizeTitle));
             }
@@ -162,6 +194,8 @@ async function openChecklistAddMenu(ctx, {
           useSuggestions: project.useSuggestions === true,
           enableQtyUnits: project.enableQtyUnits === true,
           defaultUnit: effectiveUnit,
+          mergeDuplicates: project.mergeDuplicates === true,
+          firstPageId,
           onCreated: onRefresh
         });
       }
@@ -1431,6 +1465,8 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
       useSuggestions: project.useSuggestions === true, 
       enableQtyUnits: project.enableQtyUnits === true,
       defaultUnit: effectiveUnit,
+      mergeDuplicates: project.mergeDuplicates === true,
+      firstPageId,
       onCreated: () => renderProjectDetail(ctx, projectId) 
     });
 
@@ -1806,7 +1842,7 @@ export async function openProjectAddMenu(ctx, project) {
     closeModal = modalRef.close;
 }
 
-function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated, useSuggestions = false, enableQtyUnits = false, defaultUnit = '' }) {
+function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated, useSuggestions = false, enableQtyUnits = false, defaultUnit = '', mergeDuplicates = false, firstPageId = null }) {
   const input = el('textarea', { 
     class: 'input input--title', 
     placeholder: t('itemName') || 'Item name', 
@@ -1971,9 +2007,20 @@ function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated, useSug
     const todo = newTodo({ title: title.trim(), projectId, pageId });
     todo.itemQuantity = itemQuantity;
     todo.itemUnit = itemUnit;
-    const noteVal = notesInput.value.trim();
-    if (noteVal) todo.notes = noteVal;
-    await db.todos.put(todo);
+
+    // Try merging with existing item if mergeDuplicates is enabled
+    let saved = false;
+    if (mergeDuplicates && itemQuantity != null) {
+      const merged = await tryMergeChecklistItem({ db, projectId, pageId, firstPageId, todo });
+      if (merged) saved = true;
+    }
+
+    if (!saved) {
+      const noteVal = notesInput.value.trim();
+      if (noteVal) todo.notes = noteVal;
+      await db.todos.put(todo);
+    }
+
     if (useSuggestions) {
       await db.checklistSuggestions.remember([baseTitle]);
     }
@@ -2406,6 +2453,28 @@ function renderChecklistWithDrag({ todos, modalHost, db, projectId, currentPageI
   }
   
   return container;
+}
+
+// Try to merge a new checklist item with an existing one on the same page.
+// Returns the merged item if merge happened, or null if no match found.
+async function tryMergeChecklistItem({ db, projectId, pageId, firstPageId, todo }) {
+  if (todo.itemQuantity == null) return null;
+  const allTodos = await db.todos.listByProject(projectId);
+  const newTitle = (todo.title || '').trim().toLowerCase();
+  const isFirstPage = pageId === firstPageId;
+  const match = allTodos.find(t => {
+    if (t.completed) return false;
+    if (t.pageId !== pageId) {
+      if (!isFirstPage || t.pageId) return false;
+    }
+    return (t.title || '').trim().toLowerCase() === newTitle;
+  });
+  if (!match) return null;
+  match.itemQuantity = (match.itemQuantity || 0) + (todo.itemQuantity || 0);
+  if (todo.itemUnit) match.itemUnit = todo.itemUnit;
+  match.updatedAt = nowIso();
+  await db.todos.put(match);
+  return match;
 }
 
 // Base unit values (stored internally) and their translation keys

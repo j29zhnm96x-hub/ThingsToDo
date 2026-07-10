@@ -24,6 +24,7 @@ function openEditProject(modalHost, { db, project, onChange }) {
   const suggestionsInput = el('input', { type: 'checkbox', checked: project.useSuggestions ? 'checked' : null, 'aria-label': t('useSuggestions') });
   const qtyUnitsInput = el('input', { type: 'checkbox', checked: project.enableQtyUnits ? 'checked' : null, 'aria-label': t('enableQtyUnits') });
   const keepCompletedInput = el('input', { type: 'checkbox', checked: project.keepCompletedItems ? 'checked' : null, 'aria-label': t('keepCompletedItems') });
+  const mergeDuplicatesInput = el('input', { type: 'checkbox', checked: project.mergeDuplicates ? 'checked' : null, 'aria-label': t('mergeDuplicates') || 'Merge duplicates' });
 
   const defaultUnits = [
     { value: '', label: t('defaultUnitNone') || 'None' },
@@ -57,7 +58,8 @@ function openEditProject(modalHost, { db, project, onChange }) {
       project.type === 'checklist' ? el('label', { class: 'label' }, el('span', {}, t('enableSuggestions')), suggestionsInput) : null,
       project.type === 'checklist' ? el('label', { class: 'label' }, el('span', {}, t('enableQtyUnits')), qtyUnitsInput) : null,
       project.type === 'checklist' ? defaultUnitRow : null,
-      project.type === 'checklist' ? el('label', { class: 'label' }, el('span', {}, t('keepCompletedItems')), keepCompletedInput) : null
+      project.type === 'checklist' ? el('label', { class: 'label' }, el('span', {}, t('keepCompletedItems')), keepCompletedInput) : null,
+      project.type === 'checklist' ? el('label', { class: 'label' }, el('span', {}, t('mergeDuplicates') || 'Merge duplicates'), mergeDuplicatesInput) : null
     ),
     actions: [
       { label: t('cancel'), class: 'btn btn--ghost', onClick: () => true },
@@ -67,7 +69,7 @@ function openEditProject(modalHost, { db, project, onChange }) {
         onClick: async () => {
           const name = input.value.trim();
           if (!name) return false;
-          await db.projects.put({ ...project, name, protected: protectedInput.checked, useSuggestions: project.type === 'checklist' ? suggestionsInput.checked : false, enableQtyUnits: project.type === 'checklist' ? qtyUnitsInput.checked : false, defaultUnit: project.type === 'checklist' && qtyUnitsInput.checked ? defaultUnitSelect.value || null : null, keepCompletedItems: project.type === 'checklist' ? keepCompletedInput.checked : false });
+          await db.projects.put({ ...project, name, protected: protectedInput.checked, useSuggestions: project.type === 'checklist' ? suggestionsInput.checked : false, enableQtyUnits: project.type === 'checklist' ? qtyUnitsInput.checked : false, defaultUnit: project.type === 'checklist' && qtyUnitsInput.checked ? defaultUnitSelect.value || null : null, keepCompletedItems: project.type === 'checklist' ? keepCompletedInput.checked : false, mergeDuplicates: project.type === 'checklist' ? mergeDuplicatesInput.checked : false });
           onChange?.();
           return true;
         }
