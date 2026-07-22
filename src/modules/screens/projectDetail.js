@@ -42,6 +42,7 @@ async function openChecklistAddMenu(ctx, {
   currentPageId,
   firstPageId,
   currentPageName,
+  defaultUnit: pageDefaultUnit,
   onRefresh
 }) {
   const { modalHost, db } = ctx;
@@ -193,7 +194,7 @@ async function openChecklistAddMenu(ctx, {
           pageId: currentPageId,
           useSuggestions: project.useSuggestions === true,
           enableQtyUnits: project.enableQtyUnits === true,
-          defaultUnit: effectiveUnit,
+          defaultUnit: pageDefaultUnit,
           mergeDuplicates: project.mergeDuplicates === true,
           firstPageId,
           onCreated: onRefresh
@@ -1082,6 +1083,7 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
           currentPageId,
           firstPageId,
           currentPageName: (currentPage || {}).name,
+          defaultUnit: effectiveUnit,
           onRefresh: () => renderProjectDetail(ctx, projectId)
         });
       }
