@@ -127,7 +127,7 @@ export async function openTodoInfo({ todo, db, modalHost, onEdit }) {
   let notesEl = null;
   if (todo.notes) {
     const notesTextEl = el('div', { class: 'todoInfo__notes' }, todo.notes);
-    attachLongPressCopy(notesTextEl, () => [todo.title, todo.notes].filter(Boolean).join('\n\n'));
+    attachLongPressCopy(notesTextEl, () => todo.notes || '');
     notesEl = el('div', { class: 'todoInfo__section' },
       el('div', { class: 'todoInfo__label' }, 'Notes'),
       notesTextEl
