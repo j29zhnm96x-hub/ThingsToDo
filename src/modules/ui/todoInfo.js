@@ -13,8 +13,10 @@ function attachLongPressCopy(target, getText) {
 
   let timer = null;
   let ready = false;
+  let hasTracking = false;
   function start(e) {
     if (e.button > 0) return;
+    hasTracking = true;
     ready = false;
     timer = setTimeout(() => {
       timer = null;
@@ -22,6 +24,7 @@ function attachLongPressCopy(target, getText) {
     }, LONG_PRESS_MS);
   }
   function finish() {
+    hasTracking = false;
     if (timer) { clearTimeout(timer); timer = null; ready = false; return; }
     if (!ready) return;
     ready = false;
@@ -29,12 +32,12 @@ function attachLongPressCopy(target, getText) {
     copyText(text);
     showToast(t('textCopied') || 'Copied');
   }
-  function cancel() { if (timer) { clearTimeout(timer); timer = null; } ready = false; }
+  function cancel() { hasTracking = false; if (timer) { clearTimeout(timer); timer = null; } ready = false; }
   target.addEventListener('pointerdown', start);
   target.addEventListener('pointerup', finish);
   target.addEventListener('pointercancel', cancel);
   target.addEventListener('pointermove', cancel);
-  target.addEventListener('contextmenu', (e) => e.preventDefault());
+  target.addEventListener('contextmenu', (e) => { if (hasTracking || timer || ready) e.preventDefault(); });
 }
 
 const PRIORITY_LABELS = {
