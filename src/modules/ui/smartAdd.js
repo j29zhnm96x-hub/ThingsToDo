@@ -90,6 +90,7 @@ export async function openSmartAdd(ctx, context) {
         mode: 'checklist',
         projectName: context.project.name,
         pageName: context.pageName || 'Untitled',
+        defaultUnit: context.project.defaultUnit || '',
         existingProjects
       };
     }
@@ -214,6 +215,9 @@ export async function openSmartAdd(ctx, context) {
     cancelLoadingBtn
   );
 
+  // Determine default unit for checklist context (shared between preview and edit modal)
+  const checklistDefaultUnit = context.mode === 'checklist' && context.project ? (context.project.defaultUnit || '') : '';
+
   // --- State 3: Preview ---
   function showPreview(parsed) {
     currentState = 'preview';
@@ -224,6 +228,48 @@ export async function openSmartAdd(ctx, context) {
       return;
     }
 
+    // Build a quantity/unit control row for a checklist item
+    function buildQtyRow(item) {
+      const effUnit = item.unit || checklistDefaultUnit || '';
+      const qtyInput = el('input', {
+        type: 'number', class: 'input', min: '0', step: 'any',
+        placeholder: '0', inputmode: 'decimal', 'aria-label': 'Qty',
+        value: item.qty != null ? String(item.qty) : '',
+        style: 'width:56px;padding:2px 6px;font-size:13px;height:28px'
+      });
+      qtyInput.addEventListener('input', () => {
+        const v = qtyInput.value.trim();
+        item.qty = v ? parseFloat(v) : null;
+      });
+      let unitEl;
+      if (checklistDefaultUnit) {
+        // Default unit is set — show as read-only label, set on item if not already set
+        if (!item.unit) item.unit = checklistDefaultUnit;
+        unitEl = el('span', { style: 'font-size:13px;color:var(--muted);padding:0 4px;line-height:28px' }, effUnit);
+      } else {
+        const unitOpts = [
+          { value: '', label: '—' },
+          { value: 'pcs', label: t('unitPcs') },
+          { value: 'kg', label: t('unitKg') },
+          { value: 'g', label: t('unitGram') },
+          { value: 'l', label: t('unitLit') },
+          { value: 'ml', label: t('unitMl') },
+          { value: 'pack', label: t('unitPack') },
+          { value: 'box', label: t('unitBox') },
+          { value: 'm', label: t('unitMetre') },
+          { value: 'cm', label: t('unitCm') }
+        ];
+        const unitSelect = el('select', { class: 'select', style: 'font-size:12px;padding:1px 4px;height:28px', 'aria-label': 'Unit' },
+          ...unitOpts.map(u => el('option', { value: u.value, selected: effUnit === u.value ? 'selected' : null }, u.label))
+        );
+        unitSelect.addEventListener('change', () => {
+          item.unit = unitSelect.value || null;
+        });
+        unitEl = unitSelect;
+      }
+      return el('div', { style: 'display:flex;align-items:center;gap:4px;margin-top:4px' }, qtyInput, unitEl);
+    }
+
     // Build preview list with checkboxes
     const checkboxes = [];
     const previewItems = [];
@@ -232,18 +278,20 @@ export async function openSmartAdd(ctx, context) {
       const row = createPreviewRow(cb, icon, title, typeLabel, subText, extraClass, extraChildren);
       row.addEventListener('click', (e) => {
         if (e.target.closest('input[type="checkbox"]')) return;
+        if (e.target.closest('input[type="number"], select')) return;
         openEditItemModal(item, row);
       });
       return row;
     }
 
-    // Tasks
+    // Tasks — in checklist mode these are items with qty/unit
     for (const task of parsed.tasks) {
       const cb = createCheckbox(true);
       checkboxes.push(cb);
-      // Checklist items don't have priorities — skip the priority dots
       const extra = context.mode === 'checklist' ? null : [renderPriorityDots(task)];
-      previewItems.push(makeEditableRow(task, cb, '📄', task.title, t('aiTask'), task.notes, null, extra));
+      const qtyChildren = context.mode === 'checklist' ? [buildQtyRow(task)] : null;
+      const allExtra = extra || qtyChildren ? [...(extra || []), ...(qtyChildren || [])] : null;
+      previewItems.push(makeEditableRow(task, cb, '📄', task.title, t('aiTask'), task.notes, null, allExtra));
     }
 
     // Projects
@@ -253,7 +301,14 @@ export async function openSmartAdd(ctx, context) {
       const sub = [];
       if (proj.tasks.length) sub.push(...proj.tasks.map(t => '  · ' + t.title));
       if (proj.subProjects.length) sub.push(...proj.subProjects.map(sp => '  📁 ' + sp.name + (sp.tasks.length ? ` (${sp.tasks.length} tasks)` : '')));
-      if (proj.pages.length) sub.push(...proj.pages.map(p => '  📋 ' + p.name + ` (${p.items.length} items)`));
+      if (proj.pages.length) sub.push(...proj.pages.map(p => {
+        const itemsStr = p.items.map(i => {
+          let s = i.title;
+          if (i.qty != null) s += ` (${i.qty}${i.unit ? ' ' + i.unit : ''})`;
+          return s;
+        }).join(', ');
+        return '  📋 ' + p.name + (itemsStr ? ': ' + itemsStr : '');
+      }));
       previewItems.push(makeEditableRow(proj, cb, '📁', proj.name, t('aiProject'), sub.join('\n'), proj.type === 'checklist' ? 'checklist' : 'project'));
     }
 
@@ -261,7 +316,11 @@ export async function openSmartAdd(ctx, context) {
     for (const cp of parsed.checklistPages) {
       const cb = createCheckbox(true);
       checkboxes.push(cb);
-      const items = cp.items.map(i => '  · ' + i.title).join('\n');
+      const items = cp.items.map(i => {
+        let s = '  · ' + i.title;
+        if (i.qty != null) s += ` (${i.qty}${i.unit ? ' ' + i.unit : ''})`;
+        return s;
+      }).join('\n');
       previewItems.push(makeEditableRow(cp, cb, '📋', cp.name, t('aiChecklistPage'), items));
     }
 
@@ -277,7 +336,11 @@ export async function openSmartAdd(ctx, context) {
     for (const acp of parsed.addToChecklistPage) {
       const cb = createCheckbox(true);
       checkboxes.push(cb);
-      const sub = acp.items.map(i => '  · ' + i.title).join('\n');
+      const sub = acp.items.map(i => {
+        let s = '  · ' + i.title;
+        if (i.qty != null) s += ` (${i.qty}${i.unit ? ' ' + i.unit : ''})`;
+        return s;
+      }).join('\n');
       previewItems.push(makeEditableRow(acp, cb, '📌', acp.projectName + ' › ' + acp.pageName, '→ ' + t('aiChecklistPage'), sub));
     }
 
@@ -454,8 +517,54 @@ export async function openSmartAdd(ctx, context) {
     const titleField = item.title !== undefined ? 'title' : item.text !== undefined ? 'text' : item.taskTitle !== undefined ? 'taskTitle' : item.projectName !== undefined ? 'projectName' : 'name';
     const currentTitle = item[titleField] || '';
     const hasNotes = item.notes !== undefined;
+    const isChecklistItem = item.qty !== undefined || item.unit !== undefined || context.mode === 'checklist';
     const iconMatch = row._titleEl.textContent.match(/^(\S+\s)/);
     const icon = iconMatch ? iconMatch[1] : '📄 ';
+
+    // Check if qty/unit are applicable (checklist items)
+    let qtyRow = null;
+    if (isChecklistItem) {
+      const effUnit = item.unit || checklistDefaultUnit || '';
+      const qtyInput = el('input', {
+        type: 'number', class: 'input', min: '0', step: 'any',
+        placeholder: '0', inputmode: 'decimal', 'aria-label': 'Qty',
+        value: item.qty != null ? String(item.qty) : '',
+        style: 'width:70px'
+      });
+      let unitEl;
+      if (checklistDefaultUnit) {
+        if (!item.unit) item.unit = checklistDefaultUnit;
+        unitEl = el('span', { style: 'font-size:14px;color:var(--muted);padding:0 6px;line-height:36px' }, effUnit);
+      } else {
+        const unitOpts = [
+          { value: '', label: '—' },
+          { value: 'pcs', label: t('unitPcs') },
+          { value: 'kg', label: t('unitKg') },
+          { value: 'g', label: t('unitGram') },
+          { value: 'l', label: t('unitLit') },
+          { value: 'ml', label: t('unitMl') },
+          { value: 'pack', label: t('unitPack') },
+          { value: 'box', label: t('unitBox') },
+          { value: 'm', label: t('unitMetre') },
+          { value: 'cm', label: t('unitCm') }
+        ];
+        const unitSelect = el('select', { class: 'select', 'aria-label': 'Unit' },
+          ...unitOpts.map(u => el('option', { value: u.value, selected: effUnit === u.value ? 'selected' : null }, u.label))
+        );
+        unitSelect.addEventListener('change', () => { item.unit = unitSelect.value || null; });
+        unitEl = unitSelect;
+      }
+      qtyRow = el('div', { style: 'display:flex;align-items:center;gap:8px' },
+        el('span', { style: 'font-size:14px;font-weight:500;min-width:40px' }, t('qty') || 'Qty'),
+        qtyInput,
+        unitEl
+      );
+      // Wire qty input to item
+      qtyInput.addEventListener('input', () => {
+        const v = qtyInput.value.trim();
+        item.qty = v ? parseFloat(v) : null;
+      });
+    }
 
     // Build a floating edit overlay inside the preview modal
     const input = el('input', { type: 'text', class: 'input', value: currentTitle, 'aria-label': 'Title' });
@@ -466,6 +575,7 @@ export async function openSmartAdd(ctx, context) {
     const overlay = el('div', { style: 'position:absolute;inset:0;z-index:30;background:var(--bg);display:flex;flex-direction:column;padding:24px 16px;gap:12px;overflow-y:auto' },
       el('div', { style: 'font-weight:600;font-size:15px;margin-bottom:4px' }, 'Edit ' + (item.title !== undefined ? 'task' : 'item')),
       input,
+      qtyRow || null,
       notesInput || null,
       el('div', { style: 'display:flex;gap:8px;margin-top:4px' },
         el('button', { type: 'button', class: 'btn btn--primary', style: 'flex:1' }, t('save') || 'Save'),
