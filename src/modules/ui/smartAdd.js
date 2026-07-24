@@ -631,6 +631,62 @@ export async function openSmartAdd(ctx, context) {
   let modalRef = null;
 
   // --- Main flow: start generation ---
+  // Fallback: parse qty/unit from title text if AI didn't extract it
+  function fallbackParseQty(parsed) {
+    const unitPat = '(kg|g|ml|m|cm|kile?|kila?|lit(?:re?|ra?|ri?|ar?)|l|pcs|uds|kom(?:ad[au]?)?|pz|Stk|pack|paq|pak|conf|Pack|box|caja|kut|scat|Box|pieces|liters|litres)';
+    const normalizeUnit = (u) => {
+      const map = { uds:'pcs', kom:'pcs', pz:'pcs', stk:'pcs', pieces:'pcs', lit:'l', l:'l', litres:'l', liters:'l', paq:'pack', pak:'pack', conf:'pack', pack:'pack', caja:'box', kut:'box', scat:'box', box:'box', kilogram:'kg', grams:'g', kile:'kg', kila:'kg' };
+      return map[u.toLowerCase()] || u.toLowerCase();
+    };
+    const tryParse = (raw) => {
+      const s = raw.trim();
+      const startRe = new RegExp('^(\\d+(?:\\.\\d+)?)\\s*' + unitPat + '\\s+(.+)', 'i');
+      const m1 = s.match(startRe);
+      if (m1) return { qty: parseFloat(m1[1]), unit: normalizeUnit(m1[2]), title: m1[3] };
+      const endRe = new RegExp('^(.+)\\s+(\\d+(?:\\.\\d+)?)\\s*' + unitPat + '$', 'i');
+      const m2 = s.match(endRe);
+      if (m2) return { qty: parseFloat(m2[2]), unit: normalizeUnit(m2[3]), title: m2[1] };
+      // "3 apples" pattern (number + word, no unit)
+      const numWordRe = /^(\d+(?:\.\d+)?)\s+(.+)/;
+      const m3 = s.match(numWordRe);
+      if (m3) return { qty: parseFloat(m3[1]), unit: null, title: m3[2] };
+      return null;
+    };
+    // Process tasks in checklist mode
+    if (context.mode === 'checklist') {
+      for (const task of parsed.tasks) {
+        if (task.qty == null && task.unit == null) {
+          const parsed2 = tryParse(task.title || '');
+          if (parsed2) {
+            task.qty = parsed2.qty;
+            task.unit = parsed2.unit || (checklistDefaultUnit || null);
+            task.title = parsed2.title;
+          }
+        }
+      }
+    }
+    // Process items inside pages (both new and add-to-existing)
+    const processItems = (items) => {
+      for (const i of items) {
+        if (i.qty == null && i.unit == null) {
+          const parsed2 = tryParse(i.title || '');
+          if (parsed2) {
+            i.qty = parsed2.qty;
+            i.unit = parsed2.unit || (checklistDefaultUnit || null);
+            i.title = parsed2.title;
+          }
+        }
+      }
+    };
+    for (const proj of parsed.projects) {
+      if (proj.type === 'checklist' && proj.pages) {
+        for (const p of proj.pages) processItems(p.items || []);
+      }
+    }
+    for (const cp of parsed.checklistPages) processItems(cp.items || []);
+    for (const acp of parsed.addToChecklistPage) processItems(acp.items || []);
+  }
+
   async function startGeneration() {
     const text = textarea.value.trim();
     if (!text) {
@@ -647,7 +703,9 @@ export async function openSmartAdd(ctx, context) {
       // Try local parser first for simple commands (faster, free, works offline)
       const localResult = tryParse(text, contextInfo);
       if (localResult) {
-        showPreview(validateStructure(localResult));
+        const validated = validateStructure(localResult);
+        fallbackParseQty(validated);
+        showPreview(validated);
         return;
       }
       // Fall back to AI for complex requests
@@ -656,6 +714,7 @@ export async function openSmartAdd(ctx, context) {
       const raw = await callAI(settings, systemPrompt, userPrompt);
       const parsed = parseResponse(raw);
       const validated = validateStructure(parsed);
+      fallbackParseQty(validated);
       showPreview(validated);
     } catch (err) {
       showToast(t('aiError', { msg: err.message }));
