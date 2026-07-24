@@ -974,6 +974,9 @@ function applyTodoFields(todo, data) {
       todo.recurrenceDetails = { days: data.recurrenceDays };
     }
   }
+  // Transfer checklist qty/unit from AI data
+  if (data.qty != null) todo.itemQuantity = parseFloat(data.qty);
+  if (data.unit) todo.itemUnit = String(data.unit);
 }
 
 async function createSubProjectsRecursive(db, parentProject, subProjects, results) {

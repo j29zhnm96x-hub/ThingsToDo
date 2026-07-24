@@ -60,11 +60,11 @@ Rules:
 - Capitalize ONLY the first letter of the FIRST word in each title. All other words stay lowercase (unless they are proper nouns). Example: \"Kupi mlijeko i kruh\", not \"Kupi Mlijeko I Kruh\".
 - Use proper Unicode characters for special letters in the user's language (e.g. Croatian: š, đ, č, ć, ž — never use ASCII substitutes like s, d, c, z).
 - Pay attention to correct grammar in the user's language — preserve proper noun cases (e.g. in Croatian: "javiti Alenu" not "javiti Aleni", "vidjeti Mariju" not "vidjeti Marija").
-- For checklist items: parse quantities and units from natural language. Examples: "three pieces of bread" → title "Bread", qty 3, unit "pcs". "2kg of potatoes" → title "Potatoes", qty 2, unit "kg". "a liter of milk" → title "Milk", qty 1, unit "l". "half a kilo of sugar" → title "Sugar", qty 0.5, unit "kg". "just bananas" (no qty) → title "Bananas", qty null, unit null. The default unit for the current project is provided in context — use it when the user doesn't specify a unit but mentions a quantity.
+- CRITICAL: When in a checklist context, EVERY item in the "tasks" array is a checklist entry and MUST have qty/unit parsed from natural language. The title must contain ONLY the item name, not the quantity or unit words. Examples: "three pieces of bread" → title "Bread", qty 3, unit "pcs". "2kg of potatoes" → title "Potatoes", qty 2, unit "kg". "a liter of milk" → title "Milk", qty 1, unit "l". "half a kilo of sugar" → title "Sugar", qty 0.5, unit "kg". "three of apples" → title "Apples", qty 3, unit null (use default if available). "just bananas" (no qty) → title "Bananas", qty null, unit null. NEVER put the quantity in the title. The default unit for the current project is provided in context — use it when the user mentions a quantity but no unit.
 
 Response format:
 {
-  "tasks": [{ "title": "...", "notes": "", "priority": "P2", "dueDate": null, "recurrenceType": null, "recurrenceDays": null, "protected": false, "showInInbox": false }],
+  "tasks": [{ "title": "...", "notes": "", "priority": "P2", "dueDate": null, "recurrenceType": null, "recurrenceDays": null, "protected": false, "showInInbox": false, "qty": null, "unit": null }],
   "projects": [{
     "name": "...",
     "type": "default"|"checklist",
@@ -100,8 +100,8 @@ function buildSystemPrompt(context) {
   } else if (context.mode === 'project') {
     ctxLines.push(`Current context: Project "${context.projectName}" (${context.projectType}) — create tasks in this project, or create sub-projects under it.`);
   } else if (context.mode === 'checklist') {
-    let msg = `Current context: Checklist project "${context.projectName}", current page: "${context.pageName}" — create items in this page, or create new pages.`;
-    if (context.defaultUnit) msg += ` The default unit for this project is "${context.defaultUnit}". Use this unit when the user mentions a quantity without specifying a unit.`;
+    let msg = `Current context: Checklist project "${context.projectName}", current page: "${context.pageName}" — create ITEMS (checklist entries) in this page, or create new pages.`;
+    if (context.defaultUnit) msg += ` The default unit for this project is "${context.defaultUnit}". Always use this unit when the user mentions a quantity without specifying a unit.`;
     ctxLines.push(msg);
   }
   return ctxLines.join('\n');
