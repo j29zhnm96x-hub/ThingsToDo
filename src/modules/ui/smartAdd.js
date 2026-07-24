@@ -638,18 +638,25 @@ export async function openSmartAdd(ctx, context) {
       const map = { uds:'pcs', kom:'pcs', pz:'pcs', stk:'pcs', pieces:'pcs', lit:'l', l:'l', litres:'l', liters:'l', paq:'pack', pak:'pack', conf:'pack', pack:'pack', caja:'box', kut:'box', scat:'box', box:'box', kilogram:'kg', grams:'g', kile:'kg', kila:'kg' };
       return map[u.toLowerCase()] || u.toLowerCase();
     };
+    // Clean leading prepositions and articles from parsed title
+    const cleanTitle = (t) => {
+      return t.replace(/^(?:of\s+|the\s+|di\s+|de\s+|od\s+|a\s+|an\s+)/i, '').trim();
+    };
     const tryParse = (raw) => {
       const s = raw.trim();
+      // Pattern: "2 L of milk" or "5 kg of apples" (qty + unit + rest)
       const startRe = new RegExp('^(\\d+(?:\\.\\d+)?)\\s*' + unitPat + '\\s+(.+)', 'i');
       const m1 = s.match(startRe);
-      if (m1) return { qty: parseFloat(m1[1]), unit: normalizeUnit(m1[2]), title: m1[3] };
-      const endRe = new RegExp('^(.+)\\s+(\\d+(?:\\.\\d+)?)\\s*' + unitPat + '$', 'i');
+      if (m1) return { qty: parseFloat(m1[1]), unit: normalizeUnit(m1[2]), title: cleanTitle(m1[3]) };
+      // Pattern: "milk — 2 L" or "milk - 2l" or "milk 2 L" (rest + qty + unit, possibly with dash)
+      const endRe = new RegExp('^(.+?)\\s*[-–—]?\\s+(\\d+(?:\\.\\d+)?)\\s*' + unitPat + '$', 'i');
       const m2 = s.match(endRe);
-      if (m2) return { qty: parseFloat(m2[2]), unit: normalizeUnit(m2[3]), title: m2[1] };
+      if (m2) return { qty: parseFloat(m2[2]), unit: normalizeUnit(m2[3]), title: cleanTitle(m2[1]) };
       // "3 apples" pattern (number + word, no unit)
+      // Also handles "3 of apples" by stripping the "of"
       const numWordRe = /^(\d+(?:\.\d+)?)\s+(.+)/;
       const m3 = s.match(numWordRe);
-      if (m3) return { qty: parseFloat(m3[1]), unit: null, title: m3[2] };
+      if (m3) return { qty: parseFloat(m3[1]), unit: null, title: cleanTitle(m3[2]) };
       return null;
     };
     // Process tasks in checklist mode
