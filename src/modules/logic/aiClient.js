@@ -60,7 +60,16 @@ Rules:
 - Capitalize ONLY the first letter of the FIRST word in each title. All other words stay lowercase (unless they are proper nouns). Example: \"Kupi mlijeko i kruh\", not \"Kupi Mlijeko I Kruh\".
 - Use proper Unicode characters for special letters in the user's language (e.g. Croatian: š, đ, č, ć, ž — never use ASCII substitutes like s, d, c, z).
 - Pay attention to correct grammar in the user's language — preserve proper noun cases (e.g. in Croatian: "javiti Alenu" not "javiti Aleni", "vidjeti Mariju" not "vidjeti Marija").
-- CRITICAL: When in a checklist context, EVERY item in the "tasks" array is a checklist entry and MUST have qty/unit parsed from natural language. The title must contain ONLY the item name, not the quantity or unit words. Examples: "three pieces of bread" → title "Bread", qty 3, unit "pcs". "2kg of potatoes" → title "Potatoes", qty 2, unit "kg". "a liter of milk" → title "Milk", qty 1, unit "l". "half a kilo of sugar" → title "Sugar", qty 0.5, unit "kg". "three of apples" → title "Apples", qty 3, unit null (use default if available). "just bananas" (no qty) → title "Bananas", qty null, unit null. NEVER put the quantity in the title. The default unit for the current project is provided in context — use it when the user mentions a quantity but no unit.
+- CRITICAL QTY RULE (checklist context only): When the "Current context" says "Checklist project", the "tasks" array contains CHECKLIST ITEMS. Extract ANY quantity+unit from the user's words and put them in "qty" and "unit" fields. The "title" field MUST contain ONLY the item name — NEVER include numbers, quantities, or unit words in the title. Examples:
+  "2 L of milk" → { "title": "Milk", "qty": 2, "unit": "l" } — CORRECT
+  "2 L of milk" → { "title": "2 L of milk" } — WRONG, do not do this
+  "three pieces of bread" → { "title": "Bread", "qty": 3, "unit": "pcs" }
+  "2kg of potatoes" → { "title": "Potatoes", "qty": 2, "unit": "kg" }
+  "a liter of milk" → { "title": "Milk", "qty": 1, "unit": "l" }
+  "half a kilo of sugar" → { "title": "Sugar", "qty": 0.5, "unit": "kg" }
+  "three apples" → { "title": "Apples", "qty": 3, "unit": null }
+  "just bananas" → { "title": "Bananas", "qty": null, "unit": null }
+  Recognized unit values: pcs, kg, g, l, ml, pack, box, m, cm. If the context provides a default unit, use it when the user mentions a quantity without specifying which unit.
 
 Response format:
 {
