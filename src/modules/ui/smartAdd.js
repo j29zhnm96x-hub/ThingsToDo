@@ -633,9 +633,24 @@ export async function openSmartAdd(ctx, context) {
   // --- Main flow: start generation ---
   // Fallback: parse qty/unit from title text if AI didn't extract it
   function fallbackParseQty(parsed) {
-    const unitPat = '(kg|g|ml|m|cm|kile?|kila?|lit(?:re?|ra?|ri?|ar?)|l|pcs|uds|kom(?:ad[au]?)?|pz|Stk|pack|paq|pak|conf|Pack|box|caja|kut|scat|Box|pieces|liters|litres)';
+    // Map word numbers to digits (English + user's language)
+    const WORD_NUMBERS = {
+      zero:0, one:1, two:2, three:3, four:4, five:5, six:6, seven:7, eight:8, nine:9, ten:10,
+      eleven:11, twelve:12, thirteen:13, fourteen:14, fifteen:15, sixteen:16, seventeen:17, eighteen:18, nineteen:19,
+      twenty:20, thirty:30, forty:40, fifty:50, sixty:60, seventy:70, eighty:80, ninety:90, hundred:100,
+      jedan:1, dva:2, tri:3, četiri:4, pet:5, šest:6, sedam:7, osam:8, devet:9, deset:10,
+      jedanaest:11, dvanaest:12, trinaest:13, četrnaest:14, petnaest:15, šesnaest:16, sedamnaest:17, osamnaest:18, devetnaest:19,
+      dvadeset:20, trideset:30, četrdeset:40, pedeset:50, šezdeset:60, sedamdeset:70, osamdeset:80, devedeset:90, sto:100,
+      uno:1, dos:2, tres:3, cuatro:4, cinco:5, seis:6, siete:7, ocho:8, nueve:9, diez:10
+    };
+    const parseWordQty = (s) => {
+      const lower = s.toLowerCase();
+      return WORD_NUMBERS[lower] != null ? WORD_NUMBERS[lower] : null;
+    };
+
+    const unitPat = '(kg|g|ml|m|cm|kile?|kila?|lit(?:re?|ra?|ri?|ar?)|l|pcs|uds|kom(?:ad[au]?)?|pz|Stk|pack|paq|pak|conf|Pack|box|caja|kut|scat|Box|pieces?|liters|litres)';
     const normalizeUnit = (u) => {
-      const map = { uds:'pcs', kom:'pcs', pz:'pcs', stk:'pcs', pieces:'pcs', lit:'l', l:'l', litres:'l', liters:'l', paq:'pack', pak:'pack', conf:'pack', pack:'pack', caja:'box', kut:'box', scat:'box', box:'box', kilogram:'kg', grams:'g', kile:'kg', kila:'kg' };
+      const map = { uds:'pcs', kom:'pcs', pz:'pcs', stk:'pcs', pieces:'pcs', piece:'pcs', lit:'l', l:'l', litres:'l', liters:'l', paq:'pack', pak:'pack', conf:'pack', pack:'pack', caja:'box', kut:'box', scat:'box', box:'box', kilogram:'kg', grams:'g', kile:'kg', kila:'kg' };
       return map[u.toLowerCase()] || u.toLowerCase();
     };
     // Clean leading prepositions/articles and capitalize first letter
@@ -645,19 +660,37 @@ export async function openSmartAdd(ctx, context) {
     };
     const tryParse = (raw) => {
       const s = raw.trim();
-      // Pattern: "2 L of milk" or "5 kg of apples" (qty + unit + rest)
-      const startRe = new RegExp('^(\\d+(?:\\.\\d+)?)\\s*' + unitPat + '\\s+(.+)', 'i');
-      const m1 = s.match(startRe);
-      if (m1) return { qty: parseFloat(m1[1]), unit: normalizeUnit(m1[2]), title: cleanTitle(m1[3]) };
-      // Pattern: "milk — 2 L" or "milk - 2l" or "milk 2 L" (rest + qty + unit, possibly with dash)
-      const endRe = new RegExp('^(.+?)\\s*[-–—]?\\s+(\\d+(?:\\.\\d+)?)\\s*' + unitPat + '$', 'i');
-      const m2 = s.match(endRe);
-      if (m2) return { qty: parseFloat(m2[2]), unit: normalizeUnit(m2[3]), title: cleanTitle(m2[1]) };
-      // "3 apples" pattern (number + word, no unit)
-      // Also handles "3 of apples" by stripping the "of"
-      const numWordRe = /^(\d+(?:\.\d+)?)\s+(.+)/;
-      const m3 = s.match(numWordRe);
-      if (m3) return { qty: parseFloat(m3[1]), unit: null, title: cleanTitle(m3[2]) };
+
+      // Patterns with digit or word numbers
+      // anyQtyPat has 2 capture groups: [1]=digit, [2]=word
+      const qtyDigit = '(\\d+(?:\\.\\d+)?)';
+      const qtyWord = '(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|jedan|dva|tri|četiri|pet|šest|sedam|osam|devet|deset|jedanaest|dvanaest|trinaest|četrnaest|petnaest|šesnaest|sedamnaest|osamnaest|devetnaest|dvadeset|trideset|četrdeset|pedeset|šezdeset|sedamdeset|osamdeset|devedeset|sto|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez)';
+      const anyQty = `(?:${qtyDigit}|${qtyWord})`;
+
+      // Pattern 1: "2 L of milk", "five pieces of bread" (qty + unit + rest)
+      // Groups: [1]=digit, [2]=word, [3]=unit, [4]=title
+      const m1 = s.match(new RegExp('^' + anyQty + '\\s*' + unitPat + '\\s+(.+)', 'i'));
+      if (m1) {
+        const qty = m1[1] != null ? parseFloat(m1[1]) : parseWordQty(m1[2]);
+        if (qty != null) return { qty, unit: normalizeUnit(m1[3]), title: cleanTitle(m1[4]) };
+      }
+
+      // Pattern 2: "milk — 2 L", "milk - 2l", "oranges 25 pieces" (rest + qty + unit)
+      // Groups: [1]=title, [2]=digit, [3]=word, [4]=unit
+      const m2 = s.match(new RegExp('^(.+?)\\s*[-–—]?\\s+' + anyQty + '\\s*' + unitPat + '$', 'i'));
+      if (m2) {
+        const qty = m2[2] != null ? parseFloat(m2[2]) : parseWordQty(m2[3]);
+        if (qty != null) return { qty, unit: normalizeUnit(m2[4]), title: cleanTitle(m2[1]) };
+      }
+
+      // Pattern 3: "3 apples", "five oranges" (qty + word, no unit)
+      // Groups: [1]=digit, [2]=word, [3]=title
+      const m3 = s.match(new RegExp('^' + anyQty + '\\s+(.+)', 'i'));
+      if (m3) {
+        const qty = m3[1] != null ? parseFloat(m3[1]) : parseWordQty(m3[2]);
+        if (qty != null) return { qty, unit: null, title: cleanTitle(m3[3]) };
+      }
+
       return null;
     };
     // Process tasks in checklist mode
