@@ -638,9 +638,10 @@ export async function openSmartAdd(ctx, context) {
       const map = { uds:'pcs', kom:'pcs', pz:'pcs', stk:'pcs', pieces:'pcs', lit:'l', l:'l', litres:'l', liters:'l', paq:'pack', pak:'pack', conf:'pack', pack:'pack', caja:'box', kut:'box', scat:'box', box:'box', kilogram:'kg', grams:'g', kile:'kg', kila:'kg' };
       return map[u.toLowerCase()] || u.toLowerCase();
     };
-    // Clean leading prepositions and articles from parsed title
+    // Clean leading prepositions/articles and capitalize first letter
     const cleanTitle = (t) => {
-      return t.replace(/^(?:of\s+|the\s+|di\s+|de\s+|od\s+|a\s+|an\s+)/i, '').trim();
+      const cleaned = t.replace(/^(?:of\s+|the\s+|di\s+|de\s+|od\s+|a\s+|an\s+)/i, '').trim();
+      return cleaned ? cleaned.charAt(0).toUpperCase() + cleaned.slice(1) : cleaned;
     };
     const tryParse = (raw) => {
       const s = raw.trim();
