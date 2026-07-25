@@ -16,7 +16,7 @@ import { enablePillReorder } from '../ui/pillReorder.js';
 import { Priority } from '../data/models.js';
 import { showToast } from '../ui/toast.js';
 import { openBulkAddModal, parseBulkAddTextWithPage } from '../ui/bulkAdd.js';
-import { t } from '../utils/i18n.js';
+import { t, localizeUnit, normalizeUnit } from '../utils/i18n.js';
 import { renderVoiceMemoList, openRecordingModal } from '../ui/voiceMemo.js';
 import { openSmartAdd } from '../ui/smartAdd.js';
 import { isDueNowOrPast } from '../logic/recurrence.js';
@@ -1992,7 +1992,7 @@ function quickAddChecklist({ modalHost, db, projectId, pageId, onCreated, useSug
       const qty = qtyInput.value.trim();
       if (qty) {
         itemQuantity = parseFloat(qty);
-        itemUnit = selectedUnit || null;
+        itemUnit = selectedUnit ? normalizeUnit(selectedUnit) : null;
       }
     }
 
@@ -2176,7 +2176,7 @@ function renderChecklistWithDrag({ todos, modalHost, db, projectId, currentPageI
     }, todo.title);
     if (todo.itemQuantity != null) {
       const qtyStr = todo.itemUnit
-        ? `${todo.itemQuantity} ${todo.itemUnit}`
+        ? `${todo.itemQuantity} ${localizeUnit(todo.itemUnit)}`
         : `${todo.itemQuantity}`;
       textSpan.append(el('span', { class: 'qty-badge' }, ' → ' + qtyStr));
     }
@@ -2500,7 +2500,7 @@ function openEditChecklistItem({ modalHost, db, todo, onSaved }) {
   input.addEventListener('input', autosizeEdit);
 
   const qty = todo.itemQuantity ?? '';
-  const unit = todo.itemUnit || '';
+  const unit = normalizeUnit(todo.itemUnit || '');
   const qtyInput = el('input', { type: 'number', class: 'input', min: '0', step: 'any', placeholder: 'Qty', inputmode: 'decimal', style: 'width:80px', value: String(qty) });
   const unitSelect = el('select', { class: 'select', 'aria-label': 'Unit' },
     ...UNIT_OPTIONS.map(u => {
@@ -2527,7 +2527,7 @@ function openEditChecklistItem({ modalHost, db, todo, onSaved }) {
   }
 
   let addMode = false;
-  const currentQty = todo.itemQuantity != null ? `${todo.itemQuantity}${todo.itemUnit ? ' ' + todo.itemUnit : ''}` : null;
+  const currentQty = todo.itemQuantity != null ? `${todo.itemQuantity}${todo.itemUnit ? ' ' + localizeUnit(todo.itemUnit) : ''}` : null;
 
   // Second input dedicated to Add mode (stays in DOM always)
   const addInput = el('input', { type: 'number', class: 'input', min: '0', step: 'any', placeholder: '0', inputmode: 'decimal', style: 'width:80px' });

@@ -2571,4 +2571,54 @@ export function getAvailableLanguages() {
   return Object.keys(translations);
 }
 
+// Internal unit values to translation key mapping
+const UNIT_TO_KEY = {
+  'pcs': 'unitPcs', 'kg': 'unitKg', 'g': 'unitGram',
+  'l': 'unitLit', 'ml': 'unitMl',
+  'pack': 'unitPack', 'box': 'unitBox',
+  'm': 'unitMetre', 'cm': 'unitCm'
+};
+
+// All known translated variants mapped to their internal value
+const UNIT_NORMALIZE_MAP = {
+  'pcs':'pcs', 'kg':'kg', 'g':'g', 'l':'l', 'ml':'ml',
+  'pack':'pack', 'box':'box', 'm':'m', 'cm':'cm',
+  'uds':'pcs', 'pz':'pcs', 'stk':'pcs', 'pieces':'pcs', 'piece':'pcs',
+  'kom':'pcs', 'komad':'pcs', 'komada':'pcs',
+  'lit':'l', 'litre':'l', 'litra':'l', 'litri':'l', 'litar':'l',
+  'litres':'l', 'liters':'l', 'liter':'l',
+  'kile':'kg', 'kila':'kg', 'kilogram':'kg', 'kilograms':'kg',
+  'grams':'g',
+  'paq':'pack', 'pak':'pack', 'conf':'pack',
+  'caja':'box', 'kut':'box', 'scat':'box',
+  'metre':'m', 'meter':'m'
+};
+
+/**
+ * Normalize any known unit variant to its internal value (e.g. "kom" → "pcs", "litra" → "l")
+ */
+export function normalizeUnit(u) {
+  if (!u) return '';
+  const lower = u.toLowerCase().trim();
+  const mapped = UNIT_NORMALIZE_MAP[lower];
+  if (mapped) return mapped;
+  // Check if it's already an internal value
+  if (UNIT_TO_KEY[lower]) return lower;
+  return lower;
+}
+
+/**
+ * Convert an internal unit value to the current language (e.g. "pcs" → "kom" in Croatian)
+ * Falls back to showing the raw value if unknown.
+ */
+export function localizeUnit(u) {
+  if (!u) return '';
+  const key = UNIT_TO_KEY[u];
+  if (key) return t(key);
+  // Try normalizing first in case it's a known variant stored before normalization
+  const n = normalizeUnit(u);
+  const key2 = UNIT_TO_KEY[n];
+  return key2 ? t(key2) : u;
+}
+
 
