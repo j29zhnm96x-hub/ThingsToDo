@@ -1029,8 +1029,13 @@ html[data-theme='light'] .projectCard[data-type='checklist'] .projectCard__progr
   flex: 1;
   min-width: 0;
 }
-.projectCard__compactName--pulse {
-  animation: projectCardPulse 2.5s ease-in-out infinite;
+.projectCard__compactIcon {
+  flex-shrink: 0;
+  font-size: 14px;
+}
+.projectCard__compactRow--pulse .projectCard__compactIcon,
+.projectCard__compactRow--pulse .projectCard__compactName {
+  animation: projectCardPulse 2.1s ease-in-out infinite;
 }
 @keyframes projectCardPulse {
   0% { opacity: 0.25; }

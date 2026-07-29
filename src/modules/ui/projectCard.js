@@ -23,9 +23,9 @@ export function renderProjectCard({
       },
       'aria-label': `${t('project')}: ${project.name}`
     },
-      el('div', { class: 'projectCard__compactRow' },
-        el('span', {}, project.type === 'checklist' ? '📋' : '📁'),
-        el('span', { class: 'projectCard__compactName' + (hasUnchecked ? ' projectCard__compactName--pulse' : '') }, project.name),
+      el('div', { class: 'projectCard__compactRow' + (hasUnchecked ? ' projectCard__compactRow--pulse' : '') },
+        el('span', { class: 'projectCard__compactIcon' }, project.type === 'checklist' ? '📋' : '📁'),
+        el('span', { class: 'projectCard__compactName' }, project.name),
         el('div', { style: 'display:flex;align-items:center;gap:1px;flex-shrink:0' },
           hasTodos ? el('span', { class: 'projectCard__compactPct' }, `${progress}%`) : null,
           el('button', {
