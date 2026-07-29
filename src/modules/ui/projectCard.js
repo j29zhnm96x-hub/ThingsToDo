@@ -6,7 +6,8 @@ export function renderProjectCard({
   stats = { total: 0, completed: 0, active: 0 },
   onOpen,
   onMenu,
-  compact = false
+  compact = false,
+  hasUnchecked = false
 }) {
   const projectType = project.type || 'default';
   const hasTodos = stats.total > 0;
@@ -24,7 +25,7 @@ export function renderProjectCard({
     },
       el('div', { class: 'projectCard__compactRow' },
         el('span', {}, project.type === 'checklist' ? '📋' : '📁'),
-        el('span', { class: 'projectCard__compactName' }, project.name),
+        el('span', { class: 'projectCard__compactName' + (hasUnchecked ? ' projectCard__compactName--pulse' : '') }, project.name),
         el('div', { style: 'display:flex;align-items:center;gap:1px;flex-shrink:0' },
           hasTodos ? el('span', { class: 'projectCard__compactPct' }, `${progress}%`) : null,
           el('button', {

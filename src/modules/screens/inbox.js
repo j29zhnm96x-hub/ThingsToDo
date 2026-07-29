@@ -273,6 +273,7 @@ export async function renderInbox(ctx) {
           project: p,
           stats: linkedProjectStats.get(p.id) || { total: 0, completed: 0, active: 0 },
           compact: true,
+          hasUnchecked: (linkedProjectStats.get(p.id)?.active || 0) > 0,
           onOpen: () => {
             hapticLight();
             location.hash = `#project/${p.id}`;
