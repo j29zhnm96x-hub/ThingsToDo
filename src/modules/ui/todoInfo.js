@@ -5,10 +5,10 @@ import { t } from '../utils/i18n.js';
 
 const LONG_PRESS_MS = 650;
 
-// Convert plain text into nodes, making URLs clickable (http/https/www)
-const URL_PATTERN = /(https?:\/\/[^\s<>"']+|www\.[^\s<>"']+)/gi;
+// Convert plain text into nodes, making URLs clickable (http/https/www/youtu.be)
+const URL_PATTERN = /(https?:\/\/[^\s<>"']+|www\.[^\s<>"']+|youtu\.be\/[^\s<>"']+)/gi;
 
-function linkifyNodes(text) {
+export function linkifyNodes(text) {
   if (!text) return [text];
   const parts = String(text).split(URL_PATTERN);
   const out = [];
@@ -18,7 +18,7 @@ function linkifyNodes(text) {
     const m = part.match(/^(.+?)([.,;:!)\]}"']+)$/);
     const cleaned = m ? m[1] : part;
     if (!cleaned) { out.push(part); return; }
-    const href = /^www\./i.test(cleaned) ? 'https://' + cleaned : cleaned;
+    const href = /^(www\.|youtu\.be\/)/i.test(cleaned) ? 'https://' + cleaned : cleaned;
     out.push(el('a', {
       class: 'todoInfo__link',
       href,
@@ -26,7 +26,7 @@ function linkifyNodes(text) {
       rel: 'noopener noreferrer',
       onClick: (e) => {
         // Ignore the click if it followed a long-press copy
-        const host = e.currentTarget.closest('.todoInfo__title, .todoInfo__notes');
+        const host = e.currentTarget.closest('.todoInfo__title, .todoInfo__notes, .modalFieldText');
         if (host?.dataset?.justCopied) { e.preventDefault(); return; }
         e.stopPropagation();
       }
@@ -36,7 +36,7 @@ function linkifyNodes(text) {
   return out;
 }
 
-function attachLongPressCopy(target, getText) {
+export function attachLongPressCopy(target, getText) {
   function copyText(text) {
     if (navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(text).catch(() => {});

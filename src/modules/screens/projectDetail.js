@@ -5,7 +5,7 @@ import { pickDestination, buildPagesMap } from '../ui/pickDestination.js';
 import { confirm } from '../ui/confirm.js';
 import { moveTodo, reorderBucket, completeTodo, uncompleteTodo } from '../logic/todoOps.js';
 import { openTodoMenu } from '../ui/todoMenu.js';
-import { openTodoInfo } from '../ui/todoInfo.js';
+import { openTodoInfo, linkifyNodes, attachLongPressCopy } from '../ui/todoInfo.js';
 import { openModal } from '../ui/modal.js';
 import { newTodo, newChecklistPage, newProjectNote, nowIso } from '../data/models.js';
 import { hapticLight } from '../ui/haptic.js';
@@ -1233,49 +1233,22 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
           await renderProjectDetail(ctx, projectId, 0);
         };
 
-        const detailTextEl = el('textarea', {
-          class: 'modalSelectableField',
-          readonly: 'readonly',
-          rows: '1',
-          'aria-label': t('itemDetails') || 'Item Details',
-          spellcheck: 'false'
-        }, todo.title);
-
-        const autosizeDetailText = () => {
-          detailTextEl.style.height = 'auto';
-          detailTextEl.style.height = detailTextEl.scrollHeight + 'px';
-        };
-
-        let holdTimer = null;
-        const startHold = () => {
-          holdTimer = setTimeout(() => {
-            holdTimer = null;
-            detailTextEl.select();
-          }, 500);
-        };
-        const cancelHold = () => {
-          if (holdTimer !== null) {
-            clearTimeout(holdTimer);
-            holdTimer = null;
-          }
-        };
-
-        detailTextEl.addEventListener('input', autosizeDetailText);
-        detailTextEl.addEventListener('pointerdown', startHold);
-        detailTextEl.addEventListener('pointerup', cancelHold);
-        detailTextEl.addEventListener('pointercancel', cancelHold);
-        detailTextEl.addEventListener('pointermove', cancelHold);
+        const detailTextEl = el('div', {
+          class: 'modalFieldText',
+          'aria-label': t('itemDetails') || 'Item Details'
+        }, ...linkifyNodes(todo.title));
+        attachLongPressCopy(detailTextEl, () => todo.title || '');
 
         openModal(modalHost, {
           title: t('itemDetails') || 'Item Details',
           content: el('div', {},
             detailTextEl,
             todo.notes ? (() => {
-              const notesTa = el('textarea', { class: 'modalSelectableField', readonly: 'readonly', rows: '1', style: 'width:100%', spellcheck: 'false' }, todo.notes);
-              setTimeout(() => { notesTa.style.height = 'auto'; notesTa.style.height = notesTa.scrollHeight + 'px'; }, 0);
-              return el('div', { style: 'margin-top:12px' },
+              const notesEl = el('div', { class: 'modalFieldText', style: 'margin-top:12px;min-height:0' }, ...linkifyNodes(todo.notes));
+              attachLongPressCopy(notesEl, () => todo.notes || '');
+              return el('div', {},
                 el('div', { class: 'small', style: 'color:var(--muted);margin-bottom:4px' }, 'Notes'),
-                notesTa
+                notesEl
               );
             })() : null
           ),
@@ -1288,7 +1261,6 @@ export async function renderProjectDetail(ctx, projectId, scrollPosition = 0) {
             { label: t('close'), class: 'btn btn--primary', onClick: () => true }
           ]
         });
-        setTimeout(autosizeDetailText, 0);
       },
       onEdit: (todo) => {
         openEditChecklistItem({ modalHost, db, todo, onSaved: () => renderProjectDetail(ctx, projectId, 0) });
