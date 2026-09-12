@@ -7,6 +7,7 @@ import { showToast } from '../ui/toast.js';
 import { t, getLang, setLang, languageNames, getAvailableLanguages } from '../utils/i18n.js';
 import { router } from '../router.js';
 import { checkForUpdates, getUpdateInfo, showUpdateOverlayAndReload } from '../updater.js';
+import { APP_VERSION } from '../version.js';
 import { AI_PROVIDERS, verifyConnection } from '../logic/aiClient.js';
 
 async function blobToDataUrl(blob) {
@@ -218,7 +219,7 @@ export async function renderSettings(ctx) {
 
   // Update check
   const updateInfo = getUpdateInfo();
-  const updateInfoText = updateInfo.supported ? `v${updateInfo.version || '1.0.0'}` : t('notificationsBlocked') || 'Not supported';
+  const updateInfoText = updateInfo.supported ? `v${updateInfo.version || APP_VERSION}` : t('notificationsBlocked') || 'Not supported';
   const statusEl = el('div', { id: 'updateStatus', class: 'small', style: { marginTop: '4px' } }, updateInfoText);
   const checkUpdateBtn = el('button', {
     class: 'btn',

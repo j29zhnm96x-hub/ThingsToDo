@@ -2,8 +2,7 @@
 // Forces a fresh SW install by using a unique URL per deploy,
 // bypassing all caches (CDN, browser, SW internal).
 
-// IMPORTANT: Bump this with every deploy to force PWA update detection
-const SW_BUILD = 10;
+import { APP_VERSION, SW_BUILD } from './version.js';
 
 let registration = null;
 
@@ -108,7 +107,7 @@ export function getUpdateInfo() {
   }
   return {
     supported: true,
-    version: '1.0.0',
+    version: APP_VERSION,
     build: SW_BUILD,
     registered: !!registration
   };
