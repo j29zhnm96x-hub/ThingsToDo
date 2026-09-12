@@ -14,6 +14,7 @@ import { createQuickAddButton, updateQuickAddButton } from './ui/quickAdd.js';
 import { el } from './ui/dom.js';
 import { applyTheme, applyPalette } from './ui/theme.js';
 import { autoArchiveCompleted, autoEmptyBin } from './logic/todoOps.js';
+import { runProjectResets } from './logic/projectReset.js';
 import { hapticLight } from './ui/haptic.js';
 import { t, getLang } from './utils/i18n.js';
 import { openModal } from './ui/modal.js';
@@ -185,6 +186,8 @@ export function initApp(root) {
       await autoArchiveCompleted(db);
       // Empty bin items older than 24h
       await autoEmptyBin(db);
+      // Reset checklist projects whose daily/weekly/monthly interval has passed
+      await runProjectResets(db);
 
       // Apply persisted theme and palette (default: dark + default palette).
       const settings = await db.settings.get();

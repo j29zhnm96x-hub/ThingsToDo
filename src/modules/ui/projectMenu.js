@@ -50,6 +50,55 @@ function openEditProject(modalHost, { db, project, onChange }) {
     defaultUnitRow.style.display = qtyUnitsInput.checked ? '' : 'none';
   });
 
+  // Automatic reset interval (checklist only)
+  const resetIntervalSelect = el('select', { class: 'select', 'aria-label': t('resetInterval') || 'Reset interval' },
+    el('option', { value: '', selected: !project.resetInterval ? 'selected' : null }, t('resetNever') || 'Never'),
+    el('option', { value: 'daily', selected: project.resetInterval === 'daily' ? 'selected' : null }, t('resetDaily') || 'Daily'),
+    el('option', { value: 'weekly', selected: project.resetInterval === 'weekly' ? 'selected' : null }, t('resetWeekly') || 'Weekly'),
+    el('option', { value: 'monthly', selected: project.resetInterval === 'monthly' ? 'selected' : null }, t('resetMonthly') || 'Monthly')
+  );
+  const resetIntervalRow = el('label', { class: 'label', style: project.type === 'checklist' ? '' : 'display:none;' },
+    el('span', {}, t('resetInterval') || 'Reset interval'),
+    resetIntervalSelect
+  );
+
+  const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const resetDaySelect = el('select', { class: 'select', 'aria-label': t('resetDay') || 'Reset day' });
+  const resetDayRow = el('label', { class: 'label', style: 'display:none;' },
+    el('span', {}, t('resetDay') || 'Reset day'),
+    resetDaySelect
+  );
+
+  const fillResetDayOptions = () => {
+    resetDaySelect.innerHTML = '';
+    if (resetIntervalSelect.value === 'weekly') {
+      dayNames.forEach((name, i) => {
+        resetDaySelect.appendChild(el('option', { value: String(i), selected: project.resetInterval === 'weekly' && project.resetDay === i ? 'selected' : null }, t(name)));
+      });
+    } else if (resetIntervalSelect.value === 'monthly') {
+      for (let d = 1; d <= 31; d++) {
+        resetDaySelect.appendChild(el('option', { value: String(d), selected: project.resetInterval === 'monthly' && project.resetDay === d ? 'selected' : null }, String(d)));
+      }
+    }
+  };
+
+  const updateResetVisibility = () => {
+    const interval = resetIntervalSelect.value;
+    const showDay = interval === 'weekly' || interval === 'monthly';
+    if (showDay) fillResetDayOptions();
+    resetDayRow.style.display = showDay ? '' : 'none';
+    // Reset interval locks "Keep completed items" on
+    if (interval) {
+      keepCompletedInput.checked = true;
+      keepCompletedInput.disabled = true;
+    } else {
+      keepCompletedInput.disabled = false;
+      keepCompletedInput.checked = project.keepCompletedItems === true;
+    }
+  };
+  resetIntervalSelect.addEventListener('change', updateResetVisibility);
+  updateResetVisibility();
+
   openModal(modalHost, {
     title: t('editProject'),
     content: el('div', { class: 'stack' },
@@ -59,7 +108,9 @@ function openEditProject(modalHost, { db, project, onChange }) {
       project.type === 'checklist' ? el('label', { class: 'label' }, el('span', {}, t('enableQtyUnits')), qtyUnitsInput) : null,
       project.type === 'checklist' ? defaultUnitRow : null,
       project.type === 'checklist' ? el('label', { class: 'label' }, el('span', {}, t('keepCompletedItems')), keepCompletedInput) : null,
-      project.type === 'checklist' ? el('label', { class: 'label' }, el('span', {}, t('mergeDuplicates') || 'Merge duplicates'), mergeDuplicatesInput) : null
+      project.type === 'checklist' ? el('label', { class: 'label' }, el('span', {}, t('mergeDuplicates') || 'Merge duplicates'), mergeDuplicatesInput) : null,
+      project.type === 'checklist' ? resetIntervalRow : null,
+      project.type === 'checklist' ? resetDayRow : null
     ),
     actions: [
       { label: t('cancel'), class: 'btn btn--ghost', onClick: () => true },
@@ -69,7 +120,11 @@ function openEditProject(modalHost, { db, project, onChange }) {
         onClick: async () => {
           const name = input.value.trim();
           if (!name) return false;
-          await db.projects.put({ ...project, name, protected: protectedInput.checked, useSuggestions: project.type === 'checklist' ? suggestionsInput.checked : false, enableQtyUnits: project.type === 'checklist' ? qtyUnitsInput.checked : false, defaultUnit: project.type === 'checklist' && qtyUnitsInput.checked ? defaultUnitSelect.value || null : null, keepCompletedItems: project.type === 'checklist' ? keepCompletedInput.checked : false, mergeDuplicates: project.type === 'checklist' ? mergeDuplicatesInput.checked : false });
+          const interval = project.type === 'checklist' ? (resetIntervalSelect.value || null) : null;
+          const resetDay = interval === 'weekly' || interval === 'monthly'
+            ? parseInt(resetDaySelect.value, 10)
+            : null;
+          await db.projects.put({ ...project, name, protected: protectedInput.checked, useSuggestions: project.type === 'checklist' ? suggestionsInput.checked : false, enableQtyUnits: project.type === 'checklist' ? qtyUnitsInput.checked : false, defaultUnit: project.type === 'checklist' && qtyUnitsInput.checked ? defaultUnitSelect.value || null : null, keepCompletedItems: project.type === 'checklist' ? (interval ? true : keepCompletedInput.checked) : false, mergeDuplicates: project.type === 'checklist' ? mergeDuplicatesInput.checked : false, resetInterval: interval, resetDay });
           onChange?.();
           return true;
         }

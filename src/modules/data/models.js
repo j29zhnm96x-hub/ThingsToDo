@@ -19,7 +19,7 @@ export function nowIso() {
   return new Date().toISOString();
 }
 
-export function newProject({ name, type = 'default', parentId = null, useSuggestions = false, enableQtyUnits = false, keepCompletedItems = false, defaultUnit = null, mergeDuplicates = false }) {
+export function newProject({ name, type = 'default', parentId = null, useSuggestions = false, enableQtyUnits = false, keepCompletedItems = false, defaultUnit = null, mergeDuplicates = false, resetInterval = null, resetDay = null }) {
   const t = nowIso();
   return {
     id: uuid(),
@@ -32,6 +32,9 @@ export function newProject({ name, type = 'default', parentId = null, useSuggest
     keepCompletedItems: !!keepCompletedItems,
     defaultUnit: defaultUnit || null,
     mergeDuplicates: !!mergeDuplicates,
+    resetInterval: resetInterval || null, // null | 'daily' | 'weekly' | 'monthly'
+    resetDay: resetDay != null ? resetDay : null, // weekly: 0-6 (0=Sun); monthly: 1-31
+    lastResetDate: null, // 'YYYY-MM-DD' of last reset
     createdAt: t,
     updatedAt: t,
     sortOrder: t // default: by created time

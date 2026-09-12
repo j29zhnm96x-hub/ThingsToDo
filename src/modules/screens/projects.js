@@ -296,6 +296,56 @@ export function openCreateProject({ db, modalHost, onCreated, parentId = null })
     mergeDuplicatesToggle
   );
 
+  // Automatic reset interval (checklist only)
+  const resetIntervalSelect = el('select', { class: 'select', 'aria-label': t('resetInterval') || 'Reset interval' },
+    el('option', { value: '' }, t('resetNever') || 'Never'),
+    el('option', { value: 'daily' }, t('resetDaily') || 'Daily'),
+    el('option', { value: 'weekly' }, t('resetWeekly') || 'Weekly'),
+    el('option', { value: 'monthly' }, t('resetMonthly') || 'Monthly')
+  );
+  const resetIntervalRow = el('label', { class: 'label', style: 'display:none;' },
+    el('span', {}, t('resetInterval') || 'Reset interval'),
+    resetIntervalSelect
+  );
+
+  const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const resetDaySelect = el('select', { class: 'select', 'aria-label': t('resetDay') || 'Reset day' });
+  const resetDayRow = el('label', { class: 'label', style: 'display:none;' },
+    el('span', {}, t('resetDay') || 'Reset day'),
+    resetDaySelect
+  );
+
+  const fillResetDayOptions = () => {
+    resetDaySelect.innerHTML = '';
+    if (resetIntervalSelect.value === 'weekly') {
+      dayNames.forEach((name, i) => {
+        resetDaySelect.appendChild(el('option', { value: String(i) }, t(name)));
+      });
+    } else if (resetIntervalSelect.value === 'monthly') {
+      for (let d = 1; d <= 31; d++) {
+        resetDaySelect.appendChild(el('option', { value: String(d) }, String(d)));
+      }
+    }
+  };
+
+  const updateResetVisibility = () => {
+    const isChecklist = typeSelect.value === 'checklist';
+    const interval = resetIntervalSelect.value;
+    resetIntervalRow.style.display = isChecklist ? '' : 'none';
+    const showDay = isChecklist && (interval === 'weekly' || interval === 'monthly');
+    if (showDay) fillResetDayOptions();
+    resetDayRow.style.display = showDay ? '' : 'none';
+    // Reset interval forces "Keep completed items" on (locked) so items stay resettable
+    if (isChecklist && interval) {
+      keepCompletedToggle.checked = true;
+      keepCompletedToggle.disabled = true;
+    } else {
+      keepCompletedToggle.disabled = false;
+    }
+  };
+
+  resetIntervalSelect.addEventListener('change', updateResetVisibility);
+
   const updateDefaultUnitVisibility = () => {
     const isChecklist = typeSelect.value === 'checklist';
     const showUnits = isChecklist && enableQtyUnitsToggle.checked;
@@ -309,6 +359,7 @@ export function openCreateProject({ db, modalHost, onCreated, parentId = null })
     keepCompletedRow.style.display = isChecklist ? '' : 'none';
     mergeDuplicatesRow.style.display = isChecklist ? '' : 'none';
     updateDefaultUnitVisibility();
+    updateResetVisibility();
   });
 
   enableQtyUnitsToggle.addEventListener('change', updateDefaultUnitVisibility);
@@ -320,7 +371,9 @@ export function openCreateProject({ db, modalHost, onCreated, parentId = null })
     qtyUnitsRow,
     defaultUnitRow,
     keepCompletedRow,
-    mergeDuplicatesRow
+    mergeDuplicatesRow,
+    resetIntervalRow,
+    resetDayRow
   );
 
   openModal(modalHost, {
@@ -338,7 +391,11 @@ export function openCreateProject({ db, modalHost, onCreated, parentId = null })
             return false;
           }
           const type = typeSelect.value === 'checklist' ? 'checklist' : 'default';
-          const project = newProject({ name, type, parentId, useSuggestions: type === 'checklist' ? useSuggestionsToggle.checked : false, enableQtyUnits: type === 'checklist' ? enableQtyUnitsToggle.checked : false, keepCompletedItems: type === 'checklist' ? keepCompletedToggle.checked : false, defaultUnit: type === 'checklist' && enableQtyUnitsToggle.checked ? defaultUnitSelect.value || null : null, mergeDuplicates: type === 'checklist' ? mergeDuplicatesToggle.checked : false });
+          const interval = type === 'checklist' ? (resetIntervalSelect.value || null) : null;
+          const resetDay = interval === 'weekly' || interval === 'monthly'
+            ? parseInt(resetDaySelect.value, 10)
+            : null;
+          const project = newProject({ name, type, parentId, useSuggestions: type === 'checklist' ? useSuggestionsToggle.checked : false, enableQtyUnits: type === 'checklist' ? enableQtyUnitsToggle.checked : false, keepCompletedItems: type === 'checklist' ? (interval ? true : keepCompletedToggle.checked) : false, defaultUnit: type === 'checklist' && enableQtyUnitsToggle.checked ? defaultUnitSelect.value || null : null, mergeDuplicates: type === 'checklist' ? mergeDuplicatesToggle.checked : false, resetInterval: interval, resetDay });
           await db.projects.put(project);
           
           if (type === 'checklist') {
