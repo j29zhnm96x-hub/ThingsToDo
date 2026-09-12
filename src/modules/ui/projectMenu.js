@@ -25,6 +25,7 @@ function openEditProject(modalHost, { db, project, onChange }) {
   const qtyUnitsInput = el('input', { type: 'checkbox', checked: project.enableQtyUnits ? 'checked' : null, 'aria-label': t('enableQtyUnits') });
   const keepCompletedInput = el('input', { type: 'checkbox', checked: project.keepCompletedItems ? 'checked' : null, 'aria-label': t('keepCompletedItems') });
   const mergeDuplicatesInput = el('input', { type: 'checkbox', checked: project.mergeDuplicates ? 'checked' : null, 'aria-label': t('mergeDuplicates') || 'Merge duplicates' });
+  const autoLinkInput = el('input', { type: 'checkbox', checked: project.autoLinkInbox ? 'checked' : null, 'aria-label': t('autoLinkInbox') || 'Auto-link to Inbox' });
 
   const defaultUnits = [
     { value: '', label: t('defaultUnitNone') || 'None' },
@@ -110,7 +111,8 @@ function openEditProject(modalHost, { db, project, onChange }) {
       project.type === 'checklist' ? el('label', { class: 'label' }, el('span', {}, t('keepCompletedItems')), keepCompletedInput) : null,
       project.type === 'checklist' ? el('label', { class: 'label' }, el('span', {}, t('mergeDuplicates') || 'Merge duplicates'), mergeDuplicatesInput) : null,
       project.type === 'checklist' ? resetIntervalRow : null,
-      project.type === 'checklist' ? resetDayRow : null
+      project.type === 'checklist' ? resetDayRow : null,
+      el('label', { class: 'label' }, el('span', {}, t('autoLinkInbox') || 'Auto-link to Inbox'), autoLinkInput)
     ),
     actions: [
       { label: t('cancel'), class: 'btn btn--ghost', onClick: () => true },
@@ -124,7 +126,7 @@ function openEditProject(modalHost, { db, project, onChange }) {
           const resetDay = interval === 'weekly' || interval === 'monthly'
             ? parseInt(resetDaySelect.value, 10)
             : null;
-          await db.projects.put({ ...project, name, protected: protectedInput.checked, useSuggestions: project.type === 'checklist' ? suggestionsInput.checked : false, enableQtyUnits: project.type === 'checklist' ? qtyUnitsInput.checked : false, defaultUnit: project.type === 'checklist' && qtyUnitsInput.checked ? defaultUnitSelect.value || null : null, keepCompletedItems: project.type === 'checklist' ? (interval ? true : keepCompletedInput.checked) : false, mergeDuplicates: project.type === 'checklist' ? mergeDuplicatesInput.checked : false, resetInterval: interval, resetDay });
+          await db.projects.put({ ...project, name, protected: protectedInput.checked, useSuggestions: project.type === 'checklist' ? suggestionsInput.checked : false, enableQtyUnits: project.type === 'checklist' ? qtyUnitsInput.checked : false, defaultUnit: project.type === 'checklist' && qtyUnitsInput.checked ? defaultUnitSelect.value || null : null, keepCompletedItems: project.type === 'checklist' ? (interval ? true : keepCompletedInput.checked) : false, mergeDuplicates: project.type === 'checklist' ? mergeDuplicatesInput.checked : false, resetInterval: interval, resetDay, autoLinkInbox: autoLinkInput.checked });
           onChange?.();
           return true;
         }
@@ -215,6 +217,12 @@ export function openProjectMenu(modalHost, { db, project, onChange }) {
   const moveBtn = el('button', { class: 'btn', type: 'button' }, t('move'));
   const deleteBtn = el('button', { class: 'btn btn--danger', type: 'button' }, t('delete'));
 
+  if (project.autoLinkInbox) {
+    linkBtn.disabled = true;
+    linkBtn.textContent = t('autoLinkManaged') || 'Auto-managed';
+    linkBtn.style.opacity = '0.55';
+  }
+
   editBtn.addEventListener('click', () => openEditProject(modalHost, { db, project, onChange }));
   shareBtn.addEventListener('click', async () => {
     try {
@@ -270,6 +278,12 @@ export function openProjectMenu(modalHost, { db, project, onChange }) {
 
 export function openInboxProjectMenu(modalHost, { db, project, onChange }) {
   const linkBtn = el('button', { class: 'btn', type: 'button' }, project.showInInbox ? t('unlinkFromInbox') : t('linkToInbox'));
+
+  if (project.autoLinkInbox) {
+    linkBtn.disabled = true;
+    linkBtn.textContent = t('autoLinkManaged') || 'Auto-managed';
+    linkBtn.style.opacity = '0.55';
+  }
 
   let modalRef = null;
   linkBtn.addEventListener('click', async () => {

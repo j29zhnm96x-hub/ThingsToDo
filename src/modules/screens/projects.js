@@ -296,6 +296,13 @@ export function openCreateProject({ db, modalHost, onCreated, parentId = null })
     mergeDuplicatesToggle
   );
 
+  // Auto-link to Inbox when active items exist (both project types)
+  const autoLinkToggle = el('input', { type: 'checkbox', 'aria-label': t('autoLinkInbox') || 'Auto-link to Inbox' });
+  const autoLinkRow = el('label', { class: 'label' },
+    el('span', {}, t('autoLinkInbox') || 'Auto-link to Inbox'),
+    autoLinkToggle
+  );
+
   // Automatic reset interval (checklist only)
   const resetIntervalSelect = el('select', { class: 'select', 'aria-label': t('resetInterval') || 'Reset interval' },
     el('option', { value: '' }, t('resetNever') || 'Never'),
@@ -373,7 +380,8 @@ export function openCreateProject({ db, modalHost, onCreated, parentId = null })
     keepCompletedRow,
     mergeDuplicatesRow,
     resetIntervalRow,
-    resetDayRow
+    resetDayRow,
+    autoLinkRow
   );
 
   openModal(modalHost, {
@@ -395,7 +403,7 @@ export function openCreateProject({ db, modalHost, onCreated, parentId = null })
           const resetDay = interval === 'weekly' || interval === 'monthly'
             ? parseInt(resetDaySelect.value, 10)
             : null;
-          const project = newProject({ name, type, parentId, useSuggestions: type === 'checklist' ? useSuggestionsToggle.checked : false, enableQtyUnits: type === 'checklist' ? enableQtyUnitsToggle.checked : false, keepCompletedItems: type === 'checklist' ? (interval ? true : keepCompletedToggle.checked) : false, defaultUnit: type === 'checklist' && enableQtyUnitsToggle.checked ? defaultUnitSelect.value || null : null, mergeDuplicates: type === 'checklist' ? mergeDuplicatesToggle.checked : false, resetInterval: interval, resetDay });
+          const project = newProject({ name, type, parentId, useSuggestions: type === 'checklist' ? useSuggestionsToggle.checked : false, enableQtyUnits: type === 'checklist' ? enableQtyUnitsToggle.checked : false, keepCompletedItems: type === 'checklist' ? (interval ? true : keepCompletedToggle.checked) : false, defaultUnit: type === 'checklist' && enableQtyUnitsToggle.checked ? defaultUnitSelect.value || null : null, mergeDuplicates: type === 'checklist' ? mergeDuplicatesToggle.checked : false, resetInterval: interval, resetDay, autoLinkInbox: autoLinkToggle.checked });
           await db.projects.put(project);
           
           if (type === 'checklist') {
