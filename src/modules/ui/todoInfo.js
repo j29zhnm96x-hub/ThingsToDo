@@ -4,6 +4,38 @@ import { showToast } from './toast.js';
 import { t } from '../utils/i18n.js';
 
 const LONG_PRESS_MS = 650;
+
+// Convert plain text into nodes, making URLs clickable (http/https/www)
+const URL_PATTERN = /(https?:\/\/[^\s<>"']+|www\.[^\s<>"']+)/gi;
+
+function linkifyNodes(text) {
+  if (!text) return [text];
+  const parts = String(text).split(URL_PATTERN);
+  const out = [];
+  parts.forEach((part, i) => {
+    if (i % 2 === 0) { out.push(part); return; }
+    // Strip trailing sentence punctuation from the URL, keep it as text after
+    const m = part.match(/^(.+?)([.,;:!)\]}"']+)$/);
+    const cleaned = m ? m[1] : part;
+    if (!cleaned) { out.push(part); return; }
+    const href = /^www\./i.test(cleaned) ? 'https://' + cleaned : cleaned;
+    out.push(el('a', {
+      class: 'todoInfo__link',
+      href,
+      target: '_blank',
+      rel: 'noopener noreferrer',
+      onClick: (e) => {
+        // Ignore the click if it followed a long-press copy
+        const host = e.currentTarget.closest('.todoInfo__title, .todoInfo__notes');
+        if (host?.dataset?.justCopied) { e.preventDefault(); return; }
+        e.stopPropagation();
+      }
+    }, cleaned));
+    if (m && m[2]) out.push(m[2]);
+  });
+  return out;
+}
+
 function attachLongPressCopy(target, getText) {
   function copyText(text) {
     if (navigator.clipboard?.writeText) {
@@ -31,6 +63,11 @@ function attachLongPressCopy(target, getText) {
     const text = getText();
     copyText(text);
     showToast(t('textCopied') || 'Copied');
+    // Mark parent so a click right after a long-press copy doesn't open a link
+    if (target.dataset) {
+      target.dataset.justCopied = '1';
+      setTimeout(() => { if (target.dataset) delete target.dataset.justCopied; }, 500);
+    }
   }
   function cancel() { hasTracking = false; if (timer) { clearTimeout(timer); timer = null; } ready = false; }
   target.addEventListener('pointerdown', start);
@@ -104,7 +141,7 @@ export async function openTodoInfo({ todo, db, modalHost, onEdit }) {
   // Title with completion status
   const titleEl = el('div', { class: 'todoInfo__title' },
     todo.completed ? '✓ ' : '',
-    todo.title
+    ...linkifyNodes(todo.title)
   );
   if (todo.completed) titleEl.style.textDecoration = 'line-through';
   attachLongPressCopy(titleEl, () => [todo.title, todo.notes].filter(Boolean).join('\n\n'));
@@ -129,7 +166,7 @@ export async function openTodoInfo({ todo, db, modalHost, onEdit }) {
   // Notes
   let notesEl = null;
   if (todo.notes) {
-    const notesTextEl = el('div', { class: 'todoInfo__notes' }, todo.notes);
+    const notesTextEl = el('div', { class: 'todoInfo__notes' }, ...linkifyNodes(todo.notes));
     attachLongPressCopy(notesTextEl, () => todo.notes || '');
     notesEl = el('div', { class: 'todoInfo__section' },
       el('div', { class: 'todoInfo__label' }, 'Notes'),
